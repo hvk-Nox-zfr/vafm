@@ -19,21 +19,33 @@ document.getElementById("actus").classList.add("active");
 
 
 /* ============================================================
-   ACTUALITÉS
+   ACTUALITÉS — VERSION SUPABASE
 ============================================================ */
 
-const ACTUS_KEY = "vafm_actus";
+import { supabase } from "./supabase-init.js";
+
 let actus = [];
 
-function loadActus() {
-    const saved = localStorage.getItem(ACTUS_KEY);
-    actus = saved ? JSON.parse(saved) : [];
+/* ============================================================
+   CHARGER LES ACTUS DEPUIS SUPABASE
+============================================================ */
+async function loadActus() {
+    const { data, error } = await supabase
+        .from("actus")
+        .select("*")
+        .order("date_pub", { ascending: false });
+
+    if (error) {
+        console.error("Erreur chargement actus :", error);
+        actus = [];
+    } else {
+        actus = data;
+    }
 }
 
-function saveActus() {
-    localStorage.setItem(ACTUS_KEY, JSON.stringify(actus));
-}
-
+/* ============================================================
+   AFFICHAGE DES ACTUS
+============================================================ */
 function renderActus() {
     const container = document.getElementById("actus-list");
     if (!container) return;
@@ -54,7 +66,7 @@ function renderActus() {
                 <div class="admin-image-preview" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
                 <h3>${actu.titre}</h3>
                 <p>${actu.texte}</p>
-                <small>Date prévue : ${actu.date}</small>
+                <small>Date prévue : ${actu.date_pub}</small>
                 ${actu.published ? `<span class="badge-published">Publié</span>` : `<span class="badge-draft">Brouillon</span>`}
             </div>
 
@@ -66,46 +78,48 @@ function renderActus() {
             </div>
         `;
 
-        // Publier
+        /* --- Publier --- */
         const publishBtn = card.querySelector(".publish");
         if (publishBtn) {
-            publishBtn.addEventListener("click", () => {
-                actu.published = true;
-                saveActus();
+            publishBtn.addEventListener("click", async () => {
+                await supabase.from("actus").update({ published: true }).eq("id", actu.id);
+                await loadActus();
                 renderActus();
             });
         }
 
-        // Dépublier
+        /* --- Dépublier --- */
         const unpublishBtn = card.querySelector(".unpublish");
         if (unpublishBtn) {
-            unpublishBtn.addEventListener("click", () => {
-                actu.published = false;
-                saveActus();
+            unpublishBtn.addEventListener("click", async () => {
+                await supabase.from("actus").update({ published: false }).eq("id", actu.id);
+                await loadActus();
                 renderActus();
             });
         }
 
-        // Modifier
+        /* --- Modifier --- */
         card.querySelector(".edit").addEventListener("click", () => {
             document.getElementById("actu-titre").value = actu.titre;
             document.getElementById("actu-texte").value = actu.texte;
-            document.getElementById("actu-date").value = actu.date;
+            document.getElementById("actu-date").value = actu.date_pub;
             document.getElementById("actu-image").value = actu.imageUrl || "";
 
-            actuForm.dataset.editId = String(actu.id);
+            actuForm.dataset.editId = actu.id;
             modal.classList.remove("hidden");
         });
 
-        // Supprimer
-        card.querySelector(".delete").addEventListener("click", () => {
+        /* --- Supprimer --- */
+        card.querySelector(".delete").addEventListener("click", async () => {
             if (!confirm("Supprimer cette actualité ?")) return;
-            actus = actus.filter(a => a.id !== actu.id);
-            saveActus();
+
+            await supabase.from("actus").delete().eq("id", actu.id);
+
+            await loadActus();
             renderActus();
         });
 
-        // ✅ Éditer le contenu → redirection vers page éditeur
+        /* --- Éditer le contenu --- */
         card.querySelector(".edit-content").addEventListener("click", () => {
             window.location.href = `editeur.html?id=${actu.id}`;
         });
@@ -114,7 +128,9 @@ function renderActus() {
     });
 }
 
-/* ----- MODAL ACTU ----- */
+/* ============================================================
+   MODAL AJOUT / MODIFICATION
+============================================================ */
 
 const modal = document.getElementById("actu-modal");
 const openBtn = document.getElementById("add-actu");
@@ -132,7 +148,7 @@ if (openBtn && modal && closeBtn && actuForm) {
         modal.classList.add("hidden");
     });
 
-    actuForm.addEventListener("submit", (e) => {
+    actuForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const titre = document.getElementById("actu-titre").value.trim();
@@ -148,35 +164,41 @@ if (openBtn && modal && closeBtn && actuForm) {
         const editId = actuForm.dataset.editId;
 
         if (editId) {
-            const actu = actus.find(a => String(a.id) === editId);
-            if (actu) {
-                actu.titre = titre;
-                actu.texte = texte;
-                actu.date = date;
-                actu.imageUrl = imageUrl;
-            }
-        } else {
-            actus.push({
-                id: Date.now(),
+            /* --- Mise à jour --- */
+            await supabase.from("actus").update({
                 titre,
                 texte,
-                date,
+                date_pub: date,
+                imageUrl
+            }).eq("id", editId);
+
+        } else {
+            /* --- Nouvelle actu --- */
+            await supabase.from("actus").insert([{
+                titre,
+                texte,
+                date_pub: date,
                 imageUrl,
-                published: false
-            });
+                published: false,
+                contenu: {} // vide au début
+            }]);
         }
 
-        saveActus();
+        await loadActus();
         renderActus();
+
         actuForm.reset();
         delete actuForm.dataset.editId;
         modal.classList.add("hidden");
     });
 }
 
-loadActus();
-renderActus();
+/* ============================================================
+   INIT
+============================================================ */
 
+await loadActus();
+renderActus();
 
 /* ============================================================
    ANIMATEURS (POPUP)
