@@ -1,8 +1,3 @@
-/* ============================================================
-   ADMIN.JS — VERSION CORRIGÉE
-============================================================ */
-
-import { supabase } from "./supabase-init.js";
 import { loadActus, renderActus } from "./admin-actus.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -17,17 +12,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     buttons.forEach(btn => {
         btn.addEventListener("click", () => {
             const target = btn.getAttribute("data-section");
-
             sections.forEach(sec => sec.classList.remove("active"));
             document.getElementById(target).classList.add("active");
         });
     });
 
-    // Section par défaut
     document.getElementById("actus").classList.add("active");
 
     /* ============================================================
-       MODAL ACTUS (géré par admin-actus.js)
+       ACTUALITÉS (SUPABASE)
     ============================================================ */
 
     await loadActus();
@@ -89,8 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const nom = document.getElementById("animateur-nom").value.trim();
         const emission = document.getElementById("animateur-emission").value.trim();
         const description = document.getElementById("animateur-description").value.trim();
-        const imageInput = document.getElementById("animateur-image");
-        const file = imageInput.files[0];
+        const file = document.getElementById("animateur-image").files[0];
 
         if (!nom || !emission || !description) {
             alert("Merci de remplir tous les champs.");
@@ -167,185 +159,109 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     loadAnimateurs();
     afficherAnimateursAdmin();
-});
 
+    /* ============================================================
+       ÉMISSIONS (LOCALSTORAGE)
+    ============================================================ */
 
-/* ============================================================
-   ÉMISSIONS (POPUP)
-============================================================ */
+    let emissionEditIndex = null;
 
-let emissionEditIndex = null;
+    function ouvrirPopupEmission(index = null) {
+        const popup = document.getElementById("popup-emission");
+        const title = document.getElementById("popup-emission-title");
 
-function ouvrirPopupEmission(index = null) {
-    const popup = document.getElementById("popup-emission");
-    const title = document.getElementById("popup-emission-title");
+        const nom = document.getElementById("emission-nom");
+        const horaires = document.getElementById("emission-horaires");
+        const description = document.getElementById("emission-description");
 
-    const nom = document.getElementById("emission-nom");
-    const horaires = document.getElementById("emission-horaires");
-    const description = document.getElementById("emission-description");
+        emissionEditIndex = index;
 
-    emissionEditIndex = index;
+        const saved = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
 
-    const saved = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
+        if (index === null) {
+            title.textContent = "Nouvelle émission";
+            nom.value = "";
+            horaires.value = "";
+            description.value = "";
+        } else {
+            const em = saved[index];
+            title.textContent = "Modifier l’émission";
+            nom.value = em.nom;
+            horaires.value = em.horaires;
+            description.value = em.description;
+        }
 
-    if (index === null) {
-        title.textContent = "Nouvelle émission";
-        nom.value = "";
-        horaires.value = "";
-        description.value = "";
-    } else {
-        const em = saved[index];
-        title.textContent = "Modifier l’émission";
-        nom.value = em.nom;
-        horaires.value = em.horaires;
-        description.value = em.description;
+        popup.classList.add("show");
     }
 
-    popup.classList.add("show");
-}
-
-function fermerPopupEmission() {
-    document.getElementById("popup-emission").classList.remove("show");
-}
-
-document.getElementById("popup-emission-cancel").addEventListener("click", fermerPopupEmission);
-
-document.getElementById("popup-emission-save").addEventListener("click", () => {
-    const nom = document.getElementById("emission-nom").value.trim();
-    const horaires = document.getElementById("emission-horaires").value.trim();
-    const description = document.getElementById("emission-description").value.trim();
-
-    if (!nom || !horaires || !description) {
-        alert("Merci de remplir tous les champs.");
-        return;
+    function fermerPopupEmission() {
+        document.getElementById("popup-emission").classList.remove("show");
     }
 
-    let emissions = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
+    document.getElementById("popup-emission-cancel").addEventListener("click", fermerPopupEmission);
 
-    const nouvelleEmission = { nom, horaires, description };
+    document.getElementById("popup-emission-save").addEventListener("click", () => {
+        const nom = document.getElementById("emission-nom").value.trim();
+        const horaires = document.getElementById("emission-horaires").value.trim();
+        const description = document.getElementById("emission-description").value.trim();
 
-    if (emissionEditIndex === null) {
-        emissions.push(nouvelleEmission);
-    } else {
-        emissions[emissionEditIndex] = nouvelleEmission;
+        if (!nom || !horaires || !description) {
+            alert("Merci de remplir tous les champs.");
+            return;
+        }
+
+        let emissions = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
+
+        const nouvelleEmission = { nom, horaires, description };
+
+        if (emissionEditIndex === null) {
+            emissions.push(nouvelleEmission);
+        } else {
+            emissions[emissionEditIndex] = nouvelleEmission;
+        }
+
+        localStorage.setItem("vafm_emissions", JSON.stringify(emissions));
+
+        afficherEmissionsAdmin();
+        fermerPopupEmission();
+    });
+
+    function afficherEmissionsAdmin() {
+        const container = document.getElementById("emissions-admin");
+        if (!container) return;
+
+        const emissions = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
+
+        container.innerHTML = "";
+
+        emissions.forEach((em, index) => {
+            const div = document.createElement("div");
+            div.className = "admin-item";
+
+            div.innerHTML = `
+                <strong>${em.nom}</strong><br>
+                <em>${em.horaires}</em><br>
+                ${em.description}<br><br>
+
+                <button onclick="ouvrirPopupEmission(${index})">Modifier</button>
+                <button onclick="supprimerEmission(${index})" class="danger">Supprimer</button>
+            `;
+
+            container.appendChild(div);
+        });
     }
 
-    localStorage.setItem("vafm_emissions", JSON.stringify(emissions));
-
-    afficherEmissionsAdmin();
-    fermerPopupEmission();
-});
-
-function afficherEmissionsAdmin() {
-    const container = document.getElementById("emissions-admin");
-    if (!container) return;
-
-    const emissions = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
-
-    container.innerHTML = "";
-
-    emissions.forEach((em, index) => {
-        const div = document.createElement("div");
-        div.className = "admin-item";
-
-        div.innerHTML = `
-            <strong>${em.nom}</strong><br>
-            <em>${em.horaires}</em><br>
-            ${em.description}<br><br>
-
-            <button onclick="ouvrirPopupEmission(${index})">Modifier</button>
-            <button onclick="supprimerEmission(${index})" class="danger">Supprimer</button>
-        `;
-
-        container.appendChild(div);
-    });
-}
-
-document.getElementById("add-emission").addEventListener("click", () => {
-    ouvrirPopupEmission();
-});
-
-function supprimerEmission(index) {
-    let emissions = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
-    emissions.splice(index, 1);
-    localStorage.setItem("vafm_emissions", JSON.stringify(emissions));
-    afficherEmissionsAdmin();
-}
-
-afficherEmissionsAdmin();
-
-// -------------------------
-// DROPZONE ANIMATEUR
-// -------------------------
-const dropZone = document.getElementById("drop-zone");
-const fileInput = document.getElementById("animateur-image");
-const preview = document.getElementById("preview-image");
-
-let animateurImageBase64 = ""; // image finale enregistrée
-
-if (dropZone) {
-
-    // Empêche le comportement par défaut
-    ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
-        dropZone.addEventListener(eventName, e => e.preventDefault());
-        dropZone.addEventListener(eventName, e => e.stopPropagation());
+    document.getElementById("add-emission").addEventListener("click", () => {
+        ouvrirPopupEmission();
     });
 
-    // Style visuel
-    dropZone.addEventListener("dragover", () => {
-        dropZone.classList.add("dragover");
-    });
-
-    dropZone.addEventListener("dragleave", () => {
-        dropZone.classList.remove("dragover");
-    });
-
-    // Dépôt d'image
-    dropZone.addEventListener("drop", e => {
-        dropZone.classList.remove("dragover");
-
-        const file = e.dataTransfer.files[0];
-        if (!file || !file.type.startsWith("image/")) return;
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            animateurImageBase64 = reader.result;
-            preview.src = reader.result;
-            preview.classList.remove("hidden");
-        };
-        reader.readAsDataURL(file);
-    });
-
-    // Clique pour parcourir
-    dropZone.addEventListener("click", () => {
-        fileInput.click();
-    });
-
-    // Sélection via input
-    fileInput.addEventListener("change", () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            animateurImageBase64 = reader.result;
-            preview.src = reader.result;
-            preview.classList.remove("hidden");
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-document.getElementById("popup-animateur-save").addEventListener("click", () => {
-
-    const animateur = {
-        nom: document.getElementById("animateur-nom").value,
-        emission: document.getElementById("animateur-emission").value,
-        description: document.getElementById("animateur-description").value,
-        photo: animateurImageBase64 // ← l’image est ici
+    window.supprimerEmission = function(index) {
+        let emissions = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
+        emissions.splice(index, 1);
+        localStorage.setItem("vafm_emissions", JSON.stringify(emissions));
+        afficherEmissionsAdmin();
     };
 
-    // tu l’ajoutes à ton tableau animateurs
-    // puis tu sauvegardes dans localStorage
+    afficherEmissionsAdmin();
 
 });
