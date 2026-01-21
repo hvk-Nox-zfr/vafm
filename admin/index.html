@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration – VAFM</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- 🔐 Vérification de connexion AVANT d'afficher la page -->
+<script>
+if (localStorage.getItem("admin_logged") !== "true") {
+    window.location.href = "login.html";
+}
+</script>
+
+<header class="admin-header">
+    <h1>VAFM – Administration</h1>
+    <h2 id="welcome"></h2>
+
+    <nav class="admin-nav">
+        <button data-section="actus">Actualités</button>
+        <button data-section="animateurs">Animateurs</button>
+        <button data-section="emissions">Émissions</button>
+        <button data-section="preview">Aperçu du site</button>
+    </nav>
+</header>
+
+<!-- 🔓 Déconnexion -->
+<button class="logout-btn" onclick="logout()">Déconnexion</button>
+
+<script>
+function logout() {
+    localStorage.removeItem("admin_logged");
+    localStorage.removeItem("admin_user");
+    window.location.href = "login.html";
+}
+</script>
+
+<!-- 🔥 Script qui affiche "Salut Hugo !" APRÈS que l'élément existe -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const user = localStorage.getItem("admin_user");
+    if (user) {
+        document.getElementById("welcome").textContent = "Salut " + user + " !";
+    }
+});
+</script>
+
+<main id="admin-content">
+
+    <!-- ACTUALITÉS -->
+    <section id="actus" class="admin-section">
+        <h2>Gestion des actualités</h2>
+        <button class="add-btn" id="add-actu">+ Ajouter une actualité</button>
+        <div id="actus-list" class="admin-list"></div>
+    </section>
+
+    <!-- MODAL ACTUALITÉ -->
+    <div id="actu-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Nouvelle actualité</h3>
+
+            <form id="actu-form">
+                <input type="text" id="actu-titre" placeholder="Titre de l'actualité" required>
+                <textarea id="actu-texte" placeholder="Texte de l'actualité" required></textarea>
+                <input type="date" id="actu-date">
+                <input type="text" id="actu-image" placeholder="URL de l'image (optionnel)">
+
+                <div class="modal-actions">
+                    <button type="submit">Enregistrer</button>
+                    <button type="button" id="close-modal">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ANIMATEURS -->
+    <section id="animateurs" class="admin-section">
+        <h2>Gestion des animateurs</h2>
+        <button class="add-btn" id="add-animateur">+ Ajouter un animateur</button>
+        <div id="animateurs-list" class="admin-list"></div>
+    </section>
+
+    <!-- POPUP ANIMATEUR -->
+    <div id="popup-animateur" class="popup-overlay">
+        <div class="popup">
+            <h2 id="popup-animateur-title">Nouvel animateur</h2>
+
+            <label>Nom de l’animateur</label>
+            <input type="text" id="animateur-nom">
+
+            <label>Émission associée</label>
+            <input type="text" id="animateur-emission">
+
+            <label>Description</label>
+            <textarea id="animateur-description"></textarea>
+
+            <label>Photo de l’animateur</label>
+            <div id="drop-zone" class="drop-zone">
+                <p>Glissez une image ici ou cliquez pour parcourir</p>
+                <input type="file" id="animateur-image" accept="image/*">
+            </div>
+
+            <img id="preview-image" class="preview-image hidden">
+
+            <div class="popup-buttons">
+                <button id="popup-animateur-save" class="btn-primary">Enregistrer</button>
+                <button id="popup-animateur-cancel" class="btn-secondary">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP EMISSION -->
+    <div id="popup-emission" class="popup-overlay">
+        <div class="popup">
+            <h2 id="popup-emission-title">Nouvelle émission</h2>
+
+            <label>Nom de l’émission</label>
+            <input type="text" id="emission-nom">
+
+            <label>Horaires</label>
+            <input type="text" id="emission-horaires" placeholder="Ex : Lundi 18h - 20h">
+
+            <label>Description</label>
+            <textarea id="emission-description"></textarea>
+
+            <div class="popup-buttons">
+                <button id="popup-emission-save" class="btn-primary">Enregistrer</button>
+                <button id="popup-emission-cancel" class="btn-secondary">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉMISSIONS -->
+    <section id="emissions" class="admin-section">
+        <h2>Gestion des émissions</h2>
+        <button class="add-btn" id="add-emission">+ Ajouter une émission</button>
+        <div id="emissions-admin" class="admin-list"></div>
+    </section>
+
+    <!-- APERÇU -->
+    <section id="preview" class="admin-section">
+        <h2>Aperçu du site public</h2>
+        <iframe src="../index.html" class="preview-frame"></iframe>
+    </section>
+
+</main>
+
+<script src="admin.js"></script>
+<script src="editeur.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,338 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+/* TOPBAR */
+
+.topbar {
+    height: 56px;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    justify-content: space-between;
+}
+
+.topbar h1 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.topbar-left,
+.topbar-right {
+    display: flex;
+    gap: 8px;
+}
+
+/* LAYOUT */
+
+.layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 260px;
+    height: calc(100vh - 56px);
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    background: #1f2937;
+    color: white;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sidebar h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
+}
+
+.sidebar hr {
+    border: none;
+    border-top: 1px solid #374151;
+    margin: 8px 0;
+}
+
+/* MAIN / CANVAS */
+
+.main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.canvas-wrapper {
+    background: #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+}
+
+.canvas {
+    background: white;
+    width: 800px;
+    min-height: 600px;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px #d1d5db;
+    padding: 24px;
+    position: relative;
+}
+
+/* PROPRIÉTÉS */
+
+.properties {
+    background: #f9fafb;
+    border-left: 1px solid #e5e7eb;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.properties h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+}
+
+.prop-panel {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+label {
+    font-size: 12px;
+    color: #4b5563;
+}
+
+input[type="number"],
+input[type="color"],
+input[type="range"] {
+    width: 100%;
+    margin-top: 4px;
+}
+
+/* BOUTONS */
+
+.btn {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #e5e7eb;
+    color: #111827;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.btn.full {
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.btn.small {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.btn.primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn.ghost {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.btn.danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* PANNEAU SANS SÉLECTION */
+
+#no-selection-panel {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+/* BLOCS PUBLICS (IMAGES) */
+
+.block-public {
+    position: absolute;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    overflow: hidden;
+}
+
+.block-public.selected {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+}
+
+.block-public.cropping {
+    border-style: dashed;
+    border-color: #f97316;
+}
+
+/* HANDLES REDIMENSIONNEMENT */
+
+.resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border: 2px solid #2563eb;
+    border-radius: 50%;
+}
+
+.resize-handle.top-left { top:-6px; left:-6px; cursor:nwse-resize; }
+.resize-handle.top { top:-6px; left:50%; transform:translateX(-50%); cursor:ns-resize; }
+.resize-handle.top-right { top:-6px; right:-6px; cursor:nesw-resize; }
+.resize-handle.right { top:50%; right:-6px; transform:translateY(-50%); cursor:ew-resize; }
+.resize-handle.bottom-right { bottom:-6px; right:-6px; cursor:nwse-resize; }
+.resize-handle.bottom { bottom:-6px; left:50%; transform:translateX(-50%); cursor:ns-resize; }
+.resize-handle.bottom-left { bottom:-6px; left:-6px; cursor:nesw-resize; }
+.resize-handle.left { top:50%; left:-6px; transform:translateY(-50%); cursor:ew-resize; }
+
+/* TEXTE AJOUTÉ */
+
+.editable-text {
+    display: inline-block;
+    min-width: 40px;
+    min-height: 20px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: text;
+}
+
+.editable-text.selected {
+    outline: 1px solid #2563eb;
+}
+
+/* HINT */
+
+.hint {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* === RECHERCHE D'ÉLÉMENTS (CANVA-LIKE) === */
+
+.search-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #374151;
+    background: #111827;
+    color: white;
+    font-size: 13px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.search-input::placeholder {
+    color: #9ca3af;
+}
+
+.search-input:focus {
+    border-color: #2563eb;
+    background: #0f172a;
+}
+
+/* Grille des résultats */
+.elements-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Miniature d’un élément */
+.element-item {
+    width: 60px;
+    height: 60px;
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    padding: 6px;
+    transition: 0.15s;
+}
+
+.element-item:hover {
+    background: #1e293b;
+    border-color: #2563eb;
+}
+
+/* SVG dans les résultats */
+.element-item svg {
+    width: 100%;
+    height: 100%;
+    fill: white;
+}
+
+/* PNG dans les résultats */
+.element-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Scrollbar propre */
+.elements-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.elements-grid::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
+}
+
+.elements-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
