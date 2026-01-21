@@ -1,228 +1,174 @@
 /* ============================================================
-   NAVIGATION ENTRE SECTIONS
+   ADMIN.JS — VERSION CORRIGÉE
 ============================================================ */
 
-const buttons = document.querySelectorAll(".admin-nav button");
-const sections = document.querySelectorAll(".admin-section");
+import { supabase } from "./supabase-init.js";
+import { loadActus, renderActus } from "./admin-actus.js";
 
-buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        const target = btn.getAttribute("data-section");
+document.addEventListener("DOMContentLoaded", async () => {
 
-        sections.forEach(sec => sec.classList.remove("active"));
-        document.getElementById(target).classList.add("active");
-    });
-});
+    /* ============================================================
+       NAVIGATION ENTRE SECTIONS
+    ============================================================ */
 
-// Section par défaut
-document.getElementById("actus").classList.add("active");
+    const buttons = document.querySelectorAll(".admin-nav button");
+    const sections = document.querySelectorAll(".admin-section");
 
-/* ============================================================
-   MODAL AJOUT / MODIFICATION
-============================================================ */
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.getAttribute("data-section");
 
-const modal = document.getElementById("actu-modal");
-const openBtn = document.getElementById("add-actu");
-const closeBtn = document.getElementById("close-modal");
-const actuForm = document.getElementById("actu-form");
-
-if (openBtn && modal && closeBtn && actuForm) {
-    openBtn.addEventListener("click", () => {
-        actuForm.reset();
-        delete actuForm.dataset.editId;
-        modal.classList.remove("hidden");
+            sections.forEach(sec => sec.classList.remove("active"));
+            document.getElementById(target).classList.add("active");
+        });
     });
 
-    closeBtn.addEventListener("click", () => {
-        modal.classList.add("hidden");
-    });
+    // Section par défaut
+    document.getElementById("actus").classList.add("active");
 
-    actuForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    /* ============================================================
+       MODAL ACTUS (géré par admin-actus.js)
+    ============================================================ */
 
-        const titre = document.getElementById("actu-titre").value.trim();
-        const texte = document.getElementById("actu-texte").value.trim();
-        const date = document.getElementById("actu-date").value || new Date().toISOString().slice(0, 10);
-        const imageUrl = document.getElementById("actu-image").value.trim();
+    await loadActus();
+    renderActus();
 
-        if (!titre || !texte) {
-            alert("Titre et texte obligatoires.");
+    /* ============================================================
+       ANIMATEURS (LOCALSTORAGE)
+    ============================================================ */
+
+    const ANIMATEURS_KEY = "vafm_animateurs";
+    let animateurs = [];
+    let animateurEditIndex = null;
+
+    function loadAnimateurs() {
+        const saved = localStorage.getItem(ANIMATEURS_KEY);
+        animateurs = saved ? JSON.parse(saved) : [];
+    }
+
+    function saveAnimateurs() {
+        localStorage.setItem(ANIMATEURS_KEY, JSON.stringify(animateurs));
+    }
+
+    function ouvrirPopupAnimateur(index = null) {
+        const popup = document.getElementById("popup-animateur");
+        const title = document.getElementById("popup-animateur-title");
+
+        const nom = document.getElementById("animateur-nom");
+        const emission = document.getElementById("animateur-emission");
+        const description = document.getElementById("animateur-description");
+        const imageInput = document.getElementById("animateur-image");
+
+        animateurEditIndex = index;
+
+        if (index === null) {
+            title.textContent = "Nouvel animateur";
+            nom.value = "";
+            emission.value = "";
+            description.value = "";
+            imageInput.value = "";
+        } else {
+            const anim = animateurs[index];
+            title.textContent = "Modifier l’animateur";
+            nom.value = anim.nom;
+            emission.value = anim.emission;
+            description.value = anim.description;
+            imageInput.value = "";
+        }
+
+        popup.classList.add("show");
+    }
+
+    function fermerPopupAnimateur() {
+        document.getElementById("popup-animateur").classList.remove("show");
+    }
+
+    document.getElementById("popup-animateur-cancel").addEventListener("click", fermerPopupAnimateur);
+
+    document.getElementById("popup-animateur-save").addEventListener("click", () => {
+        const nom = document.getElementById("animateur-nom").value.trim();
+        const emission = document.getElementById("animateur-emission").value.trim();
+        const description = document.getElementById("animateur-description").value.trim();
+        const imageInput = document.getElementById("animateur-image");
+        const file = imageInput.files[0];
+
+        if (!nom || !emission || !description) {
+            alert("Merci de remplir tous les champs.");
             return;
         }
 
-        const editId = actuForm.dataset.editId;
-
-        if (editId) {
-            /* --- Mise à jour --- */
-            await supabase.from("actus").update({
-                titre,
-                texte,
-                date_pub: date,
-                imageUrl
-            }).eq("id", editId);
-
-        } else {
-            /* --- Nouvelle actu --- */
-            await supabase.from("actus").insert([{
-                titre,
-                texte,
-                date_pub: date,
-                imageUrl,
-                published: false,
-                contenu: {} // vide au début
-            }]);
+        let imageUrl = "";
+        if (file) {
+            imageUrl = URL.createObjectURL(file);
+        } else if (animateurEditIndex !== null) {
+            imageUrl = animateurs[animateurEditIndex].imageUrl || "";
         }
 
-        await loadActus();
-        renderActus();
+        const newAnim = { nom, emission, description, imageUrl };
 
-        actuForm.reset();
-        delete actuForm.dataset.editId;
-        modal.classList.add("hidden");
+        if (animateurEditIndex === null) {
+            animateurs.push(newAnim);
+        } else {
+            animateurs[animateurEditIndex] = newAnim;
+        }
+
+        saveAnimateurs();
+        afficherAnimateursAdmin();
+        fermerPopupAnimateur();
     });
-}
 
-/* ============================================================
-   INIT
-============================================================ */
+    function afficherAnimateursAdmin() {
+        const container = document.getElementById("animateurs-list");
+        container.innerHTML = "";
 
-await loadActus();
-renderActus();
+        if (animateurs.length === 0) {
+            container.innerHTML = "<p>Aucun animateur pour le moment.</p>";
+            return;
+        }
 
-/* ============================================================
-   ANIMATEURS (POPUP)
-============================================================ */
+        animateurs.forEach((anim, index) => {
+            const card = document.createElement("div");
+            card.className = "admin-card";
 
-const ANIMATEURS_KEY = "vafm_animateurs";
-let animateurs = [];
-let animateurEditIndex = null;
-
-function loadAnimateurs() {
-    const saved = localStorage.getItem(ANIMATEURS_KEY);
-    animateurs = saved ? JSON.parse(saved) : [];
-}
-
-function saveAnimateurs() {
-    localStorage.setItem(ANIMATEURS_KEY, JSON.stringify(animateurs));
-}
-
-function ouvrirPopupAnimateur(index = null) {
-    const popup = document.getElementById("popup-animateur");
-    const title = document.getElementById("popup-animateur-title");
-
-    const nom = document.getElementById("animateur-nom");
-    const emission = document.getElementById("animateur-emission");
-    const description = document.getElementById("animateur-description");
-    const imageInput = document.getElementById("animateur-image");
-
-    animateurEditIndex = index;
-
-    if (index === null) {
-        title.textContent = "Nouvel animateur";
-        nom.value = "";
-        emission.value = "";
-        description.value = "";
-        imageInput.value = "";
-    } else {
-        const anim = animateurs[index];
-        title.textContent = "Modifier l’animateur";
-        nom.value = anim.nom;
-        emission.value = anim.emission;
-        description.value = anim.description;
-        imageInput.value = ""; // impossible de pré-remplir un input file
-    }
-
-    popup.classList.add("show");
-}
-
-function fermerPopupAnimateur() {
-    document.getElementById("popup-animateur").classList.remove("show");
-}
-
-document.getElementById("popup-animateur-cancel").addEventListener("click", fermerPopupAnimateur);
-
-document.getElementById("popup-animateur-save").addEventListener("click", () => {
-    const nom = document.getElementById("animateur-nom").value.trim();
-    const emission = document.getElementById("animateur-emission").value.trim();
-    const description = document.getElementById("animateur-description").value.trim();
-    const imageInput = document.getElementById("animateur-image");
-    const file = imageInput.files[0];
-
-    if (!nom || !emission || !description) {
-        alert("Merci de remplir tous les champs.");
-        return;
-    }
-
-    let imageUrl = "";
-    if (file) {
-        imageUrl = URL.createObjectURL(file);
-    } else if (animateurEditIndex !== null) {
-        imageUrl = animateurs[animateurEditIndex].imageUrl || "";
-    }
-
-    const newAnim = { nom, emission, description, imageUrl };
-
-    if (animateurEditIndex === null) {
-        animateurs.push(newAnim);
-    } else {
-        animateurs[animateurEditIndex] = newAnim;
-    }
-
-    saveAnimateurs();
-    afficherAnimateursAdmin();
-    fermerPopupAnimateur();
-});
-
-function afficherAnimateursAdmin() {
-    const container = document.getElementById("animateurs-list");
-    container.innerHTML = "";
-
-    if (animateurs.length === 0) {
-        container.innerHTML = "<p>Aucun animateur pour le moment.</p>";
-        return;
-    }
-
-    animateurs.forEach((anim, index) => {
-        const card = document.createElement("div");
-        card.className = "admin-card";
-
-        card.innerHTML = `
-            <div class="admin-anim-left">
-                <img src="${anim.imageUrl || 'https://via.placeholder.com/80'}" class="admin-anim-img">
-                <div>
-                    <h3>${anim.nom}</h3>
-                    <p><strong>${anim.emission}</strong></p>
-                    <p>${anim.description}</p>
+            card.innerHTML = `
+                <div class="admin-anim-left">
+                    <img src="${anim.imageUrl || 'https://via.placeholder.com/80'}" class="admin-anim-img">
+                    <div>
+                        <h3>${anim.nom}</h3>
+                        <p><strong>${anim.emission}</strong></p>
+                        <p>${anim.description}</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="actions">
-                <button class="edit">Modifier</button>
-                <button class="delete">Supprimer</button>
-            </div>
-        `;
+                <div class="actions">
+                    <button class="edit">Modifier</button>
+                    <button class="delete">Supprimer</button>
+                </div>
+            `;
 
-        card.querySelector(".edit").addEventListener("click", () => {
-            ouvrirPopupAnimateur(index);
+            card.querySelector(".edit").addEventListener("click", () => {
+                ouvrirPopupAnimateur(index);
+            });
+
+            card.querySelector(".delete").addEventListener("click", () => {
+                if (!confirm("Supprimer cet animateur ?")) return;
+                animateurs.splice(index, 1);
+                saveAnimateurs();
+                afficherAnimateursAdmin();
+            });
+
+            container.appendChild(card);
         });
+    }
 
-        card.querySelector(".delete").addEventListener("click", () => {
-            if (!confirm("Supprimer cet animateur ?")) return;
-            animateurs.splice(index, 1);
-            saveAnimateurs();
-            afficherAnimateursAdmin();
-        });
-
-        container.appendChild(card);
+    document.getElementById("add-animateur").addEventListener("click", () => {
+        ouvrirPopupAnimateur();
     });
-}
 
-document.getElementById("add-animateur").addEventListener("click", () => {
-    ouvrirPopupAnimateur();
+    loadAnimateurs();
+    afficherAnimateursAdmin();
 });
 
-loadAnimateurs();
-afficherAnimateursAdmin();
 
 /* ============================================================
    ÉMISSIONS (POPUP)
