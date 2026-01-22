@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             imageUrl = supabase.storage
-                .from("images")
+                .from("uploads")
                 .getPublicUrl(fileName).data.publicUrl;
         }
 
