@@ -57,6 +57,7 @@ export function renderActus() {
         `;
 
         /* Publier */
+        console.log("Bouton trouvé :", card.querySelector(".publish"));
         card.querySelector("[data-action='publish']")?.addEventListener("click", async () => {
             await supabase.from("actus").update({ published: true }).eq("id", actu.id);
             await loadActus();
