@@ -73,7 +73,6 @@ export function renderActus() {
             document.getElementById("actu-titre").value = actu.titre;
             document.getElementById("actu-texte").value = actu.texte;
             document.getElementById("actu-date").value = actu.date_pub;
-            document.getElementById("actu-image").value = actu.imageUrl || "";
 
             const form = document.getElementById("actu-form");
             form.dataset.editId = actu.id;
@@ -128,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const titre = document.getElementById("actu-titre").value.trim();
         const texte = document.getElementById("actu-texte").value.trim();
         const date = document.getElementById("actu-date").value || new Date().toISOString().slice(0, 10);
-        const imageUrl = document.getElementById("actu-image").value.trim();
+        const file = document.getElementById("actu-image").files[0];
         const editId = actuForm.dataset.editId;
 
         if (!titre || !texte) {
@@ -136,22 +135,56 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        /* ============================
+           UPLOAD IMAGE SI FOURNIE
+        ============================ */
+        let imageUrl = "https://vafmlaradio.fr/assets/default.jpg"; // image par défaut
+
+        if (file) {
+            const fileName = `actus/${Date.now()}-${file.name}`;
+
+            const { data, error: uploadError } = await supabase.storage
+                .from("images")
+                .upload(fileName, file);
+
+            if (uploadError) {
+                console.error(uploadError);
+                alert("Erreur lors de l’upload de l’image.");
+                return;
+            }
+
+            imageUrl = supabase.storage
+                .from("images")
+                .getPublicUrl(fileName).data.publicUrl;
+        }
+
+        /* ============================
+           INSERTION / MODIFICATION
+        ============================ */
+        let error;
+
         if (editId) {
-            await supabase.from("actus").update({
+            ({ error } = await supabase.from("actus").update({
                 titre,
                 texte,
                 date_pub: date,
                 imageUrl
-            }).eq("id", editId);
+            }).eq("id", editId));
         } else {
-            await supabase.from("actus").insert([{
+            ({ error } = await supabase.from("actus").insert([{
                 titre,
                 texte,
                 date_pub: date,
                 imageUrl,
                 published: false,
                 contenu: {}
-            }]);
+            }]));
+        }
+
+        if (error) {
+            console.error("Erreur Supabase :", error);
+            alert("Erreur Supabase : " + error.message);
+            return;
         }
 
         modal.classList.add("hidden");
