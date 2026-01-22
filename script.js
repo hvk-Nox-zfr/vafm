@@ -3,7 +3,7 @@
 const audio = document.getElementById("radio-audio");
 const playBtn = document.getElementById("play-btn");
 const currentShow = document.getElementById("current-show");
-const playIcon = playBtn.querySelector(".icon");
+const playIcon = playBtn?.querySelector(".icon");
 
 // Texte affiché sous le titre
 if (currentShow) {
@@ -14,10 +14,9 @@ if (currentShow) {
 let isMuted = false;
 let hasStarted = false;
 
-if (playBtn && audio) {
+if (playBtn && audio && playIcon) {
     playBtn.addEventListener("click", async () => {
         try {
-            // Première lecture du flux
             if (!hasStarted) {
                 await audio.play();
                 audio.volume = 1;
@@ -28,7 +27,6 @@ if (playBtn && audio) {
                 return;
             }
 
-            // Si déjà lancé : on coupe / remet le son
             if (!isMuted) {
                 audio.volume = 0;
                 isMuted = true;
@@ -61,7 +59,6 @@ function lancerDefilementVoiture(titre) {
     clearTimeout(animTimeout);
 
     trackSpan.textContent = titre;
-
     trackSpan.style.transition = "none";
     trackSpan.style.transform = "translateX(0)";
 
@@ -88,11 +85,15 @@ function lancerDefilementVoiture(titre) {
 async function updateCurrentTitle() {
     try {
         const response = await fetch("https://manager10.streamradio.fr:1555/status-json.xsl");
+
+        if (!response.ok) {
+            throw new Error("Réponse réseau invalide");
+        }
+
         const data = await response.json();
+        const rawTitle = data?.icestats?.source?.title;
 
-        const rawTitle = data.icestats?.source?.title;
-
-        if (!rawTitle) {
+        if (!rawTitle || typeof rawTitle !== "string") {
             lancerDefilementVoiture("Titre non disponible");
             return;
         }
