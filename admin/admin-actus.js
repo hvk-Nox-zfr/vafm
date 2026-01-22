@@ -41,35 +41,37 @@ export function renderActus() {
             <div>
                 <div class="admin-image-preview" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
                 <h3>${actu.titre}</h3>
-                <p>${actu.texte}</p>
+                <p>${actu.texte || ""}</p>
                 <small>Date prévue : ${actu.date_pub}</small>
                 ${actu.published ? `<span class="badge-published">Publié</span>` : `<span class="badge-draft">Brouillon</span>`}
             </div>
 
             <div class="actions">
-                ${actu.published ? `<button class="unpublish">Dépublier</button>` : `<button class="publish">Publier</button>`}
-                <button class="edit">Modifier</button>
-                <button class="delete">Supprimer</button>
-                <button class="edit-content">Éditer le contenu</button>
+                ${actu.published 
+                    ? `<button data-action="unpublish">Dépublier</button>` 
+                    : `<button data-action="publish">Publier</button>`}
+                <button data-action="edit">Modifier</button>
+                <button data-action="delete">Supprimer</button>
+                <button data-action="edit-content">Éditer le contenu</button>
             </div>
         `;
 
         /* Publier */
-        card.querySelector(".publish")?.addEventListener("click", async () => {
+        card.querySelector("[data-action='publish']")?.addEventListener("click", async () => {
             await supabase.from("actus").update({ published: true }).eq("id", actu.id);
             await loadActus();
             renderActus();
         });
 
         /* Dépublier */
-        card.querySelector(".unpublish")?.addEventListener("click", async () => {
+        card.querySelector("[data-action='unpublish']")?.addEventListener("click", async () => {
             await supabase.from("actus").update({ published: false }).eq("id", actu.id);
             await loadActus();
             renderActus();
         });
 
         /* Modifier */
-        card.querySelector(".edit").addEventListener("click", () => {
+        card.querySelector("[data-action='edit']").addEventListener("click", () => {
             document.getElementById("actu-titre").value = actu.titre;
             document.getElementById("actu-texte").value = actu.texte;
             document.getElementById("actu-date").value = actu.date_pub;
@@ -81,7 +83,7 @@ export function renderActus() {
         });
 
         /* Supprimer */
-        card.querySelector(".delete").addEventListener("click", async () => {
+        card.querySelector("[data-action='delete']").addEventListener("click", async () => {
             if (!confirm("Supprimer cette actualité ?")) return;
             await supabase.from("actus").delete().eq("id", actu.id);
             await loadActus();
@@ -89,11 +91,7 @@ export function renderActus() {
         });
 
         /* Éditer contenu */
-        card.querySelector(".edit-content").addEventListener("click", () => {
-            if (!actu.id) {
-                alert("ID introuvable pour cette actu.");
-                return;
-            }
+        card.querySelector("[data-action='edit-content']").addEventListener("click", () => {
             window.location.href = `editeur.html?id=${actu.id}`;
         });
 
@@ -135,15 +133,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        /* ============================
-           UPLOAD IMAGE SI FOURNIE
-        ============================ */
-        let imageUrl = "https://vafmlaradio.fr/assets/default.jpg"; // image par défaut
+        let imageUrl = "https://vafmlaradio.fr/assets/default.jpg";
 
         if (file) {
             const fileName = `actus/${Date.now()}-${file.name}`;
 
-            const { data, error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from("uploads")
                 .upload(fileName, file);
 
@@ -158,9 +153,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 .getPublicUrl(fileName).data.publicUrl;
         }
 
-        /* ============================
-           INSERTION / MODIFICATION
-        ============================ */
         let error;
 
         if (editId) {
