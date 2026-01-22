@@ -1,3 +1,5 @@
+console.log("ADMIN ACTUS CHARGÉ");
+
 import { supabase } from "./supabase-init.js";
 
 export let actus = [];
