@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const fileName = `actus/${Date.now()}-${file.name}`;
 
             const { data, error: uploadError } = await supabase.storage
-                .from("images")
+                .from("uploads")
                 .upload(fileName, file);
 
             if (uploadError) {
