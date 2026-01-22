@@ -1,10 +1,12 @@
 function smoothScrollTo(target, duration = 900, offset = 40) {
     const start = window.pageYOffset;
     const element = document.querySelector(target);
-    const end = element.offsetTop - offset; // on s'arrête un peu avant
+    if (!element) return; // Sécurité
+
+    const end = element.offsetTop - offset;
     const maxScroll = document.body.scrollHeight - window.innerHeight;
 
-    const finalPosition = Math.min(end, maxScroll); // évite de dépasser
+    const finalPosition = Math.min(end, maxScroll);
     const distance = finalPosition - start;
 
     let startTime = null;
@@ -15,7 +17,6 @@ function smoothScrollTo(target, duration = 900, offset = 40) {
         const timeElapsed = currentTime - startTime;
         const progress = Math.min(timeElapsed / duration, 1);
 
-        // Courbe ease-out encore plus douce
         const easeOut = 1 - Math.pow(1 - progress, 4);
 
         window.scrollTo(0, start + distance * easeOut);
@@ -28,22 +29,32 @@ function smoothScrollTo(target, duration = 900, offset = 40) {
     requestAnimationFrame(animation);
 }
 
+// Smooth scroll sur les liens #
 document.querySelectorAll('a[href^="#"]').forEach(link => {
     link.addEventListener("click", function (e) {
         e.preventDefault();
         const target = this.getAttribute("href");
-        smoothScrollTo(target, 1000); // 1000ms = 1 seconde
+        smoothScrollTo(target, 1000);
     });
 });
+
+// ===============================
+// CARROUSEL ACTUS (sécurisé)
+// ===============================
 
 const actusTrack = document.getElementById("actus-public");
 const btnLeft = document.querySelector(".carousel-btn.left");
 const btnRight = document.querySelector(".carousel-btn.right");
 
-btnLeft.addEventListener("click", () => {
-  actusTrack.scrollBy({ left: -320, behavior: "smooth" });
-});
+// Vérifie que les éléments existent AVANT d'ajouter les events
+if (actusTrack && btnLeft) {
+    btnLeft.addEventListener("click", () => {
+        actusTrack.scrollBy({ left: -320, behavior: "smooth" });
+    });
+}
 
-btnRight.addEventListener("click", () => {
-  actusTrack.scrollBy({ left: 320, behavior: "smooth" });
-});
+if (actusTrack && btnRight) {
+    btnRight.addEventListener("click", () => {
+        actusTrack.scrollBy({ left: 320, behavior: "smooth" });
+    });
+}
