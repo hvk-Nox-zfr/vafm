@@ -2,12 +2,12 @@ console.log("ADMIN ACTUS CHARGÉ");
 
 import { supabase } from "./supabase-init.js";
 
-export let actus = [];
+let actus = [];
 
 /* ============================================================
    CHARGER LES ACTUS
 ============================================================ */
-export async function loadActus() {
+async function loadActus() {
     const { data, error } = await supabase
         .from("actus")
         .select("*")
@@ -24,7 +24,7 @@ export async function loadActus() {
 /* ============================================================
    AFFICHER LES ACTUS
 ============================================================ */
-export function renderActus() {
+function renderActus() {
     const container = document.getElementById("actus-list");
     if (!container) return;
 
@@ -58,22 +58,18 @@ export function renderActus() {
             </div>
         `;
 
-        /* Publier */
-        console.log("Bouton trouvé :", card.querySelector(".publish"));
         card.querySelector("[data-action='publish']")?.addEventListener("click", async () => {
             await supabase.from("actus").update({ published: true }).eq("id", actu.id);
             await loadActus();
             renderActus();
         });
 
-        /* Dépublier */
         card.querySelector("[data-action='unpublish']")?.addEventListener("click", async () => {
             await supabase.from("actus").update({ published: false }).eq("id", actu.id);
             await loadActus();
             renderActus();
         });
 
-        /* Modifier */
         card.querySelector("[data-action='edit']").addEventListener("click", () => {
             document.getElementById("actu-titre").value = actu.titre;
             document.getElementById("actu-texte").value = actu.texte;
@@ -85,7 +81,6 @@ export function renderActus() {
             document.getElementById("actu-modal").classList.remove("hidden");
         });
 
-        /* Supprimer */
         card.querySelector("[data-action='delete']").addEventListener("click", async () => {
             if (!confirm("Supprimer cette actualité ?")) return;
             await supabase.from("actus").delete().eq("id", actu.id);
@@ -93,7 +88,6 @@ export function renderActus() {
             renderActus();
         });
 
-        /* Éditer contenu */
         card.querySelector("[data-action='edit-content']").addEventListener("click", () => {
             window.location.href = `editeur.html?id=${actu.id}`;
         });
@@ -106,7 +100,7 @@ export function renderActus() {
    FORMULAIRE AJOUT / MODIF
 ============================================================ */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const modal = document.getElementById("actu-modal");
     const openBtn = document.getElementById("add-actu");
     const closeBtn = document.getElementById("close-modal");
@@ -189,4 +183,8 @@ document.addEventListener("DOMContentLoaded", () => {
         await loadActus();
         renderActus();
     });
+
+    // 👉 Appelle les fonctions au démarrage
+    await loadActus();
+    renderActus();
 });
