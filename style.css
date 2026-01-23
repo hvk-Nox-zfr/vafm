@@ -609,3 +609,9 @@ textarea:focus {
     height: 100px;
   }
 }
+
+.actu-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
