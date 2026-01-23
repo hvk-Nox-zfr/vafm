@@ -7,7 +7,7 @@ let actus = [];
 /* ============================================================
    CHARGER LES ACTUS
 ============================================================ */
-async function loadActus() {
+export async function loadActus() {
     const { data, error } = await supabase
         .from("actus")
         .select("*")
@@ -24,7 +24,7 @@ async function loadActus() {
 /* ============================================================
    AFFICHER LES ACTUS
 ============================================================ */
-function renderActus() {
+export function renderActus() {
     const container = document.getElementById("actus-list");
     if (!container) return;
 
@@ -99,8 +99,7 @@ function renderActus() {
 /* ============================================================
    FORMULAIRE AJOUT / MODIF
 ============================================================ */
-
-document.addEventListener("DOMContentLoaded", async () => {
+export function setupActuForm() {
     const modal = document.getElementById("actu-modal");
     const openBtn = document.getElementById("add-actu");
     const closeBtn = document.getElementById("close-modal");
@@ -183,8 +182,4 @@ document.addEventListener("DOMContentLoaded", async () => {
         await loadActus();
         renderActus();
     });
-
-    // 👉 Appelle les fonctions au démarrage
-    await loadActus();
-    renderActus();
-});
+}
