@@ -31,7 +31,7 @@ async function chargerActusPubliques() {
     card.className = "actu-card";
 
     card.innerHTML = `
-      <a href="actu.html?id=${actu.id}" class="actu-link">
+      <a href="page.html?id=${actu.id}" class="actu-link">
           <div class="actu-image" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
           <h3>${actu.titre}</h3>
           <p>${actu.texte}</p>
