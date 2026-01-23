@@ -1,4 +1,4 @@
-import { loadActus, renderActus } from "./admin-actus.js";
+import { loadActus, renderActus, setupActuForm } from "./admin-actus.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
        ACTUALITÉS (SUPABASE)
     ============================================================ */
 
+    setupActuForm();
     await loadActus();
     renderActus();
 
@@ -76,9 +77,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("popup-animateur").classList.remove("show");
     }
 
-    document.getElementById("popup-animateur-cancel").addEventListener("click", fermerPopupAnimateur);
+    document.getElementById("popup-animateur-cancel")?.addEventListener("click", fermerPopupAnimateur);
 
-    document.getElementById("popup-animateur-save").addEventListener("click", () => {
+    document.getElementById("popup-animateur-save")?.addEventListener("click", () => {
         const nom = document.getElementById("animateur-nom").value.trim();
         const emission = document.getElementById("animateur-emission").value.trim();
         const description = document.getElementById("animateur-description").value.trim();
@@ -111,6 +112,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function afficherAnimateursAdmin() {
         const container = document.getElementById("animateurs-list");
+        if (!container) return;
+
         container.innerHTML = "";
 
         if (animateurs.length === 0) {
@@ -153,7 +156,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    document.getElementById("add-animateur").addEventListener("click", () => {
+    document.getElementById("add-animateur")?.addEventListener("click", () => {
         ouvrirPopupAnimateur();
     });
 
@@ -198,9 +201,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("popup-emission").classList.remove("show");
     }
 
-    document.getElementById("popup-emission-cancel").addEventListener("click", fermerPopupEmission);
+    document.getElementById("popup-emission-cancel")?.addEventListener("click", fermerPopupEmission);
 
-    document.getElementById("popup-emission-save").addEventListener("click", () => {
+    document.getElementById("popup-emission-save")?.addEventListener("click", () => {
         const nom = document.getElementById("emission-nom").value.trim();
         const horaires = document.getElementById("emission-horaires").value.trim();
         const description = document.getElementById("emission-description").value.trim();
@@ -243,24 +246,38 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <em>${em.horaires}</em><br>
                 ${em.description}<br><br>
 
-                <button onclick="ouvrirPopupEmission(${index})">Modifier</button>
-                <button onclick="supprimerEmission(${index})" class="danger">Supprimer</button>
+                <button class="edit-emission" data-index="${index}">Modifier</button>
+                <button class="delete-emission danger" data-index="${index}">Supprimer</button>
             `;
 
             container.appendChild(div);
         });
+
+        container.querySelectorAll(".edit-emission").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const index = btn.getAttribute("data-index");
+                ouvrirPopupEmission(Number(index));
+            });
+        });
+
+        container.querySelectorAll(".delete-emission").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const index = btn.getAttribute("data-index");
+                supprimerEmission(Number(index));
+            });
+        });
     }
 
-    document.getElementById("add-emission").addEventListener("click", () => {
+    document.getElementById("add-emission")?.addEventListener("click", () => {
         ouvrirPopupEmission();
     });
 
-    window.supprimerEmission = function(index) {
+    function supprimerEmission(index) {
         let emissions = JSON.parse(localStorage.getItem("vafm_emissions")) || [];
         emissions.splice(index, 1);
         localStorage.setItem("vafm_emissions", JSON.stringify(emissions));
         afficherEmissionsAdmin();
-    };
+    }
 
     afficherEmissionsAdmin();
 
