@@ -8,10 +8,14 @@ let actus = [];
    CHARGER LES ACTUS
 ============================================================ */
 export async function loadActus() {
+    console.log("Chargement des actus…");
+
     const { data, error } = await supabase
         .from("actus")
         .select("*")
-        .order("date_pub", { ascending: false });
+        .order("id", { ascending: false });
+
+    console.log("Résultat loadActus :", { data, error });
 
     if (error) {
         console.error("Erreur chargement actus :", error);
@@ -25,6 +29,8 @@ export async function loadActus() {
    AFFICHER LES ACTUS
 ============================================================ */
 export function renderActus() {
+    console.log("Rendu des actus :", actus);
+
     const container = document.getElementById("actus-list");
     if (!container) return;
 
@@ -36,6 +42,9 @@ export function renderActus() {
     }
 
     actus.forEach(actu => {
+        const id = Number(actu.id);
+        console.log("Actu ID :", id, actu);
+
         const card = document.createElement("div");
         card.className = "admin-card";
 
@@ -58,26 +67,51 @@ export function renderActus() {
             </div>
         `;
 
-        // ✅ Sécurise l'ID
-        const id = Number(actu.id);
-        if (!id) return;
-
+        /* ============================================================
+           PUBLISH
+        ============================================================ */
         card.querySelector("[data-action='publish']")?.addEventListener("click", async () => {
-            await supabase.from("actus").update({ published: true }).eq("id", id);
+            console.log("→ PUBLISH demandé pour ID :", id);
+
+            const { data, error } = await supabase
+                .from("actus")
+                .update({ published: true })
+                .eq("id", id)
+                .select();
+
+            console.log("Résultat publish :", { data, error });
+
             await loadActus();
             renderActus();
         });
 
+        /* ============================================================
+           UNPUBLISH
+        ============================================================ */
         card.querySelector("[data-action='unpublish']")?.addEventListener("click", async () => {
-            await supabase.from("actus").update({ published: false }).eq("id", id);
+            console.log("→ UNPUBLISH demandé pour ID :", id);
+
+            const { data, error } = await supabase
+                .from("actus")
+                .update({ published: false })
+                .eq("id", id)
+                .select();
+
+            console.log("Résultat unpublish :", { data, error });
+
             await loadActus();
             renderActus();
         });
 
+        /* ============================================================
+           EDIT
+        ============================================================ */
         card.querySelector("[data-action='edit']").addEventListener("click", () => {
-            document.getElementById("actu-titre").value = actu.titre || "";
-            document.getElementById("actu-texte").value = actu.texte || "";
-            document.getElementById("actu-date").value = actu.date_pub || "";
+            console.log("→ EDIT demandé pour ID :", id);
+
+            document.getElementById("actu-titre").value = actu.titre;
+            document.getElementById("actu-texte").value = actu.texte;
+            document.getElementById("actu-date").value = actu.date_pub;
 
             const form = document.getElementById("actu-form");
             form.dataset.editId = id;
@@ -85,14 +119,31 @@ export function renderActus() {
             document.getElementById("actu-modal").classList.remove("hidden");
         });
 
+        /* ============================================================
+           DELETE
+        ============================================================ */
         card.querySelector("[data-action='delete']").addEventListener("click", async () => {
             if (!confirm("Supprimer cette actualité ?")) return;
-            await supabase.from("actus").delete().eq("id", id);
+
+            console.log("→ DELETE demandé pour ID :", id);
+
+            const { data, error } = await supabase
+                .from("actus")
+                .delete()
+                .eq("id", id)
+                .select();
+
+            console.log("Résultat delete :", { data, error });
+
             await loadActus();
             renderActus();
         });
 
+        /* ============================================================
+           EDIT CONTENT
+        ============================================================ */
         card.querySelector("[data-action='edit-content']").addEventListener("click", () => {
+            console.log("→ EDIT CONTENT pour ID :", id);
             window.location.href = `editeur.html?id=${id}`;
         });
 
@@ -110,12 +161,14 @@ export function setupActuForm() {
     const actuForm = document.getElementById("actu-form");
 
     openBtn?.addEventListener("click", () => {
+        console.log("→ OUVERTURE MODAL AJOUT");
         actuForm.reset();
         delete actuForm.dataset.editId;
         modal.classList.remove("hidden");
     });
 
     closeBtn?.addEventListener("click", () => {
+        console.log("→ FERMETURE MODAL");
         modal.classList.add("hidden");
     });
 
@@ -128,6 +181,8 @@ export function setupActuForm() {
         const file = document.getElementById("actu-image").files[0];
         const editId = Number(actuForm.dataset.editId);
 
+        console.log("→ SUBMIT FORM :", { titre, texte, date, editId });
+
         if (!titre || !texte) {
             alert("Titre et texte obligatoires.");
             return;
@@ -137,13 +192,15 @@ export function setupActuForm() {
 
         if (file) {
             const fileName = `actus/${Date.now()}-${file.name}`;
+            console.log("→ UPLOAD IMAGE :", fileName);
 
             const { error: uploadError } = await supabase.storage
                 .from("uploads")
                 .upload(fileName, file);
 
+            console.log("Résultat upload :", uploadError);
+
             if (uploadError) {
-                console.error(uploadError);
                 alert("Erreur lors de l’upload de l’image.");
                 return;
             }
@@ -156,6 +213,8 @@ export function setupActuForm() {
         let error;
 
         if (editId) {
+            console.log("→ UPDATE actu ID :", editId);
+
             ({ error } = await supabase.from("actus").update({
                 titre,
                 texte,
@@ -163,6 +222,8 @@ export function setupActuForm() {
                 imageUrl
             }).eq("id", editId));
         } else {
+            console.log("→ INSERT nouvelle actu");
+
             ({ error } = await supabase.from("actus").insert([{
                 titre,
                 texte,
@@ -173,8 +234,9 @@ export function setupActuForm() {
             }]));
         }
 
+        console.log("Résultat submit :", error);
+
         if (error) {
-            console.error("Erreur Supabase :", error);
             alert("Erreur Supabase : " + error.message);
             return;
         }
