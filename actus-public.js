@@ -30,13 +30,16 @@ async function chargerActusPubliques() {
   data.forEach(actu => {
     const card = document.createElement("div");
     card.className = "actu-card";
+    
+card.innerHTML = `
+    <a href="actu.html?id=${actu.id}" class="actu-link">
+        <div class="actu-image" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
+        <h3>${actu.titre}</h3>
+        <p>${actu.texte}</p>
+        <small>Publié le ${actu.date_pub}</small>
+    </a>
+`;
 
-    card.innerHTML = `
-      <div class="actu-image" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
-      <h3>${actu.titre}</h3>
-      <p>${actu.texte}</p>
-      <small>Publié le ${actu.date_pub}</small>
-    `;
 
     container.appendChild(card);
   });
