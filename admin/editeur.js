@@ -1,51 +1,16 @@
 import { supabase } from "./supabase-init.js";
 
 // -------------------------
-// UPLOAD IMAGE SUPABASE
-// -------------------------
-async function uploadImage(file) {
-    const fileName = Date.now() + "-" + file.name;
-
-    const { data, error } = await supabase.storage
-        .from("uploads")
-        .upload(fileName, file);
-
-    if (error) {
-        console.error("Erreur upload :", error);
-        return null;
-    }
-
-    const { data: publicUrl } = supabase.storage
-        .from("uploads")
-        .getPublicUrl(fileName);
-
-    return publicUrl.publicUrl;
-}
-
-// -------------------------
-// RÉCUPÉRATION DE L'ACTU
+// RÉCUP PARAMÈTRE ID
 // -------------------------
 const params = new URLSearchParams(window.location.search);
 const actuId = Number(params.get("id"));
 
-let actus = JSON.parse(localStorage.getItem("vafm_actus")) || [];
-let actu = actus.find(a => a.id === actuId);
-
-if (!actu) {
-    alert("Article introuvable");
-    window.location.href = "index.html";
-}
-
-if (!actu.contenu || typeof actu.contenu !== "object") {
-    actu.contenu = { texte: "", images: [] };
-} else {
-    if (!actu.contenu.texte) actu.contenu.texte = "";
-    if (!Array.isArray(actu.contenu.images)) actu.contenu.images = [];
-}
+let actu = null;        // l'actu en cours d'édition
+let history = [];       // historique pour undo/redo
+let future = [];        // redo
 
 const editorTitle = document.getElementById("editor-title");
-if (editorTitle) editorTitle.textContent = actu.titre || "Sans titre";
-
 const editorArea = document.getElementById("editor-area");
 
 // PANNEAUX PROPRIÉTÉS
@@ -53,11 +18,51 @@ const noSelectionPanel = document.getElementById("no-selection-panel");
 const textPanel = document.getElementById("text-panel");
 const imagePanel = document.getElementById("image-panel");
 
+// SÉLECTION
+let selectedBlock = null;
+let selectedText = null;
+let currentCropBlock = null;
+
 // -------------------------
-// HISTORIQUE UNDO / REDO
+// INIT : CHARGER L'ACTU DEPUIS SUPABASE
 // -------------------------
-let history = [];
-let future = [];
+async function initEditor() {
+    if (!actuId) {
+        alert("Article introuvable (ID manquant)");
+        window.location.href = "index.html";
+        return;
+    }
+
+    const { data, error } = await supabase
+        .from("actus")
+        .select("*")
+        .eq("id", actuId)
+        .single();
+
+    if (error || !data) {
+        console.error("Erreur chargement actu :", error);
+        alert("Article introuvable");
+        window.location.href = "index.html";
+        return;
+    }
+
+    actu = data;
+
+    // Normalisation du contenu
+    if (!actu.contenu || typeof actu.contenu !== "object") {
+        actu.contenu = { texte: "", images: [] };
+    } else {
+        if (!actu.contenu.texte) actu.contenu.texte = "";
+        if (!Array.isArray(actu.contenu.images)) actu.contenu.images = [];
+    }
+
+    if (editorTitle) editorTitle.textContent = actu.titre || "Sans titre";
+
+    // On initialise l'éditeur
+    reloadEditor(false);
+    saveState();          // premier état dans l'historique
+    updatePropertiesPanel();
+}
 
 function getState() {
     return JSON.stringify(actu.contenu);
@@ -65,8 +70,7 @@ function getState() {
 
 function setState(stateStr) {
     actu.contenu = JSON.parse(stateStr);
-    localStorage.setItem("vafm_actus", JSON.stringify(actus));
-    reloadEditor(false); // ne touche pas à l'historique ici
+    reloadEditor(false);
 }
 
 function saveState() {
@@ -77,6 +81,9 @@ function saveState() {
     }
 }
 
+// -------------------------
+// UNDO / REDO / RETOUR
+// -------------------------
 document.getElementById("undo-btn")?.addEventListener("click", () => {
     if (history.length > 1) {
         const current = history.pop();
@@ -103,10 +110,33 @@ document.getElementById("back-btn")?.addEventListener("click", () => {
 });
 
 // -------------------------
+// UPLOAD IMAGE SUPABASE
+// -------------------------
+async function uploadImage(file) {
+    const fileName = Date.now() + "-" + file.name;
+
+    const { data, error } = await supabase.storage
+        .from("uploads")
+        .upload(fileName, file);
+
+    if (error) {
+        console.error("Erreur upload :", error);
+        return null;
+    }
+
+    const { data: publicUrl } = supabase.storage
+        .from("uploads")
+        .getPublicUrl(fileName);
+
+    return publicUrl.publicUrl;
+}
+
+// -------------------------
 // RECHARGER L'ÉDITEUR
 // -------------------------
 function reloadEditor(pushHistory = true) {
-    // On ne touche qu'au texte, les images sont gérées à part
+    if (!actu) return;
+
     editorArea.innerHTML = actu.contenu.texte || "";
 
     // On enlève d'éventuels blocs images résiduels
@@ -125,10 +155,6 @@ function reloadEditor(pushHistory = true) {
 // -------------------------
 // SÉLECTION GLOBALE
 // -------------------------
-let selectedBlock = null;
-let selectedText = null;
-let currentCropBlock = null;
-
 function clearSelection() {
     if (selectedBlock) {
         selectedBlock.classList.remove("selected");
@@ -143,7 +169,6 @@ function clearSelection() {
     updatePropertiesPanel();
 }
 
-// Gestion des clics dans la zone
 editorArea.addEventListener("mousedown", e => {
     const block = e.target.closest(".block-public");
     const textEl = e.target.closest(".editable-text");
@@ -164,7 +189,6 @@ editorArea.addEventListener("mousedown", e => {
     }
 
     if (textEl) {
-        // On laisse le focus pour écrire, mais on gère la sélection
         if (selectedBlock) {
             selectedBlock.classList.remove("selected");
             selectedBlock.classList.remove("cropping");
@@ -180,7 +204,6 @@ editorArea.addEventListener("mousedown", e => {
         return;
     }
 
-    // Clic dans le vide
     clearSelection();
 });
 
@@ -232,11 +255,10 @@ function rgbToHex(rgb) {
 }
 
 // -------------------------
-// AJOUT / SAUVEGARDE TEXTE
+// TEXTE
 // -------------------------
 function attachTextHandlers() {
     [...editorArea.querySelectorAll(".editable-text")].forEach(el => {
-        // éviter de dupliquer les listeners
         el.oninput = () => {
             saveTextContent();
         };
@@ -257,9 +279,8 @@ function attachTextHandlers() {
 }
 
 function saveTextContent() {
-    // On ne touche qu'au texte, les images sont gérées à part
+    if (!actu) return;
     actu.contenu.texte = editorArea.innerHTML;
-    localStorage.setItem("vafm_actus", JSON.stringify(actus));
 }
 
 // -------------------------
@@ -286,7 +307,7 @@ document.getElementById("add-image").addEventListener("click", () => {
 });
 
 // -------------------------
-// BOUTON SUPPRIMER
+// SUPPRIMER SÉLECTION
 // -------------------------
 document.getElementById("delete-selected-btn").addEventListener("click", () => {
     if (selectedBlock) {
@@ -471,7 +492,7 @@ function makeResizable(el, handle, position) {
 }
 
 // -------------------------
-// DRAG IMAGE INTERNE (CROP CANVA)
+// DRAG IMAGE INTERNE (CROP)
 // -------------------------
 function makeImageDraggableInside(block, img) {
     let isDraggingImg = false;
@@ -546,7 +567,7 @@ function toggleCropMode(block) {
 }
 
 // -------------------------
-// SLIDERS IMAGE (cadre + zoom)
+// SLIDERS IMAGE
 // -------------------------
 document.getElementById("img-frame-width").addEventListener("input", e => {
     if (!selectedBlock) return;
@@ -607,9 +628,11 @@ textPanel.querySelectorAll("[data-style]").forEach(btn => {
 });
 
 // -------------------------
-// SAUVEGARDE IMAGES
+// SAUVEGARDE IMAGES (EN MÉMOIRE)
 // -------------------------
 function autoSaveImages() {
+    if (!actu) return;
+
     const images = [...editorArea.querySelectorAll(".block-public")].map(div => {
         const img = div.querySelector("img");
         return {
@@ -626,20 +649,33 @@ function autoSaveImages() {
     });
 
     actu.contenu.images = images;
-    localStorage.setItem("vafm_actus", JSON.stringify(actus));
 }
 
 // -------------------------
-// BOUTON ENREGISTRER
+// BOUTON ENREGISTRER (SUPABASE)
 // -------------------------
-document.getElementById("save-btn").addEventListener("click", () => {
+document.getElementById("save-btn").addEventListener("click", async () => {
+    if (!actu) return;
+
     saveTextContent();
     autoSaveImages();
+
+    const { error } = await supabase
+        .from("actus")
+        .update({ contenu: actu.contenu })
+        .eq("id", actuId);
+
+    if (error) {
+        console.error("Erreur sauvegarde Supabase :", error);
+        alert("Erreur lors de l'enregistrement.");
+        return;
+    }
+
     alert("Contenu enregistré !");
 });
 
 // -------------------------
-// CHARGEMENT DES ÉLÉMENTS (SVG + PNG)
+// LIBRAIRIE D'ÉLÉMENTS
 // -------------------------
 let ELEMENTS_LIBRARY = [];
 
@@ -650,9 +686,6 @@ fetch("./elements.json")
         console.log("Éléments chargés :", ELEMENTS_LIBRARY);
     });
 
-// -------------------------
-// RECHERCHE D'ÉLÉMENTS
-// -------------------------
 const searchInput = document.getElementById("element-search");
 const resultsContainer = document.getElementById("elements-results");
 
@@ -674,9 +707,6 @@ searchInput.addEventListener("input", () => {
     displaySearchResults(results);
 });
 
-// -------------------------
-// AFFICHAGE DES RÉSULTATS
-// -------------------------
 function displaySearchResults(list) {
     resultsContainer.innerHTML = "";
 
@@ -702,9 +732,6 @@ function displaySearchResults(list) {
     });
 }
 
-// -------------------------
-// AJOUT D'UN ÉLÉMENT SUR LE CANVAS
-// -------------------------
 function addElementToCanvas(el) {
     if (el.type === "svg") {
         fetch(el.url)
@@ -742,7 +769,6 @@ function addElementToCanvas(el) {
                 saveState();
             });
     } else {
-        // pour les PNG de la librairie, on réutilise le même système que addImageBlock
         addImageBlock({ url: el.url });
         autoSaveImages();
         saveState();
@@ -750,11 +776,8 @@ function addElementToCanvas(el) {
 }
 
 // -------------------------
-// INIT
+// SÉLECTION TEXTE VIA SELECTIONCHANGE
 // -------------------------
-reloadEditor(true);
-updatePropertiesPanel();
-
 document.addEventListener("selectionchange", () => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
@@ -768,3 +791,8 @@ document.addEventListener("selectionchange", () => {
         updatePropertiesPanel("text");
     }
 });
+
+// -------------------------
+// LANCEMENT
+// -------------------------
+initEditor();
