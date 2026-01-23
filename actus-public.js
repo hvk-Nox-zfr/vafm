@@ -1,26 +1,28 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+// Remplace par ton URL et ta clé anon
 const supabase = createClient(
-  "https://TON-PROJET.supabase.co",
-  "ta-clé-anon"
+  "https://blronpowdhaumjudtgvn.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTkzNzYxNzksImV4cCI6MjAxNDk1MjE3OX0.3r7Zz1gKjvWZzWZkZ7vWZzWZzWZzWZzWZzWZzWZzWZz"
 );
 
-async function chargerActus() {
+async function chargerActusPubliques() {
   const { data, error } = await supabase
     .from("actus")
-    .select("id, titre, texte, date_pub, imageUrl, published")
+    .select("titre, texte, date_pub, imageUrl")
     .eq("published", true)
     .order("date_pub", { ascending: false });
 
+  const container = document.getElementById("actus-public");
+  container.innerHTML = "";
+
   if (error) {
     console.error("Erreur chargement actus :", error);
+    container.innerHTML = "<p>Impossible de charger les actualités.</p>";
     return;
   }
 
-  const container = document.getElementById("actus-list-public");
-  container.innerHTML = "";
-
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     container.innerHTML = "<p>Aucune actualité pour le moment.</p>";
     return;
   }
@@ -40,4 +42,4 @@ async function chargerActus() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", chargerActus);
+document.addEventListener("DOMContentLoaded", chargerActusPubliques);
