@@ -58,38 +58,42 @@ export function renderActus() {
             </div>
         `;
 
+        // ✅ Sécurise l'ID
+        const id = Number(actu.id);
+        if (!id) return;
+
         card.querySelector("[data-action='publish']")?.addEventListener("click", async () => {
-            await supabase.from("actus").update({ published: true }).eq("id", actu.id);
+            await supabase.from("actus").update({ published: true }).eq("id", id);
             await loadActus();
             renderActus();
         });
 
         card.querySelector("[data-action='unpublish']")?.addEventListener("click", async () => {
-            await supabase.from("actus").update({ published: false }).eq("id", actu.id);
+            await supabase.from("actus").update({ published: false }).eq("id", id);
             await loadActus();
             renderActus();
         });
 
         card.querySelector("[data-action='edit']").addEventListener("click", () => {
-            document.getElementById("actu-titre").value = actu.titre;
-            document.getElementById("actu-texte").value = actu.texte;
-            document.getElementById("actu-date").value = actu.date_pub;
+            document.getElementById("actu-titre").value = actu.titre || "";
+            document.getElementById("actu-texte").value = actu.texte || "";
+            document.getElementById("actu-date").value = actu.date_pub || "";
 
             const form = document.getElementById("actu-form");
-            form.dataset.editId = actu.id;
+            form.dataset.editId = id;
 
             document.getElementById("actu-modal").classList.remove("hidden");
         });
 
         card.querySelector("[data-action='delete']").addEventListener("click", async () => {
             if (!confirm("Supprimer cette actualité ?")) return;
-            await supabase.from("actus").delete().eq("id", actu.id);
+            await supabase.from("actus").delete().eq("id", id);
             await loadActus();
             renderActus();
         });
 
         card.querySelector("[data-action='edit-content']").addEventListener("click", () => {
-            window.location.href = `editeur.html?id=${actu.id}`;
+            window.location.href = `editeur.html?id=${id}`;
         });
 
         container.appendChild(card);
@@ -122,7 +126,7 @@ export function setupActuForm() {
         const texte = document.getElementById("actu-texte").value.trim();
         const date = document.getElementById("actu-date").value || new Date().toISOString().slice(0, 10);
         const file = document.getElementById("actu-image").files[0];
-        const editId = actuForm.dataset.editId;
+        const editId = Number(actuForm.dataset.editId);
 
         if (!titre || !texte) {
             alert("Titre et texte obligatoires.");
@@ -183,4 +187,3 @@ export function setupActuForm() {
         renderActus();
     });
 }
-
