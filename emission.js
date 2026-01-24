@@ -1,16 +1,15 @@
-// ✅ Vérification de chargement
 console.log("📡 emission.js chargé");
 
-// ✅ Connexion à Supabase
-const supabaseUrl = "https://blronpowdhaumjudtgvn.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+// Connexion Supabase (nom différent pour éviter le conflit)
+const supabasePublic = window.supabase.createClient(
+    "https://blronpowdhaumjudtgvn.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
+);
 
-// ✅ Charger les émissions
 async function loadPublicEmissions() {
-    console.log("🔄 Chargement des émissions depuis Supabase…");
+    console.log("🔄 Chargement des émissions…");
 
-    const { data, error } = await supabase
+    const { data, error } = await supabasePublic
         .from("emissions")
         .select("*")
         .order("created_at", { ascending: false });
@@ -20,17 +19,13 @@ async function loadPublicEmissions() {
         return;
     }
 
-    console.log("✅ Émissions reçues :", data);
+    console.log("📡 Émissions reçues :", data);
     displayPublicEmissions(data);
 }
 
-// ✅ Affichage dans le site public
 function displayPublicEmissions(list) {
     const container = document.getElementById("emissions-public");
-    if (!container) {
-        console.warn("⚠️ Conteneur #emissions-public introuvable");
-        return;
-    }
+    if (!container) return;
 
     container.innerHTML = "";
 
@@ -51,5 +46,4 @@ function displayPublicEmissions(list) {
     });
 }
 
-// ✅ Lancer au chargement
 document.addEventListener("DOMContentLoaded", loadPublicEmissions);
