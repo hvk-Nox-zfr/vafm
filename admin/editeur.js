@@ -310,19 +310,20 @@ document.getElementById("add-image").addEventListener("click", () => {
 // SUPPRIMER SÉLECTION
 // -------------------------
 document.getElementById("delete-selected-btn").addEventListener("click", () => {
-    if (selectedBlock) {
-        selectedBlock.remove();
-        selectedBlock = null;
-        autoSaveImages();
-        saveState();
-        clearSelection();
-        return;
-    }
-    if (selectedText) {
-        selectedText.remove();
-        saveTextContent();
-        saveState();
-        clearSelection();
+    const selected = document.querySelector(".selected");
+    if (!selected) return;
+
+    // Autoriser la suppression UNIQUEMENT pour :
+    // - les images flottantes
+    // - les textes éditables
+    const isDeletable =
+        selected.classList.contains("block-public") ||
+        selected.classList.contains("editable-text");
+
+    if (isDeletable) {
+        selected.remove();
+    } else {
+        console.warn("Cet élément ne peut pas être supprimé.");
     }
 });
 
@@ -594,22 +595,6 @@ document.getElementById("crop-toggle-btn").addEventListener("click", () => {
     } else {
         img.style.cursor = "default";
         img.onmousedown = null;
-    }
-});
-
-document.getElementById("delete-btn").addEventListener("click", () => {
-    const selected = document.querySelector(".selected");
-    if (!selected) return;
-
-    // Ne supprimer que les éléments autorisés
-    const isDeletable =
-        selected.classList.contains("block-public") ||
-        selected.classList.contains("editable-text");
-
-    if (isDeletable) {
-        selected.remove();
-    } else {
-        alert("Cet élément ne peut pas être supprimé.");
     }
 });
 
