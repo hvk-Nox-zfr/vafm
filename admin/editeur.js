@@ -556,26 +556,47 @@ function makeImageDraggableInside(block, img) {
 // MODE CROP
 // -------------------------
 document.getElementById("crop-toggle-btn").addEventListener("click", () => {
-    if (!selectedBlock) return;
-    const img = selectedBlock.querySelector("img");
-    if (!img) return;
-    toggleCropMode(selectedBlock);
+    const selected = document.querySelector(".block-public.selected");
+    if (!selected) return;
+
+    const img = selected.querySelector("img");
+    const isCropping = selected.classList.toggle("cropping");
+
+    // Basculer les styles
+    selected.style.overflow = isCropping ? "hidden" : "visible";
+    img.style.objectFit = isCropping ? "cover" : "contain";
+
+    // Activer ou désactiver le déplacement interne
+    if (isCropping) {
+        img.style.cursor = "grab";
+        img.onmousedown = function (e) {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const initLeft = parseInt(img.style.left || "0");
+            const initTop = parseInt(img.style.top || "0");
+
+            function onMove(ev) {
+                const dx = ev.clientX - startX;
+                const dy = ev.clientY - startY;
+                img.style.left = initLeft + dx + "px";
+                img.style.top = initTop + dy + "px";
+            }
+
+            function onUp() {
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+            }
+
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        };
+    } else {
+        img.style.cursor = "default";
+        img.onmousedown = null;
+    }
 });
 
-function toggleCropMode(block) {
-    if (currentCropBlock && currentCropBlock !== block) {
-        currentCropBlock.classList.remove("cropping");
-    }
-
-    const isNowCropping = !block.classList.contains("cropping");
-    if (isNowCropping) {
-        block.classList.add("cropping");
-        currentCropBlock = block;
-    } else {
-        block.classList.remove("cropping");
-        currentCropBlock = null;
-    }
-}
 
 // -------------------------
 // SLIDERS IMAGE
