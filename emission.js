@@ -1,36 +1,46 @@
-function updateLiveShowStatus() {
-    const now = new Date();
-    const day = now.getDay(); // 0 = dimanche, 1 = lundi, ..., 6 = samedi
-    const hour = now.getHours();
+// Connexion Supabase
+const supabaseUrl = "https://blronpowdhaumjudtgvn.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Réinitialise tous les statuts
-    document.querySelectorAll(".status").forEach(el => {
-        el.textContent = "";
-    });
+// Charger les émissions
+async function loadPublicEmissions() {
+    const { data, error } = await supabase
+        .from("emissions")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    // Morning Vibes : lundi à vendredi, 7h–10h
-    if (day >= 1 && day <= 5 && hour >= 7 && hour < 10) {
-        const morningStatus = document.querySelector("#morning .status");
-        if (morningStatus) morningStatus.textContent = "En cours";
+    if (error) {
+        console.error("Erreur chargement émissions :", error);
+        return;
     }
 
-    // Afterwork Lounge : tous les jours, 18h–20h
-    if (hour >= 18 && hour < 20) {
-        const afterworkStatus = document.querySelector("#afterwork .status");
-        if (afterworkStatus) afterworkStatus.textContent = "En cours";
-    }
-
-    // Night Session : jeudi à samedi, 22h–2h
-    const isNightSession =
-        (day >= 4 && day <= 6 && hour >= 22) || // Jeudi à samedi, 22h–minuit
-        ((day === 5 || day === 6) && hour < 2); // Vendredi/samedi, minuit–2h
-
-    if (isNightSession) {
-        const nightStatus = document.querySelector("#night .status");
-        if (nightStatus) nightStatus.textContent = "En cours";
-    }
+    displayPublicEmissions(data);
 }
 
-// Met à jour toutes les minutes
-updateLiveShowStatus();
-setInterval(updateLiveShowStatus, 60000);
+// Affichage public
+function displayPublicEmissions(list) {
+    const container = document.getElementById("emissions-public");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    list.forEach(em => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <div class="card-content">
+                <h3>${em.titre}</h3>
+                <p class="horaire">${em.horaires || ""}</p>
+                <p class="description">${em.description || ""}</p>
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+// Charger au démarrage
+document.addEventListener("DOMContentLoaded", loadPublicEmissions);
+
