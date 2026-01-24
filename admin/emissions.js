@@ -35,7 +35,7 @@ function displayEmissions(list) {
 
         item.innerHTML = `
             <div class="admin-item-content">
-                <h3>${em.nom}</h3>
+                <h3>${em.titre}</h3>
                 <p>${em.horaires}</p>
                 <p>${em.description}</p>
             </div>
@@ -54,13 +54,13 @@ function displayEmissions(list) {
 // AJOUTER UNE EMISSION
 // -------------------------
 async function addEmission() {
-    const nom = document.getElementById("emission-nom").value;
+    const titre = document.getElementById("emission-nom").value;
     const horaires = document.getElementById("emission-horaires").value;
     const description = document.getElementById("emission-description").value;
 
     const { error } = await supabase
         .from("emissions")
-        .insert([{ nom, horaires, description }]);
+        .insert([{ titre, horaires, description }]);
 
     if (error) {
         console.error("Erreur ajout émission :", error);
@@ -93,23 +93,17 @@ async function deleteEmission(id) {
 // -------------------------
 document.addEventListener("DOMContentLoaded", () => {
 
-    // Charger les émissions
     loadEmissions();
 
-    // Ouvrir popup
     document.getElementById("add-emission").addEventListener("click", () => {
         document.getElementById("popup-emission").classList.add("active");
     });
 
-    // Fermer popup
     document.getElementById("popup-emission-cancel").addEventListener("click", () => {
         document.getElementById("popup-emission").classList.remove("active");
     });
 
-    // Sauvegarder émission
     document.getElementById("popup-emission-save").addEventListener("click", () => {
         addEmission();
     });
 });
-
-
