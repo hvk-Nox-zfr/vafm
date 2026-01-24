@@ -103,7 +103,7 @@ async function deleteEmission(id) {
 document.addEventListener("DOMContentLoaded", () => {
     loadEmissions();
 
-    document.getElementById("add-emission-btn").addEventListener("click", () => {
+    document.getElementById("add-emission").addEventListener("click", () => {
         addEmission();
     });
 });
