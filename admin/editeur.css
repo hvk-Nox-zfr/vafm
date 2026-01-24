@@ -1,3 +1,4 @@
+/* RESET */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -8,10 +9,10 @@
 body {
     background: #f3f4f6;
     color: #111827;
+    overflow: hidden;
 }
 
 /* TOPBAR */
-
 .topbar {
     height: 56px;
     background: #111827;
@@ -22,11 +23,6 @@ body {
     justify-content: space-between;
 }
 
-.topbar h1 {
-    font-size: 18px;
-    font-weight: 600;
-}
-
 .topbar-left,
 .topbar-right {
     display: flex;
@@ -34,7 +30,6 @@ body {
 }
 
 /* LAYOUT */
-
 .layout {
     display: grid;
     grid-template-columns: 220px 1fr 260px;
@@ -42,7 +37,6 @@ body {
 }
 
 /* SIDEBAR */
-
 .sidebar {
     background: #1f2937;
     color: white;
@@ -50,6 +44,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -65,8 +60,7 @@ body {
     margin: 8px 0;
 }
 
-/* MAIN / CANVAS */
-
+/* CANVAS WRAPPER */
 .main {
     display: flex;
     align-items: center;
@@ -86,6 +80,7 @@ body {
     overflow: auto;
 }
 
+/* CANVAS */
 .canvas {
     background: white;
     width: 800px;
@@ -97,7 +92,6 @@ body {
 }
 
 /* PROPRIÉTÉS */
-
 .properties {
     background: #f9fafb;
     border-left: 1px solid #e5e7eb;
@@ -105,6 +99,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    overflow-y: auto;
 }
 
 .properties h2 {
@@ -125,6 +120,7 @@ body {
     display: none !important;
 }
 
+/* INPUTS */
 label {
     font-size: 12px;
     color: #4b5563;
@@ -138,7 +134,6 @@ input[type="range"] {
 }
 
 /* BOUTONS */
-
 .btn {
     border: none;
     border-radius: 6px;
@@ -185,21 +180,26 @@ input[type="range"] {
     flex-wrap: wrap;
 }
 
-/* PANNEAU SANS SÉLECTION */
-
-#no-selection-panel {
-    font-size: 13px;
-    color: #6b7280;
-    line-height: 1.4;
+/* TEXTE */
+.editable-text {
+    display: inline-block;
+    min-width: 40px;
+    min-height: 20px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: text;
 }
 
-/* BLOCS PUBLICS (IMAGES) */
+.editable-text.selected {
+    outline: 1px solid #2563eb;
+}
 
+/* BLOCS IMAGES */
 .block-public {
     position: absolute;
     border-radius: 4px;
     border: 1px solid transparent;
-    overflow: hidden;
+    overflow: visible; /* IMPORTANT : plus de rognage */
 }
 
 .block-public.selected {
@@ -210,10 +210,18 @@ input[type="range"] {
 .block-public.cropping {
     border-style: dashed;
     border-color: #f97316;
+    overflow: hidden; /* Seulement en mode rognage */
+}
+
+/* IMAGE DANS LE BLOC */
+.block-public img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Correction principale */
+    pointer-events: none;
 }
 
 /* HANDLES REDIMENSIONNEMENT */
-
 .resize-handle {
     position: absolute;
     width: 10px;
@@ -232,30 +240,7 @@ input[type="range"] {
 .resize-handle.bottom-left { bottom:-6px; left:-6px; cursor:nesw-resize; }
 .resize-handle.left { top:50%; left:-6px; transform:translateY(-50%); cursor:ew-resize; }
 
-/* TEXTE AJOUTÉ */
-
-.editable-text {
-    display: inline-block;
-    min-width: 40px;
-    min-height: 20px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    cursor: text;
-}
-
-.editable-text.selected {
-    outline: 1px solid #2563eb;
-}
-
-/* HINT */
-
-.hint {
-    font-size: 11px;
-    color: #9ca3af;
-}
-
-/* === RECHERCHE D'ÉLÉMENTS (CANVA-LIKE) === */
-
+/* RECHERCHE D'ÉLÉMENTS */
 .search-input {
     width: 100%;
     padding: 8px 10px;
@@ -277,7 +262,7 @@ input[type="range"] {
     background: #0f172a;
 }
 
-/* Grille des résultats */
+/* GRID DES ÉLÉMENTS */
 .elements-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -288,7 +273,7 @@ input[type="range"] {
     padding-right: 4px;
 }
 
-/* Miniature d’un élément */
+/* MINIATURE */
 .element-item {
     width: 60px;
     height: 60px;
@@ -309,21 +294,19 @@ input[type="range"] {
     border-color: #2563eb;
 }
 
-/* SVG dans les résultats */
 .element-item svg {
     width: 100%;
     height: 100%;
     fill: white;
 }
 
-/* PNG dans les résultats */
 .element-item img {
     width: 100%;
     height: 100%;
     object-fit: contain;
 }
 
-/* Scrollbar propre */
+/* SCROLLBAR */
 .elements-grid::-webkit-scrollbar {
     width: 6px;
 }
@@ -336,3 +319,4 @@ input[type="range"] {
 .elements-grid::-webkit-scrollbar-track {
     background: transparent;
 }
+
