@@ -597,6 +597,21 @@ document.getElementById("crop-toggle-btn").addEventListener("click", () => {
     }
 });
 
+document.getElementById("delete-btn").addEventListener("click", () => {
+    const selected = document.querySelector(".selected");
+    if (!selected) return;
+
+    // Ne supprimer que les éléments autorisés
+    const isDeletable =
+        selected.classList.contains("block-public") ||
+        selected.classList.contains("editable-text");
+
+    if (isDeletable) {
+        selected.remove();
+    } else {
+        alert("Cet élément ne peut pas être supprimé.");
+    }
+});
 
 // -------------------------
 // SLIDERS IMAGE
