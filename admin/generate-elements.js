@@ -17,11 +17,11 @@ function scanDir(dir, category) {
             const name = file.replace(/\.(svg|png)/, "");
             const cleanPath = fullPath.replace(/\\/g, "/");
 
-            // Pour admin : chemin relatif
+            // Chemin admin (sans "admin/")
             const urlAdmin = cleanPath.replace(/^admin\//, "");
 
-            // Pour public : chemin absolu
-            const urlPublic = "/" + cleanPath.replace(/^admin\//, "");
+            // Chemin public (avec "admin/" devant)
+            const urlPublic = "admin/" + cleanPath.replace(/^admin\//, "");
 
             const element = {
                 name: name,
@@ -41,7 +41,14 @@ function scanDir(dir, category) {
 
 scanDir(BASE_DIR, "general");
 
-fs.writeFileSync("admin/elements-admin.json", JSON.stringify(elementsAdmin, null, 4));
-fs.writeFileSync("public/elements.json", JSON.stringify(elementsPublic, null, 4));
+// Création du dossier public si nécessaire
+if (!fs.existsSync("public")) {
+    fs.mkdirSync("public", { recursive: true });
+}
+
+// Écriture des fichiers
+fs.writeFileSync("admin/elements.json", JSON.stringify(elementsAdmin, null, 4));
+fs.writeFileSync("elements.json", JSON.stringify(elementsPublic, null, 4));
 
 console.log("✔ Fichiers elements.json générés pour admin et public !");
+
