@@ -341,16 +341,26 @@ function addImageBlock(data = {}) {
     div.style.overflow = "hidden";
 
     const img = document.createElement("img");
-    img.src = data.url;
-    img.style.position = "absolute";
-    img.style.left = data.offsetX || "0px";
-    img.style.top = data.offsetY || "0px";
-    img.style.width = data.imgWidth || "120%";
-    img.style.height = data.imgHeight || "120%";
-    img.style.objectFit = "cover";
-    img.draggable = false;
-    img.style.pointerEvents = "auto";
-    div.appendChild(img);
+img.src = data.url;
+
+// Position dans le bloc
+img.style.position = "absolute";
+img.style.left = data.offsetX || "0px";
+img.style.top = data.offsetY || "0px";
+
+// Taille : 100% pour éviter le débordement
+img.style.width = data.imgWidth || "100%";
+img.style.height = data.imgHeight || "100%";
+
+// Affichage non rogné
+img.style.objectFit = "contain";
+
+// Interaction
+img.draggable = false;
+img.style.pointerEvents = "auto";
+
+div.appendChild(img);
+
 
     const positions = [
         "top-left", "top", "top-right",
