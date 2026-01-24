@@ -1,4 +1,6 @@
 import { loadActus, renderActus, setupActuForm } from "./admin-actus.js";
+import "./emissions.js";
+
 
 document.addEventListener("DOMContentLoaded", async () => {
 
