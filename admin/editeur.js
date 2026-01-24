@@ -338,30 +338,30 @@ function addImageBlock(data = {}) {
     div.style.height = data.height || "200px";
     div.style.position = "absolute";
     div.style.userSelect = "none";
-    div.style.overflow = "hidden";
+    div.style.overflow = "visible"; // ✅ plus de rognage par défaut
 
     const img = document.createElement("img");
-img.src = data.url;
+    img.src = data.url;
 
-// Position dans le bloc
-img.style.position = "absolute";
-img.style.left = data.offsetX || "0px";
-img.style.top = data.offsetY || "0px";
+    // Position dans le bloc
+    img.style.position = "absolute";
+    img.style.left = data.offsetX || "0px";
+    img.style.top = data.offsetY || "0px";
 
-// Taille : 100% pour éviter le débordement
-img.style.width = data.imgWidth || "100%";
-img.style.height = data.imgHeight || "100%";
+    // Taille : 100% pour éviter le débordement
+    img.style.width = data.imgWidth || "100%";
+    img.style.height = data.imgHeight || "100%";
 
-// Affichage non rogné
-img.style.objectFit = "contain";
+    // Affichage non rogné
+    img.style.objectFit = "contain";
 
-// Interaction
-img.draggable = false;
-img.style.pointerEvents = "auto";
+    // Interaction
+    img.draggable = false;
+    img.style.pointerEvents = "auto";
 
-div.appendChild(img);
+    div.appendChild(img);
 
-
+    // Handles de redimensionnement
     const positions = [
         "top-left", "top", "top-right",
         "right", "bottom-right", "bottom",
@@ -381,6 +381,7 @@ div.appendChild(img);
     makeImageDraggableInside(div, img);
     editorArea.appendChild(div);
 }
+
 
 // -------------------------
 // DRAG BLOC
