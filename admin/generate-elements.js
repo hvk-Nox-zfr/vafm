@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
+// Dossier où sont stockés les éléments
 const BASE_DIR = "admin/assets";
 
 let elements = [];
@@ -53,6 +54,7 @@ function autoTags(name, category) {
     return [...new Set(tags)];
 }
 
+// Scan récursif
 function scanDir(dir, category) {
     const files = fs.readdirSync(dir);
 
@@ -64,9 +66,11 @@ function scanDir(dir, category) {
         } else if (file.endsWith(".svg") || file.endsWith(".png")) {
             const name = file.replace(/\.(svg|png)/, "");
 
-            // 🔥 Correction : URL propre pour le navigateur
-            const cleanUrl = fullPath.replace(/\\/g, "/"); // Windows safe
-            const publicUrl = cleanUrl.replace(/^admin\//, "admin/");
+            // Nettoyage du chemin (Windows safe)
+            const cleanPath = fullPath.replace(/\\/g, "/");
+
+            // URL ABSOLUE pour éviter admin/admin/
+            const publicUrl = "/" + cleanPath.replace(/^admin\//, "");
 
             elements.push({
                 name: name,
@@ -79,8 +83,11 @@ function scanDir(dir, category) {
     });
 }
 
+// Lancement
 scanDir(BASE_DIR, "general");
 
+// Écriture du fichier JSON
 fs.writeFileSync("admin/elements.json", JSON.stringify(elements, null, 4));
 
-console.log("elements.json généré automatiquement avec IA locale !");
+console.log("✔ elements.json généré avec succès !");
+
