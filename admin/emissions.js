@@ -69,7 +69,7 @@ async function addEmission() {
         return;
     }
 
-    document.getElementById("popup-emission").classList.remove("active");
+    document.getElementById("popup-emission").classList.remove("show");
     loadEmissions();
 }
 
