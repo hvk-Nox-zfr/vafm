@@ -31,15 +31,12 @@ function displayPublicEmissions(list) {
 
     list.forEach(em => {
         const card = document.createElement("div");
-        card.className = "card";
+        card.className = "emission-card";
 
         card.innerHTML = `
-            ${em.image_url ? `<img src="${em.image_url}" class="card-img">` : ""}
-            <div class="card-content">
-                <h3>${em.titre}</h3>
-                <p class="horaire">${em.horaires || ""}</p>
-                <p class="description">${em.description || ""}</p>
-            </div>
+            <h3>${em.titre}</h3>
+            <div class="emission-horaire">${em.horaires || ""}</div>
+            <p>${em.description || ""}</p>
         `;
 
         container.appendChild(card);
