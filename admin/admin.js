@@ -1,10 +1,15 @@
 import { loadActus, renderActus, setupActuForm } from "./admin-actus.js";
 import { loadEmissions, setupEmissionForm } from "./emissions.js";
 
+const supabase = window.supabase.createClient(
+    "https://blronpowdhaumjudtgvn.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
+);
+
 document.addEventListener("DOMContentLoaded", async () => {
 
     /* ============================================================
-       NAVIGATION ENTRE SECTIONS
+       NAVIGATION
     ============================================================ */
 
     const buttons = document.querySelectorAll(".admin-nav button");
@@ -21,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("actus").classList.add("active");
 
     /* ============================================================
-       ACTUALITÉS (SUPABASE)
+       ACTUALITÉS
     ============================================================ */
 
     setupActuForm();
@@ -29,105 +34,79 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderActus();
 
     /* ============================================================
-       ÉMISSIONS (SUPABASE)
+       ÉMISSIONS
     ============================================================ */
 
     await loadEmissions();
-    requestAnimationFrame(() => {
-        setupEmissionForm();
-    });
+    requestAnimationFrame(() => setupEmissionForm());
 
     /* ============================================================
-       ANIMATEURS (LOCALSTORAGE)
+       ANIMATEURS (SUPABASE)
     ============================================================ */
 
-    const ANIMATEURS_KEY = "vafm_animateurs";
-    let animateurs = [];
-    let animateurEditIndex = null;
+    async function loadAnimateurs() {
+        const { data, error } = await supabase
+            .from("animateurs")
+            .select("*")
+            .order("created_at", { ascending: false });
 
-    function loadAnimateurs() {
-        const saved = localStorage.getItem(ANIMATEURS_KEY);
-        animateurs = saved ? JSON.parse(saved) : [];
-    }
-
-    function saveAnimateurs() {
-        localStorage.setItem(ANIMATEURS_KEY, JSON.stringify(animateurs));
-    }
-
-    function ouvrirPopupAnimateur(index = null) {
-        const popup = document.getElementById("popup-animateur");
-        const title = document.getElementById("popup-animateur-title");
-
-        const nom = document.getElementById("animateur-nom");
-        const emission = document.getElementById("animateur-emission");
-        const description = document.getElementById("animateur-description");
-        const imageInput = document.getElementById("animateur-image");
-        const preview = document.getElementById("preview-image");
-
-        animateurEditIndex = index;
-
-        if (index === null) {
-            title.textContent = "Nouvel animateur";
-            nom.value = "";
-            emission.value = "";
-            description.value = "";
-            imageInput.value = "";
-            preview.src = "";
-            preview.classList.add("hidden");
-        } else {
-            const anim = animateurs[index];
-            title.textContent = "Modifier l’animateur";
-            nom.value = anim.nom;
-            emission.value = anim.emission;
-            description.value = anim.description;
-            imageInput.value = "";
-            preview.src = anim.imageUrl || "";
-            preview.classList.toggle("hidden", !anim.imageUrl);
+        if (error) {
+            console.error("Erreur chargement animateurs :", error);
+            return [];
         }
 
-        popup.classList.add("show");
+        return data;
     }
 
-    function fermerPopupAnimateur() {
-        document.getElementById("popup-animateur").classList.remove("show");
-    }
+    async function saveAnimateur(anim, file) {
+        let image_url = anim.image_url;
 
-    document.getElementById("popup-animateur-cancel")?.addEventListener("click", fermerPopupAnimateur);
-
-    document.getElementById("popup-animateur-save")?.addEventListener("click", () => {
-        const nom = document.getElementById("animateur-nom").value.trim();
-        const emission = document.getElementById("animateur-emission").value.trim();
-        const description = document.getElementById("animateur-description").value.trim();
-        const file = document.getElementById("animateur-image").files[0];
-
-        if (!nom || !emission || !description) {
-            alert("Merci de remplir tous les champs.");
-            return;
-        }
-
-        let imageUrl = "";
         if (file) {
-            imageUrl = URL.createObjectURL(file);
-        } else if (animateurEditIndex !== null) {
-            imageUrl = animateurs[animateurEditIndex].imageUrl || "";
+            const fileName = `anim-${Date.now()}.jpg`;
+
+            const { error: uploadError } = await supabase
+                .storage
+                .from("animateurs")
+                .upload(fileName, file);
+
+            if (uploadError) {
+                console.error("Erreur upload image :", uploadError);
+            } else {
+                image_url = supabase.storage
+                    .from("animateurs")
+                    .getPublicUrl(fileName).data.publicUrl;
+            }
         }
 
-        const newAnim = { nom, emission, description, imageUrl };
-
-        if (animateurEditIndex === null) {
-            animateurs.push(newAnim);
+        if (anim.id) {
+            await supabase
+                .from("animateurs")
+                .update({
+                    nom: anim.nom,
+                    emission: anim.emission,
+                    description: anim.description,
+                    image_url
+                })
+                .eq("id", anim.id);
         } else {
-            animateurs[animateurEditIndex] = newAnim;
+            await supabase
+                .from("animateurs")
+                .insert([{
+                    nom: anim.nom,
+                    emission: anim.emission,
+                    description: anim.description,
+                    image_url
+                }]);
         }
+    }
 
-        saveAnimateurs();
-        afficherAnimateursAdmin();
-        fermerPopupAnimateur();
-    });
+    async function deleteAnimateur(id) {
+        await supabase.from("animateurs").delete().eq("id", id);
+    }
 
-    function afficherAnimateursAdmin() {
+    async function afficherAnimateursAdmin() {
         const container = document.getElementById("animateurs-list");
-        if (!container) return;
+        const animateurs = await loadAnimateurs();
 
         container.innerHTML = "";
 
@@ -136,13 +115,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        animateurs.forEach((anim, index) => {
+        animateurs.forEach(anim => {
             const card = document.createElement("div");
             card.className = "admin-card";
 
             card.innerHTML = `
                 <div class="admin-anim-left">
-                    <img src="${anim.imageUrl || 'https://via.placeholder.com/80'}" class="admin-anim-img">
+                    <img src="${anim.image_url || 'https://via.placeholder.com/80'}" class="admin-anim-img">
                     <div>
                         <h3>${anim.nom}</h3>
                         <p><strong>${anim.emission}</strong></p>
@@ -157,13 +136,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             `;
 
             card.querySelector(".edit").addEventListener("click", () => {
-                ouvrirPopupAnimateur(index);
+                ouvrirPopupAnimateur(anim);
             });
 
-            card.querySelector(".delete").addEventListener("click", () => {
+            card.querySelector(".delete").addEventListener("click", async () => {
                 if (!confirm("Supprimer cet animateur ?")) return;
-                animateurs.splice(index, 1);
-                saveAnimateurs();
+                await deleteAnimateur(anim.id);
                 afficherAnimateursAdmin();
             });
 
@@ -171,16 +149,69 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    document.getElementById("add-animateur")?.addEventListener("click", () => {
+    /* POPUP */
+
+    function ouvrirPopupAnimateur(anim = null) {
+        const popup = document.getElementById("popup-animateur");
+        const title = document.getElementById("popup-animateur-title");
+
+        const nom = document.getElementById("animateur-nom");
+        const emission = document.getElementById("animateur-emission");
+        const description = document.getElementById("animateur-description");
+        const imageInput = document.getElementById("animateur-image");
+        const preview = document.getElementById("preview-image");
+
+        if (!anim) {
+            title.textContent = "Nouvel animateur";
+            nom.value = "";
+            emission.value = "";
+            description.value = "";
+            preview.src = "";
+            preview.classList.add("hidden");
+            imageInput.value = "";
+            imageInput.dataset.id = "";
+        } else {
+            title.textContent = "Modifier l’animateur";
+            nom.value = anim.nom;
+            emission.value = anim.emission;
+            description.value = anim.description;
+            preview.src = anim.image_url || "";
+            preview.classList.toggle("hidden", !anim.image_url);
+            imageInput.dataset.id = anim.id;
+        }
+
+        popup.classList.add("show");
+    }
+
+    document.getElementById("popup-animateur-cancel").addEventListener("click", () => {
+        document.getElementById("popup-animateur").classList.remove("show");
+    });
+
+    document.getElementById("popup-animateur-save").addEventListener("click", async () => {
+        const nom = document.getElementById("animateur-nom").value.trim();
+        const emission = document.getElementById("animateur-emission").value.trim();
+        const description = document.getElementById("animateur-description").value.trim();
+        const file = document.getElementById("animateur-image").files[0];
+        const id = document.getElementById("animateur-image").dataset.id;
+
+        if (!nom || !emission || !description) {
+            alert("Merci de remplir tous les champs.");
+            return;
+        }
+
+        await saveAnimateur({ id, nom, emission, description }, file);
+
+        document.getElementById("popup-animateur").classList.remove("show");
+        afficherAnimateursAdmin();
+    });
+
+    document.getElementById("add-animateur").addEventListener("click", () => {
         ouvrirPopupAnimateur();
     });
 
-    loadAnimateurs();
     afficherAnimateursAdmin();
 
-    /* ============================================================
-       GLISSER-DÉPOSER IMAGE ANIMATEUR
-    ============================================================ */
+    /* DRAG & DROP */
 
     const dropZone = document.getElementById("drop-zone");
     const imageInput = document.getElementById("animateur-image");
@@ -199,29 +230,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         e.preventDefault();
         dropZone.classList.remove("dragover");
 
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            imageInput.files = files;
-
-            const file = files[0];
-            const url = URL.createObjectURL(file);
-            preview.src = url;
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            imageInput.files = e.dataTransfer.files;
+            preview.src = URL.createObjectURL(file);
             preview.classList.remove("hidden");
         }
     });
 
-    dropZone.addEventListener("click", () => {
-        imageInput.click();
-    });
+    dropZone.addEventListener("click", () => imageInput.click());
 
     imageInput.addEventListener("change", () => {
         const file = imageInput.files[0];
         if (file) {
-            const url = URL.createObjectURL(file);
-            preview.src = url;
+            preview.src = URL.createObjectURL(file);
             preview.classList.remove("hidden");
         }
     });
 
 });
+
 
