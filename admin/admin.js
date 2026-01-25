@@ -2,7 +2,7 @@ import { loadActus, renderActus, setupActuForm } from "./admin-actus.js";
 import { loadEmissions, setupEmissionForm } from "./emissions.js";
 
 /* ============================================================
-   SUPABASE CLIENT (UNE SEULE FOIS)
+   SUPABASE CLIENT
 ============================================================ */
 
 const supabase = window.supabase.createClient(
@@ -12,23 +12,22 @@ const supabase = window.supabase.createClient(
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-/* ============================================================
-   NAVIGATION
-============================================================ */
+    /* ============================================================
+       NAVIGATION ENTRE SECTIONS
+    ============================================================ */
 
-const buttons = document.querySelectorAll(".admin-nav button");
-const sections = document.querySelectorAll(".admin-section");
+    const buttons = document.querySelectorAll(".admin-nav button");
+    const sections = document.querySelectorAll(".admin-section");
 
-buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        const target = btn.getAttribute("data-section");
-        sections.forEach(sec => sec.classList.remove("active"));
-        document.getElementById(target).classList.add("active");
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.getAttribute("data-section");
+            sections.forEach(sec => sec.classList.remove("active"));
+            document.getElementById(target).classList.add("active");
+        });
     });
-});
 
-document.getElementById("actus").classList.add("active");
-
+    document.getElementById("actus").classList.add("active");
 
     /* ============================================================
        ACTUALITÉS
@@ -46,7 +45,7 @@ document.getElementById("actus").classList.add("active");
     requestAnimationFrame(() => setupEmissionForm());
 
     /* ============================================================
-       CHARGER LES ANIMATEURS
+       ANIMATEURS — CHARGEMENT
     ============================================================ */
 
     async function loadAnimateurs() {
@@ -64,7 +63,7 @@ document.getElementById("actus").classList.add("active");
     }
 
     /* ============================================================
-       UPLOAD IMAGE + SAVE ANIMATEUR
+       ANIMATEURS — SAUVEGARDE + UPLOAD IMAGE
     ============================================================ */
 
     async function saveAnimateur(anim, file) {
@@ -113,7 +112,7 @@ document.getElementById("actus").classList.add("active");
     }
 
     /* ============================================================
-       SUPPRESSION
+       ANIMATEURS — SUPPRESSION
     ============================================================ */
 
     async function deleteAnimateur(id) {
@@ -121,7 +120,7 @@ document.getElementById("actus").classList.add("active");
     }
 
     /* ============================================================
-       AFFICHAGE ADMIN
+       ANIMATEURS — AFFICHAGE
     ============================================================ */
 
     async function afficherAnimateursAdmin() {
@@ -170,7 +169,7 @@ document.getElementById("actus").classList.add("active");
     }
 
     /* ============================================================
-       POPUP
+       ANIMATEURS — POPUP
     ============================================================ */
 
     function ouvrirPopupAnimateur(anim = null) {
@@ -205,15 +204,9 @@ document.getElementById("actus").classList.add("active");
         popup.classList.add("show");
     }
 
-buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        const target = btn.getAttribute("data-section");
-        sections.forEach(sec => sec.classList.remove("active"));
-        document.getElementById(target).classList.add("active");
+    document.getElementById("popup-animateur-cancel").addEventListener("click", () => {
+        document.getElementById("popup-animateur").classList.remove("show");
     });
-});
-
-document.getElementById("actus").classList.add("active");
 
     document.getElementById("popup-animateur-save").addEventListener("click", async () => {
         const nom = document.getElementById("animateur-nom").value.trim();
@@ -234,7 +227,7 @@ document.getElementById("actus").classList.add("active");
     });
 
     /* ============================================================
-       DRAG & DROP
+       DRAG & DROP IMAGE
     ============================================================ */
 
     const dropZone = document.getElementById("drop-zone");
@@ -278,4 +271,3 @@ document.getElementById("actus").classList.add("active");
 
     afficherAnimateursAdmin();
 });
-
