@@ -12,22 +12,23 @@ const supabase = window.supabase.createClient(
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-    /* ============================================================
-       NAVIGATION
-    ============================================================ */
+/* ============================================================
+   NAVIGATION
+============================================================ */
 
-    const buttons = document.querySelectorAll(".admin-nav button");
-    const sections = document.querySelectorAll(".admin-section");
+const buttons = document.querySelectorAll(".admin-nav button");
+const sections = document.querySelectorAll(".admin-section");
 
-    buttons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const target = btn.getAttribute("data-section");
-            sections.forEach(sec => sec.classList.remove("show"));
-            document.getElementById(target).classList.add("show");
-        });
+buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        const target = btn.getAttribute("data-section");
+        sections.forEach(sec => sec.classList.remove("active"));
+        document.getElementById(target).classList.add("active");
     });
+});
 
-    document.getElementById("actus").classList.add("show");
+document.getElementById("actus").classList.add("active");
+
 
     /* ============================================================
        ACTUALITÉS
