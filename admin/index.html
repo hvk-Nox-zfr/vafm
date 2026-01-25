@@ -25,7 +25,6 @@ if (localStorage.getItem("admin_logged") !== "true") {
         <button data-section="actus">Actualités</button>
         <button data-section="animateurs">Animateurs</button>
         <button data-section="emissions">Émissions</button>
-        <button data-section="preview">Aperçu du site</button>
     </nav>
 </header>
 
@@ -140,12 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <h2>Gestion des émissions</h2>
         <button class="add-btn" id="add-emission">+ Ajouter une émission</button>
         <div id="emissions-admin" class="admin-list"></div>
-    </section>
-
-    <!-- APERÇU -->
-    <section id="preview" class="admin-section">
-        <h2>Aperçu du site public</h2>
-        <iframe src="../index.html" class="preview-frame"></iframe>
     </section>
 
 </main>
