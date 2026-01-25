@@ -1,7 +1,7 @@
 console.log("📡 animateurs-public.js chargé");
 
-// Connexion Supabase
-const supabasePublic = window.supabase.createClient(
+// Connexion Supabase (nom unique pour éviter les conflits)
+const supabaseAnimateurs = window.supabase.createClient(
     "https://blronpowdhaumjudtgvn.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
 );
@@ -9,7 +9,7 @@ const supabasePublic = window.supabase.createClient(
 async function loadPublicAnimateurs() {
     console.log("🔄 Chargement des animateurs…");
 
-    const { data, error } = await supabasePublic
+    const { data, error } = await supabaseAnimateurs
         .from("animateurs")
         .select("*")
         .order("created_at", { ascending: false });
