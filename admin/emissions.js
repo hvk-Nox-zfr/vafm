@@ -96,11 +96,11 @@ async function deleteEmission(id) {
 export function setupEmissionForm() {
 
     document.getElementById("add-emission")?.addEventListener("click", () => {
-        document.getElementById("popup-emission").classList.add("active");
+        document.getElementById("popup-emission").classList.add("show");
     });
 
     document.getElementById("popup-emission-cancel")?.addEventListener("click", () => {
-        document.getElementById("popup-emission").classList.remove("active");
+        document.getElementById("popup-emission").classList.remove("show");
     });
 
     document.getElementById("popup-emission-save")?.addEventListener("click", () => {
