@@ -33,8 +33,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     ============================================================ */
 
     await loadEmissions();
-
-    // 🔥 Correction : on attend que le DOM soit rendu avant d’attacher les listeners
     requestAnimationFrame(() => {
         setupEmissionForm();
     });
@@ -64,6 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const emission = document.getElementById("animateur-emission");
         const description = document.getElementById("animateur-description");
         const imageInput = document.getElementById("animateur-image");
+        const preview = document.getElementById("preview-image");
 
         animateurEditIndex = index;
 
@@ -73,6 +72,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             emission.value = "";
             description.value = "";
             imageInput.value = "";
+            preview.src = "";
+            preview.classList.add("hidden");
         } else {
             const anim = animateurs[index];
             title.textContent = "Modifier l’animateur";
@@ -80,6 +81,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             emission.value = anim.emission;
             description.value = anim.description;
             imageInput.value = "";
+            preview.src = anim.imageUrl || "";
+            preview.classList.toggle("hidden", !anim.imageUrl);
         }
 
         popup.classList.add("show");
@@ -175,4 +178,50 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadAnimateurs();
     afficherAnimateursAdmin();
 
+    /* ============================================================
+       GLISSER-DÉPOSER IMAGE ANIMATEUR
+    ============================================================ */
+
+    const dropZone = document.getElementById("drop-zone");
+    const imageInput = document.getElementById("animateur-image");
+    const preview = document.getElementById("preview-image");
+
+    dropZone.addEventListener("dragover", e => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", e => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            imageInput.files = files;
+
+            const file = files[0];
+            const url = URL.createObjectURL(file);
+            preview.src = url;
+            preview.classList.remove("hidden");
+        }
+    });
+
+    dropZone.addEventListener("click", () => {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener("change", () => {
+        const file = imageInput.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            preview.src = url;
+            preview.classList.remove("hidden");
+        }
+    });
+
 });
+
