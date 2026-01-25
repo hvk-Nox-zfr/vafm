@@ -1,15 +1,21 @@
 [
     {
+        "name": "barre-rose-jaune",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "barre-rose-jaune",
+            "icons"
+        ],
+        "url": "assets/icons/barre-rose-jaune.png"
+    },
+    {
         "name": "cloche-noel",
         "type": "png",
         "category": "stickers",
         "tags": [
-            "cloche",
-            "noel",
-            "stickers",
-            "icon",
-            "element",
-            "graphic"
+            "cloche-noel",
+            "stickers"
         ],
         "url": "assets/stickers/cloche-noel.png"
     }
