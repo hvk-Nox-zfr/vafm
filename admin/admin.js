@@ -205,9 +205,15 @@ document.getElementById("actus").classList.add("active");
         popup.classList.add("show");
     }
 
-    document.getElementById("popup-animateur-cancel").addEventListener("click", () => {
-        document.getElementById("popup-animateur").classList.remove("show");
+buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        const target = btn.getAttribute("data-section");
+        sections.forEach(sec => sec.classList.remove("active"));
+        document.getElementById(target).classList.add("active");
     });
+});
+
+document.getElementById("actus").classList.add("active");
 
     document.getElementById("popup-animateur-save").addEventListener("click", async () => {
         const nom = document.getElementById("animateur-nom").value.trim();
