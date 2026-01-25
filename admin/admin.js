@@ -280,6 +280,4 @@ imageInput.addEventListener("change", () => {
 ============================================================ */
 
 afficherAnimateursAdmin();
-
-
-
+});
