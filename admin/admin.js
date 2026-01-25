@@ -32,8 +32,12 @@ document.addEventListener("DOMContentLoaded", async () => {
        ÉMISSIONS (SUPABASE)
     ============================================================ */
 
-    setupEmissionForm();
     await loadEmissions();
+
+    // 🔥 Correction : on attend que le DOM soit rendu avant d’attacher les listeners
+    requestAnimationFrame(() => {
+        setupEmissionForm();
+    });
 
     /* ============================================================
        ANIMATEURS (LOCALSTORAGE)
