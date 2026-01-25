@@ -22,12 +22,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     buttons.forEach(btn => {
         btn.addEventListener("click", () => {
             const target = btn.getAttribute("data-section");
-            sections.forEach(sec => sec.classList.remove("active"));
-            document.getElementById(target).classList.add("active");
+            sections.forEach(sec => sec.classList.remove("show"));
+            document.getElementById(target).classList.add("show");
         });
     });
 
-    document.getElementById("actus").classList.add("active");
+    document.getElementById("actus").classList.add("show");
 
     /* ============================================================
        ACTUALITÉS
