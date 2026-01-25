@@ -6,7 +6,7 @@ const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 // -------------------------
 // CHARGER LES EMISSIONS
 // -------------------------
-async function loadEmissions() {
+export async function loadEmissions() {
     const { data, error } = await supabase
         .from("emissions")
         .select("*")
@@ -89,21 +89,19 @@ async function deleteEmission(id) {
 }
 
 // -------------------------
-// AU CHARGEMENT
+// INITIALISATION DU FORMULAIRE
 // -------------------------
-document.addEventListener("DOMContentLoaded", () => {
+export function setupEmissionForm() {
 
-    loadEmissions();
-
-    document.getElementById("add-emission").addEventListener("click", () => {
+    document.getElementById("add-emission")?.addEventListener("click", () => {
         document.getElementById("popup-emission").classList.add("active");
     });
 
-    document.getElementById("popup-emission-cancel").addEventListener("click", () => {
+    document.getElementById("popup-emission-cancel")?.addEventListener("click", () => {
         document.getElementById("popup-emission").classList.remove("active");
     });
 
-    document.getElementById("popup-emission-save").addEventListener("click", () => {
+    document.getElementById("popup-emission-save")?.addEventListener("click", () => {
         addEmission();
     });
-});
+}
