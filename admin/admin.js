@@ -1,6 +1,5 @@
 import { loadActus, renderActus, setupActuForm } from "./admin-actus.js";
-import "./emissions.js";
-
+import { loadEmissions, setupEmissionForm } from "./emissions.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -28,6 +27,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupActuForm();
     await loadActus();
     renderActus();
+
+    /* ============================================================
+       ÉMISSIONS (SUPABASE)
+    ============================================================ */
+
+    setupEmissionForm();
+    await loadEmissions();
 
     /* ============================================================
        ANIMATEURS (LOCALSTORAGE)
@@ -164,4 +170,5 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     loadAnimateurs();
     afficherAnimateursAdmin();
-    });
+
+});
