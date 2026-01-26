@@ -25,8 +25,8 @@ async function chargerActusPubliques() {
     return;
   }
 
-  // --- CAS NORMAL : 3 actus ou moins ---
-  if (data.length <= 4) {
+  // --- CAS NORMAL : 5 actus ou moins ---
+  if (data.length <= 5) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
     return;
   }
