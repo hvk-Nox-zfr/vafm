@@ -1,5 +1,115 @@
 [
     {
+        "name": "bulle-bd",
+        "type": "png",
+        "category": "bd",
+        "tags": [
+            "bulle-bd",
+            "bd"
+        ],
+        "url": "admin/assets/bd/bulle-bd.png"
+    },
+    {
+        "name": "bulle-bd2",
+        "type": "png",
+        "category": "bd",
+        "tags": [
+            "bulle-bd2",
+            "bd"
+        ],
+        "url": "admin/assets/bd/bulle-bd2.png"
+    },
+    {
+        "name": "balle",
+        "type": "png",
+        "category": "foot",
+        "tags": [
+            "balle",
+            "foot"
+        ],
+        "url": "admin/assets/foot/balle.png"
+    },
+    {
+        "name": "ballon-basket",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "ballon-basket",
+            "icons"
+        ],
+        "url": "admin/assets/icons/ballon-basket.png"
+    },
+    {
+        "name": "ballon-bleu",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "ballon-bleu",
+            "icons"
+        ],
+        "url": "admin/assets/icons/ballon-bleu.png"
+    },
+    {
+        "name": "ballon-orange",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "ballon-orange",
+            "icons"
+        ],
+        "url": "admin/assets/icons/ballon-orange.png"
+    },
+    {
+        "name": "ballon-rose",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "ballon-rose",
+            "icons"
+        ],
+        "url": "admin/assets/icons/ballon-rose.png"
+    },
+    {
+        "name": "ballon-rouge",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "ballon-rouge",
+            "icons"
+        ],
+        "url": "admin/assets/icons/ballon-rouge.png"
+    },
+    {
+        "name": "ballons",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "ballons",
+            "icons"
+        ],
+        "url": "admin/assets/icons/ballons.png"
+    },
+    {
+        "name": "balloon-146492_1280",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "balloon-146492_1280",
+            "icons"
+        ],
+        "url": "admin/assets/icons/balloon-146492_1280.png"
+    },
+    {
+        "name": "barre-bleu",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "barre-bleu",
+            "icons"
+        ],
+        "url": "admin/assets/icons/barre-bleu.png"
+    },
+    {
         "name": "barre-rose-jaune",
         "type": "png",
         "category": "icons",
@@ -10,6 +120,176 @@
         "url": "admin/assets/icons/barre-rose-jaune.png"
     },
     {
+        "name": "barre-rouge-bleu",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "barre-rouge-bleu",
+            "icons"
+        ],
+        "url": "admin/assets/icons/barre-rouge-bleu.png"
+    },
+    {
+        "name": "barre-rouge",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "barre-rouge",
+            "icons"
+        ],
+        "url": "admin/assets/icons/barre-rouge.png"
+    },
+    {
+        "name": "barre-vert",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "barre-vert",
+            "icons"
+        ],
+        "url": "admin/assets/icons/barre-vert.png"
+    },
+    {
+        "name": "caméra",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "caméra",
+            "icons"
+        ],
+        "url": "admin/assets/icons/caméra.png"
+    },
+    {
+        "name": "fiole",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "fiole",
+            "icons"
+        ],
+        "url": "admin/assets/icons/fiole.png"
+    },
+    {
+        "name": "mongolefière",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "mongolefière",
+            "icons"
+        ],
+        "url": "admin/assets/icons/mongolefière.png"
+    },
+    {
+        "name": "mongolfière2",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "mongolfière2",
+            "icons"
+        ],
+        "url": "admin/assets/icons/mongolfière2.png"
+    },
+    {
+        "name": "planète-terre",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "planète-terre",
+            "icons"
+        ],
+        "url": "admin/assets/icons/planète-terre.png"
+    },
+    {
+        "name": "silhouette",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "silhouette",
+            "icons"
+        ],
+        "url": "admin/assets/icons/silhouette.png"
+    },
+    {
+        "name": "silhouette2",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "silhouette2",
+            "icons"
+        ],
+        "url": "admin/assets/icons/silhouette2.png"
+    },
+    {
+        "name": "téléphone",
+        "type": "png",
+        "category": "icons",
+        "tags": [
+            "téléphone",
+            "icons"
+        ],
+        "url": "admin/assets/icons/téléphone.png"
+    },
+    {
+        "name": "avocat",
+        "type": "png",
+        "category": "manger",
+        "tags": [
+            "avocat",
+            "manger"
+        ],
+        "url": "admin/assets/manger/avocat.png"
+    },
+    {
+        "name": "avocats",
+        "type": "png",
+        "category": "manger",
+        "tags": [
+            "avocats",
+            "manger"
+        ],
+        "url": "admin/assets/manger/avocats.png"
+    },
+    {
+        "name": "fraises",
+        "type": "png",
+        "category": "manger",
+        "tags": [
+            "fraises",
+            "manger"
+        ],
+        "url": "admin/assets/manger/fraises.png"
+    },
+    {
+        "name": "ballon-plage",
+        "type": "png",
+        "category": "plage",
+        "tags": [
+            "ballon-plage",
+            "plage"
+        ],
+        "url": "admin/assets/plage/ballon-plage.png"
+    },
+    {
+        "name": "ballon-plage2",
+        "type": "png",
+        "category": "plage",
+        "tags": [
+            "ballon-plage2",
+            "plage"
+        ],
+        "url": "admin/assets/plage/ballon-plage2.png"
+    },
+    {
+        "name": "clavier",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "clavier",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/clavier.png"
+    },
+    {
         "name": "cloche-noel",
         "type": "png",
         "category": "stickers",
@@ -18,5 +298,85 @@
             "stickers"
         ],
         "url": "admin/assets/stickers/cloche-noel.png"
+    },
+    {
+        "name": "horloge",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "horloge",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/horloge.png"
+    },
+    {
+        "name": "horloge2",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "horloge2",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/horloge2.png"
+    },
+    {
+        "name": "horloge3",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "horloge3",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/horloge3.png"
+    },
+    {
+        "name": "horloge4",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "horloge4",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/horloge4.png"
+    },
+    {
+        "name": "horloge5",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "horloge5",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/horloge5.png"
+    },
+    {
+        "name": "oiseau",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "oiseau",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/oiseau.png"
+    },
+    {
+        "name": "point-d'interrogation",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "point-d'interrogation",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/point-d'interrogation.png"
+    },
+    {
+        "name": "violet",
+        "type": "png",
+        "category": "stickers",
+        "tags": [
+            "violet",
+            "stickers"
+        ],
+        "url": "admin/assets/stickers/violet.png"
     }
 ]
