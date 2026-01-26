@@ -7,7 +7,7 @@
             "bulle-bd",
             "bd"
         ],
-        "url": "admin/assets/bd/bulle-bd.png"
+        "url": "assets/bd/bulle-bd.png"
     },
     {
         "name": "bulle-bd2",
@@ -17,7 +17,7 @@
             "bulle-bd2",
             "bd"
         ],
-        "url": "admin/assets/bd/bulle-bd2.png"
+        "url": "assets/bd/bulle-bd2.png"
     },
     {
         "name": "balle",
@@ -27,7 +27,7 @@
             "balle",
             "foot"
         ],
-        "url": "admin/assets/foot/balle.png"
+        "url": "assets/foot/balle.png"
     },
     {
         "name": "ballon-basket",
@@ -37,7 +37,7 @@
             "ballon-basket",
             "icons"
         ],
-        "url": "admin/assets/icons/ballon-basket.png"
+        "url": "assets/icons/ballon-basket.png"
     },
     {
         "name": "ballon-bleu",
@@ -47,7 +47,7 @@
             "ballon-bleu",
             "icons"
         ],
-        "url": "admin/assets/icons/ballon-bleu.png"
+        "url": "assets/icons/ballon-bleu.png"
     },
     {
         "name": "ballon-orange",
@@ -57,7 +57,7 @@
             "ballon-orange",
             "icons"
         ],
-        "url": "admin/assets/icons/ballon-orange.png"
+        "url": "assets/icons/ballon-orange.png"
     },
     {
         "name": "ballon-rose",
@@ -67,7 +67,7 @@
             "ballon-rose",
             "icons"
         ],
-        "url": "admin/assets/icons/ballon-rose.png"
+        "url": "assets/icons/ballon-rose.png"
     },
     {
         "name": "ballon-rouge",
@@ -77,7 +77,7 @@
             "ballon-rouge",
             "icons"
         ],
-        "url": "admin/assets/icons/ballon-rouge.png"
+        "url": "assets/icons/ballon-rouge.png"
     },
     {
         "name": "ballons",
@@ -87,7 +87,7 @@
             "ballons",
             "icons"
         ],
-        "url": "admin/assets/icons/ballons.png"
+        "url": "assets/icons/ballons.png"
     },
     {
         "name": "balloon-146492_1280",
@@ -97,7 +97,7 @@
             "balloon-146492_1280",
             "icons"
         ],
-        "url": "admin/assets/icons/balloon-146492_1280.png"
+        "url": "assets/icons/balloon-146492_1280.png"
     },
     {
         "name": "barre-bleu",
@@ -107,7 +107,7 @@
             "barre-bleu",
             "icons"
         ],
-        "url": "admin/assets/icons/barre-bleu.png"
+        "url": "assets/icons/barre-bleu.png"
     },
     {
         "name": "barre-rose-jaune",
@@ -117,7 +117,7 @@
             "barre-rose-jaune",
             "icons"
         ],
-        "url": "admin/assets/icons/barre-rose-jaune.png"
+        "url": "assets/icons/barre-rose-jaune.png"
     },
     {
         "name": "barre-rouge-bleu",
@@ -127,7 +127,7 @@
             "barre-rouge-bleu",
             "icons"
         ],
-        "url": "admin/assets/icons/barre-rouge-bleu.png"
+        "url": "assets/icons/barre-rouge-bleu.png"
     },
     {
         "name": "barre-rouge",
@@ -137,7 +137,7 @@
             "barre-rouge",
             "icons"
         ],
-        "url": "admin/assets/icons/barre-rouge.png"
+        "url": "assets/icons/barre-rouge.png"
     },
     {
         "name": "barre-vert",
@@ -147,7 +147,7 @@
             "barre-vert",
             "icons"
         ],
-        "url": "admin/assets/icons/barre-vert.png"
+        "url": "assets/icons/barre-vert.png"
     },
     {
         "name": "caméra",
@@ -157,7 +157,7 @@
             "caméra",
             "icons"
         ],
-        "url": "admin/assets/icons/caméra.png"
+        "url": "assets/icons/caméra.png"
     },
     {
         "name": "fiole",
@@ -167,7 +167,7 @@
             "fiole",
             "icons"
         ],
-        "url": "admin/assets/icons/fiole.png"
+        "url": "assets/icons/fiole.png"
     },
     {
         "name": "mongolefière",
@@ -177,7 +177,7 @@
             "mongolefière",
             "icons"
         ],
-        "url": "admin/assets/icons/mongolefière.png"
+        "url": "assets/icons/mongolefière.png"
     },
     {
         "name": "mongolfière2",
@@ -187,7 +187,7 @@
             "mongolfière2",
             "icons"
         ],
-        "url": "admin/assets/icons/mongolfière2.png"
+        "url": "assets/icons/mongolfière2.png"
     },
     {
         "name": "planète-terre",
@@ -197,7 +197,7 @@
             "planète-terre",
             "icons"
         ],
-        "url": "admin/assets/icons/planète-terre.png"
+        "url": "assets/icons/planète-terre.png"
     },
     {
         "name": "silhouette",
@@ -207,7 +207,7 @@
             "silhouette",
             "icons"
         ],
-        "url": "admin/assets/icons/silhouette.png"
+        "url": "assets/icons/silhouette.png"
     },
     {
         "name": "silhouette2",
@@ -217,7 +217,7 @@
             "silhouette2",
             "icons"
         ],
-        "url": "admin/assets/icons/silhouette2.png"
+        "url": "assets/icons/silhouette2.png"
     },
     {
         "name": "téléphone",
@@ -227,7 +227,7 @@
             "téléphone",
             "icons"
         ],
-        "url": "admin/assets/icons/téléphone.png"
+        "url": "assets/icons/téléphone.png"
     },
     {
         "name": "avocat",
@@ -237,7 +237,7 @@
             "avocat",
             "manger"
         ],
-        "url": "admin/assets/manger/avocat.png"
+        "url": "assets/manger/avocat.png"
     },
     {
         "name": "avocats",
@@ -247,7 +247,7 @@
             "avocats",
             "manger"
         ],
-        "url": "admin/assets/manger/avocats.png"
+        "url": "assets/manger/avocats.png"
     },
     {
         "name": "fraises",
@@ -257,7 +257,7 @@
             "fraises",
             "manger"
         ],
-        "url": "admin/assets/manger/fraises.png"
+        "url": "assets/manger/fraises.png"
     },
     {
         "name": "ballon-plage",
@@ -267,7 +267,7 @@
             "ballon-plage",
             "plage"
         ],
-        "url": "admin/assets/plage/ballon-plage.png"
+        "url": "assets/plage/ballon-plage.png"
     },
     {
         "name": "ballon-plage2",
@@ -277,7 +277,7 @@
             "ballon-plage2",
             "plage"
         ],
-        "url": "admin/assets/plage/ballon-plage2.png"
+        "url": "assets/plage/ballon-plage2.png"
     },
     {
         "name": "clavier",
@@ -287,7 +287,7 @@
             "clavier",
             "stickers"
         ],
-        "url": "admin/assets/stickers/clavier.png"
+        "url": "assets/stickers/clavier.png"
     },
     {
         "name": "cloche-noel",
@@ -297,7 +297,7 @@
             "cloche-noel",
             "stickers"
         ],
-        "url": "admin/assets/stickers/cloche-noel.png"
+        "url": "assets/stickers/cloche-noel.png"
     },
     {
         "name": "horloge",
@@ -307,7 +307,7 @@
             "horloge",
             "stickers"
         ],
-        "url": "admin/assets/stickers/horloge.png"
+        "url": "assets/stickers/horloge.png"
     },
     {
         "name": "horloge2",
@@ -317,7 +317,7 @@
             "horloge2",
             "stickers"
         ],
-        "url": "admin/assets/stickers/horloge2.png"
+        "url": "assets/stickers/horloge2.png"
     },
     {
         "name": "horloge3",
@@ -327,7 +327,7 @@
             "horloge3",
             "stickers"
         ],
-        "url": "admin/assets/stickers/horloge3.png"
+        "url": "assets/stickers/horloge3.png"
     },
     {
         "name": "horloge4",
@@ -337,7 +337,7 @@
             "horloge4",
             "stickers"
         ],
-        "url": "admin/assets/stickers/horloge4.png"
+        "url": "assets/stickers/horloge4.png"
     },
     {
         "name": "horloge5",
@@ -347,7 +347,7 @@
             "horloge5",
             "stickers"
         ],
-        "url": "admin/assets/stickers/horloge5.png"
+        "url": "assets/stickers/horloge5.png"
     },
     {
         "name": "oiseau",
@@ -357,7 +357,7 @@
             "oiseau",
             "stickers"
         ],
-        "url": "admin/assets/stickers/oiseau.png"
+        "url": "assets/stickers/oiseau.png"
     },
     {
         "name": "point-d'interrogation",
@@ -367,7 +367,7 @@
             "point-d'interrogation",
             "stickers"
         ],
-        "url": "admin/assets/stickers/point-d'interrogation.png"
+        "url": "assets/stickers/point-d'interrogation.png"
     },
     {
         "name": "violet",
@@ -377,6 +377,6 @@
             "violet",
             "stickers"
         ],
-        "url": "admin/assets/stickers/violet.png"
+        "url": "assets/stickers/violet.png"
     }
 ]
