@@ -265,6 +265,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+   document.getElementById("add-animateur").addEventListener("click", () => {
+    ouvrirPopupAnimateur();
+   });
+
     /* ============================================================
        INIT
     ============================================================ */
