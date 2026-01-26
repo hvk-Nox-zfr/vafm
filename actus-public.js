@@ -16,7 +16,6 @@ async function chargerActusPubliques() {
   container.innerHTML = "";
 
   if (error) {
-    console.error("Erreur chargement actus :", error);
     container.innerHTML = "<p>Impossible de charger les actualités.</p>";
     return;
   }
@@ -26,27 +25,40 @@ async function chargerActusPubliques() {
     return;
   }
 
-  // --- CAS 1 : 3 actus ou moins → affichage normal ---
+  // --- CAS NORMAL : 3 actus ou moins ---
   if (data.length <= 3) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
     return;
   }
 
-  // --- CAS 2 : plus de 3 actus → CAROUSEL ---
-  container.classList.add("carousel");
+  // --- CAS CAROUSEL ---
+  container.classList.add("carousel-paged");
 
-  const inner = document.createElement("div");
-  inner.className = "carousel-inner";
+  // Bouton gauche
+  const btnLeft = document.createElement("button");
+  btnLeft.className = "carousel-btn left";
+  btnLeft.textContent = "‹";
+
+  // Track
+  const track = document.createElement("div");
+  track.className = "carousel-track";
 
   data.forEach(actu => {
-    const card = creerCarteActu(actu);
-    card.classList.add("carousel-item");
-    inner.appendChild(card);
+    track.appendChild(creerCarteActu(actu));
   });
 
-  container.appendChild(inner);
+  // Bouton droit
+  const btnRight = document.createElement("button");
+  btnRight.className = "carousel-btn right";
+  btnRight.textContent = "›";
 
-  lancerCarousel(inner, data.length);
+  // Ajout dans le container
+  container.appendChild(btnLeft);
+  container.appendChild(track);
+  container.appendChild(btnRight);
+
+  // Activation du carousel
+  activerCarousel(track, btnLeft, btnRight);
 }
 
 function creerCarteActu(actu) {
@@ -65,13 +77,14 @@ function creerCarteActu(actu) {
   return card;
 }
 
-function lancerCarousel(inner, total) {
-  let index = 0;
+function activerCarousel(track, btnLeft, btnRight) {
+  btnLeft.addEventListener("click", () => {
+    track.scrollBy({ left: -350, behavior: "smooth" });
+  });
 
-  setInterval(() => {
-    index = (index + 1) % total;
-    inner.style.transform = `translateX(-${index * 100}%)`;
-  }, 3000);
+  btnRight.addEventListener("click", () => {
+    track.scrollBy({ left: 350, behavior: "smooth" });
+  });
 }
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
