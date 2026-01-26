@@ -8,7 +8,7 @@ const supabase = createClient(
 async function chargerActusPubliques() {
   const { data, error } = await supabase
     .from("actus")
-    .select("id, titre, texte, date_pub, imageUrl") // ← ID AJOUTÉ ICI
+    .select("id, titre, texte, date_pub, imageUrl")
     .eq("published", true)
     .order("date_pub", { ascending: false });
 
@@ -26,21 +26,52 @@ async function chargerActusPubliques() {
     return;
   }
 
+  // --- CAS 1 : 3 actus ou moins → affichage normal ---
+  if (data.length <= 3) {
+    data.forEach(actu => container.appendChild(creerCarteActu(actu)));
+    return;
+  }
+
+  // --- CAS 2 : plus de 3 actus → CAROUSEL ---
+  container.classList.add("carousel");
+
+  const inner = document.createElement("div");
+  inner.className = "carousel-inner";
+
   data.forEach(actu => {
-    const card = document.createElement("div");
-    card.className = "actu-card";
-
-    card.innerHTML = `
-      <a href="page.html?id=${actu.id}" class="actu-link">
-          <div class="actu-image" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
-          <h3>${actu.titre}</h3>
-          <p>${actu.texte}</p>
-          <small>Publié le ${actu.date_pub}</small>
-      </a>
-    `;
-
-    container.appendChild(card);
+    const card = creerCarteActu(actu);
+    card.classList.add("carousel-item");
+    inner.appendChild(card);
   });
+
+  container.appendChild(inner);
+
+  lancerCarousel(inner, data.length);
+}
+
+function creerCarteActu(actu) {
+  const card = document.createElement("div");
+  card.className = "actu-card";
+
+  card.innerHTML = `
+    <a href="page.html?id=${actu.id}" class="actu-link">
+        <div class="actu-image" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
+        <h3>${actu.titre}</h3>
+        <p>${actu.texte}</p>
+        <small>Publié le ${actu.date_pub}</small>
+    </a>
+  `;
+
+  return card;
+}
+
+function lancerCarousel(inner, total) {
+  let index = 0;
+
+  setInterval(() => {
+    index = (index + 1) % total;
+    inner.style.transform = `translateX(-${index * 100}%)`;
+  }, 3000);
 }
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
