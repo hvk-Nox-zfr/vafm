@@ -34,12 +34,10 @@ async function chargerActusPubliques() {
   // --- CAS CAROUSEL ---
   container.classList.add("carousel-paged");
 
-  // Bouton gauche
   const btnLeft = document.createElement("button");
   btnLeft.className = "carousel-btn left";
   btnLeft.textContent = "‹";
 
-  // Track
   const track = document.createElement("div");
   track.className = "carousel-track";
 
@@ -47,17 +45,14 @@ async function chargerActusPubliques() {
     track.appendChild(creerCarteActu(actu));
   });
 
-  // Bouton droit
   const btnRight = document.createElement("button");
   btnRight.className = "carousel-btn right";
   btnRight.textContent = "›";
 
-  // Ajout dans le container
   container.appendChild(btnLeft);
   container.appendChild(track);
   container.appendChild(btnRight);
 
-  // Activation du carousel
   activerCarousel(track, btnLeft, btnRight);
 }
 
@@ -66,8 +61,8 @@ function creerCarteActu(actu) {
   card.className = "actu-card";
 
   card.innerHTML = `
-    <a href="page.html?id=${actu.id}" class="actu-link">
-        <div class="actu-image" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
+    <a href="page.html?id=${actu.id}" class="actu-link" onclick="launchTransition(event)">
+        <div class="actu-image" style="background-image: url('${actu.imageUrl || "/assets/default.jpg"}');"></div>
         <h3>${actu.titre}</h3>
         <p>${actu.texte}</p>
         <small>Publié le ${actu.date_pub}</small>
@@ -86,5 +81,23 @@ function activerCarousel(track, btnLeft, btnRight) {
     track.scrollBy({ left: 350, behavior: "smooth" });
   });
 }
+
+/* --- ANIMATION DE TRANSITION --- */
+window.launchTransition = function(event) {
+  event.preventDefault();
+  const url = event.currentTarget.href;
+
+  const overlay = document.getElementById("transition-overlay");
+
+  overlay.classList.add("active");
+
+  setTimeout(() => {
+    overlay.classList.add("animate");
+  }, 50);
+
+  setTimeout(() => {
+    window.location.href = url;
+  }, 1100);
+};
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
