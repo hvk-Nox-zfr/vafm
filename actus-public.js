@@ -80,7 +80,7 @@ function activerCarousel(track, btnLeft, btnRight) {
   });
 }
 
-function launchTransition(event) {
+async function launchTransition(event) {
     event.preventDefault();
     const url = event.currentTarget.href;
 
@@ -88,7 +88,7 @@ function launchTransition(event) {
     const fakeLogo = document.getElementById("transition-logo");
     const realLogo = document.querySelector(".header-logo");
 
-    // Sécurité si le logo n'est pas trouvé
+    // Sécurité
     if (!realLogo) {
         window.location.href = url;
         return;
@@ -104,28 +104,22 @@ function launchTransition(event) {
     overlay.style.setProperty("--logo-x", offsetX + "px");
     overlay.style.setProperty("--logo-y", offsetY + "px");
 
-    // Étape 1 : écran blanc
+    // Animation
     overlay.classList.add("active");
 
-    // Étape 2 : fade-in
-    setTimeout(() => {
-        overlay.classList.add("fadein");
-    }, 80);
+    setTimeout(() => overlay.classList.add("fadein"), 80);
+    setTimeout(() => overlay.classList.add("moveup"), 650);
 
-    // 🚀 Préchargement de la page en arrière-plan
-    const preloader = document.createElement("iframe");
-    preloader.src = url;
-    preloader.style.display = "none";
-    document.body.appendChild(preloader);
+    // 🚀 CHARGEMENT DE LA PAGE EN ARRIÈRE‑PLAN
+    const response = await fetch(url);
+    const html = await response.text();
 
-    // Étape 3 : déplacement
+    // ⏳ On attend la fin de l’animation
     setTimeout(() => {
-        overlay.classList.add("moveup");
-    }, 650);
-
-    // Étape 4 : bascule vers la page déjà en cours de chargement
-    setTimeout(() => {
-        window.location.href = url;
+        // On remplace le contenu de la page SANS recharger
+        document.open();
+        document.write(html);
+        document.close();
     }, 1500);
 }
 
