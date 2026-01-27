@@ -1,3 +1,4 @@
+/* Overlay blanc */
 #transition-overlay {
     position: fixed;
     inset: 0;
@@ -8,27 +9,32 @@
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.45s ease-out;
 }
 
+/* Activation */
 #transition-overlay.active {
     opacity: 1;
     pointer-events: all;
 }
 
+/* Logo au centre */
 #transition-logo {
     width: 140px;
     opacity: 0;
-    transform: translate(0, 0);
-    transition: opacity 0.6s ease, transform 0.8s ease;
+    transform: translate(0, 0) scale(0.9);
+    transition:
+        opacity 0.6s ease-out,
+        transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Étape 1 : fade-in */
+/* Étape 1 : fade-in + léger zoom */
 #transition-overlay.fadein #transition-logo {
     opacity: 1;
+    transform: scale(1);
 }
 
-/* Étape 2 : déplacement vers le haut gauche */
+/* Étape 2 : déplacement vers le header */
 #transition-overlay.moveup #transition-logo {
-    transform: translate(-42vw, -42vh); /* ajuste selon ton header */
+    transform: translate(var(--logo-x), var(--logo-y)) scale(0.55);
 }
