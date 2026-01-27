@@ -25,13 +25,11 @@ async function chargerActusPubliques() {
     return;
   }
 
-  // --- CAS NORMAL : 4 actus ou moins ---
   if (data.length <= 4) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
     return;
   }
 
-  // --- CAS CAROUSEL ---
   container.classList.add("carousel-paged");
 
   const btnLeft = document.createElement("button");
@@ -82,41 +80,39 @@ function activerCarousel(track, btnLeft, btnRight) {
   });
 }
 
-/* --- ANIMATION DE TRANSITION FLUIDE & PRO --- */
 function launchTransition(event) {
   event.preventDefault();
   const url = event.currentTarget.href;
 
   const overlay = document.getElementById("transition-overlay");
   const fakeLogo = document.getElementById("transition-logo");
-  const realLogo = document.querySelector(".header-logo"); // ← ton vrai logo dans le header
+  const realLogo = document.querySelector(".header-logo");
 
-  // Position réelle du logo dans le header
+  if (!realLogo) {
+    console.error("❌ ERREUR : Aucun élément .header-logo trouvé !");
+    window.location.href = url;
+    return;
+  }
+
   const realRect = realLogo.getBoundingClientRect();
   const fakeRect = fakeLogo.getBoundingClientRect();
 
-  // Calcul du déplacement exact
   const offsetX = realRect.left - fakeRect.left;
   const offsetY = realRect.top - fakeRect.top;
 
-  // On injecte dans des variables CSS
   overlay.style.setProperty("--logo-x", offsetX + "px");
   overlay.style.setProperty("--logo-y", offsetY + "px");
 
-  // Étape 1 : écran blanc
   overlay.classList.add("active");
 
-  // Étape 2 : fade-in + zoom léger
   setTimeout(() => {
     overlay.classList.add("fadein");
   }, 80);
 
-  // Étape 3 : déplacement fluide vers le header
   setTimeout(() => {
     overlay.classList.add("moveup");
   }, 650);
 
-  // Étape 4 : redirection
   setTimeout(() => {
     window.location.href = url;
   }, 1500);
