@@ -81,41 +81,52 @@ function activerCarousel(track, btnLeft, btnRight) {
 }
 
 function launchTransition(event) {
-  event.preventDefault();
-  const url = event.currentTarget.href;
+    event.preventDefault();
+    const url = event.currentTarget.href;
 
-  const overlay = document.getElementById("transition-overlay");
-  const fakeLogo = document.getElementById("transition-logo");
-  const realLogo = document.querySelector(".header-logo");
+    const overlay = document.getElementById("transition-overlay");
+    const fakeLogo = document.getElementById("transition-logo");
+    const realLogo = document.querySelector(".header-logo");
 
-  if (!realLogo) {
-    console.error("❌ ERREUR : Aucun élément .header-logo trouvé !");
-    window.location.href = url;
-    return;
-  }
+    // Sécurité si le logo n'est pas trouvé
+    if (!realLogo) {
+        window.location.href = url;
+        return;
+    }
 
-  const realRect = realLogo.getBoundingClientRect();
-  const fakeRect = fakeLogo.getBoundingClientRect();
+    // Position réelle du logo
+    const realRect = realLogo.getBoundingClientRect();
+    const fakeRect = fakeLogo.getBoundingClientRect();
 
-  const offsetX = realRect.left - fakeRect.left;
-  const offsetY = realRect.top - fakeRect.top;
+    const offsetX = realRect.left - fakeRect.left;
+    const offsetY = realRect.top - fakeRect.top;
 
-  overlay.style.setProperty("--logo-x", offsetX + "px");
-  overlay.style.setProperty("--logo-y", offsetY + "px");
+    overlay.style.setProperty("--logo-x", offsetX + "px");
+    overlay.style.setProperty("--logo-y", offsetY + "px");
 
-  overlay.classList.add("active");
+    // Étape 1 : écran blanc
+    overlay.classList.add("active");
 
-  setTimeout(() => {
-    overlay.classList.add("fadein");
-  }, 80);
+    // Étape 2 : fade-in
+    setTimeout(() => {
+        overlay.classList.add("fadein");
+    }, 80);
 
-  setTimeout(() => {
-    overlay.classList.add("moveup");
-  }, 650);
+    // 🚀 Préchargement de la page en arrière-plan
+    const preloader = document.createElement("iframe");
+    preloader.src = url;
+    preloader.style.display = "none";
+    document.body.appendChild(preloader);
 
-  setTimeout(() => {
-    window.location.href = url;
-  }, 1500);
+    // Étape 3 : déplacement
+    setTimeout(() => {
+        overlay.classList.add("moveup");
+    }, 650);
+
+    // Étape 4 : bascule vers la page déjà en cours de chargement
+    setTimeout(() => {
+        window.location.href = url;
+    }, 1500);
 }
 
 window.launchTransition = launchTransition;
