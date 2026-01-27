@@ -82,25 +82,41 @@ function activerCarousel(track, btnLeft, btnRight) {
   });
 }
 
-/* --- ANIMATION DE TRANSITION EN 2 TEMPS --- */
+/* --- ANIMATION DE TRANSITION FLUIDE & PRO --- */
 function launchTransition(event) {
   event.preventDefault();
   const url = event.currentTarget.href;
-  const overlay = document.getElementById("transition-overlay");
 
+  const overlay = document.getElementById("transition-overlay");
+  const fakeLogo = document.getElementById("transition-logo");
+  const realLogo = document.querySelector(".header-logo"); // ← ton vrai logo dans le header
+
+  // Position réelle du logo dans le header
+  const realRect = realLogo.getBoundingClientRect();
+  const fakeRect = fakeLogo.getBoundingClientRect();
+
+  // Calcul du déplacement exact
+  const offsetX = realRect.left - fakeRect.left;
+  const offsetY = realRect.top - fakeRect.top;
+
+  // On injecte dans des variables CSS
+  overlay.style.setProperty("--logo-x", offsetX + "px");
+  overlay.style.setProperty("--logo-y", offsetY + "px");
+
+  // Étape 1 : écran blanc
   overlay.classList.add("active");
 
-  // Étape 1 : fade-in
+  // Étape 2 : fade-in + zoom léger
   setTimeout(() => {
     overlay.classList.add("fadein");
-  }, 50);
+  }, 80);
 
-  // Étape 2 : déplacement vers le haut gauche
+  // Étape 3 : déplacement fluide vers le header
   setTimeout(() => {
     overlay.classList.add("moveup");
-  }, 700);
+  }, 650);
 
-  // Étape 3 : redirection
+  // Étape 4 : redirection
   setTimeout(() => {
     window.location.href = url;
   }, 1500);
@@ -109,4 +125,3 @@ function launchTransition(event) {
 window.launchTransition = launchTransition;
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
-
