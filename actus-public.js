@@ -25,7 +25,7 @@ async function chargerActusPubliques() {
     return;
   }
 
-  // --- CAS NORMAL : 5 actus ou moins ---
+  // --- CAS NORMAL : 4 actus ou moins ---
   if (data.length <= 4) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
     return;
@@ -82,22 +82,31 @@ function activerCarousel(track, btnLeft, btnRight) {
   });
 }
 
-/* --- ANIMATION DE TRANSITION --- */
-window.launchTransition = function(event) {
+/* --- ANIMATION DE TRANSITION EN 2 TEMPS --- */
+function launchTransition(event) {
   event.preventDefault();
   const url = event.currentTarget.href;
-
   const overlay = document.getElementById("transition-overlay");
 
   overlay.classList.add("active");
 
+  // Étape 1 : fade-in
   setTimeout(() => {
-    overlay.classList.add("animate");
+    overlay.classList.add("fadein");
   }, 50);
 
+  // Étape 2 : déplacement vers le haut gauche
+  setTimeout(() => {
+    overlay.classList.add("moveup");
+  }, 700);
+
+  // Étape 3 : redirection
   setTimeout(() => {
     window.location.href = url;
-  }, 1100);
-};
+  }, 1500);
+}
+
+window.launchTransition = launchTransition;
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
+
