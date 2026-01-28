@@ -6,10 +6,14 @@
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     background: #f3f4f6;
     color: #111827;
-    overflow: hidden;
 }
 
 /* TOPBAR */
@@ -34,6 +38,7 @@ body {
     display: grid;
     grid-template-columns: 220px 1fr 260px;
     height: calc(100vh - 56px);
+    overflow: hidden;
 }
 
 /* SIDEBAR */
@@ -63,30 +68,33 @@ body {
 /* CANVAS WRAPPER */
 .main {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
     padding: 16px;
 }
 
 .canvas-wrapper {
+    position: relative; /* ESSENTIEL pour les images flottantes */
+    flex: 1;
+    width: 100%;
+    height: 100%;
     background: #e5e7eb;
     border-radius: 12px;
     padding: 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    width: 100%;
-    height: 100%;
-    position: relative;
     overflow: auto;
 }
 
-/* CANVAS */
+/* CANVAS (zone de texte) */
 .canvas {
     background: white;
     width: 800px;
-    min-height: 600px;
+    min-height: 100%;
     border-radius: 8px;
     box-shadow: 0 0 0 1px #d1d5db;
     padding: 24px;
+    margin: 0 auto; /* centre le canvas */
     position: relative;
 }
 
@@ -198,7 +206,8 @@ input[type="range"] {
     position: absolute;
     border-radius: 4px;
     border: 1px solid transparent;
-    overflow: visible; /* IMPORTANT : plus de rognage */
+    overflow: visible;
+    pointer-events: auto;
 }
 
 .block-public.selected {
@@ -209,14 +218,14 @@ input[type="range"] {
 .block-public.cropping {
     border-style: dashed;
     border-color: #f97316;
-    overflow: hidden; /* Seulement en mode rognage */
+    overflow: hidden;
 }
 
 /* IMAGE DANS LE BLOC */
 .block-public img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Correction principale */
+    object-fit: contain;
     pointer-events: none;
 }
 
