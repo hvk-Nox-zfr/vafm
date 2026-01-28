@@ -396,9 +396,11 @@ function makeDraggable(el) {
         if (el.classList.contains("cropping")) return;
 
         isDown = true;
-        parentRect = editorArea.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
 
+        // ✅ on prend le bon conteneur (canvas-wrapper)
+        parentRect = el.parentElement.getBoundingClientRect();
+
+        const elRect = el.getBoundingClientRect();
         offsetX = e.clientX - elRect.left;
         offsetY = e.clientY - elRect.top;
 
