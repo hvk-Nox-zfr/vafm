@@ -622,6 +622,7 @@ if (zoomInput) {
         const zoom = e.target.value;
         img.style.width = zoom + "%";
         img.style.height = zoom + "%";
+        img.setAttribute("contenteditable", "false");
         autoSaveImages();
     });
 }
