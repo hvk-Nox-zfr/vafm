@@ -507,6 +507,9 @@ function makeResizable(el, handle, position) {
 // DRAG IMAGE INTERNE (CROP)
 // -------------------------
 function makeImageDraggableInside(block, img) {
+    // Empêche d'écrire dans l'image
+    img.setAttribute("contenteditable", "false");
+
     let isDraggingImg = false;
     let startX, startY, startLeft, startTop;
 
