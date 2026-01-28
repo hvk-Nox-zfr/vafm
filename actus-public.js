@@ -128,3 +128,5 @@ window.launchTransition = launchTransition;
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
 
 console.log(actu);
+
+console.log("ACTU :", actu);
