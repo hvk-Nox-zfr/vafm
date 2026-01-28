@@ -379,7 +379,7 @@ function addImageBlock(data = {}) {
 
     makeDraggable(div);
     makeImageDraggableInside(div, img);
-    editorArea.appendChild(div);
+    document.querySelector(".canvas-wrapper").appendChild(div);
 }
 
 // -------------------------
