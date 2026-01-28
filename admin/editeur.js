@@ -333,36 +333,35 @@ document.getElementById("delete-selected-btn").addEventListener("click", () => {
 function addImageBlock(data = {}) {
     const div = document.createElement("div");
     div.className = "block-public";
+
+    // 🚫 on empêche d'écrire dans le conteneur image
+    div.setAttribute("contenteditable", "false");
+
     div.style.left = data.x || "100px";
     div.style.top = data.y || "100px";
     div.style.width = data.width || "300px";
     div.style.height = data.height || "200px";
     div.style.position = "absolute";
     div.style.userSelect = "none";
-    div.style.overflow = "visible"; // ✅ plus de rognage par défaut
+    div.style.overflow = "visible";
 
     const img = document.createElement("img");
     img.src = data.url;
 
-    // Position dans le bloc
+    // 🚫 on empêche d'écrire dans l’image elle-même
+    img.setAttribute("contenteditable", "false");
+
     img.style.position = "absolute";
     img.style.left = data.offsetX || "0px";
     img.style.top = data.offsetY || "0px";
-
-    // Taille : 100% pour éviter le débordement
     img.style.width = data.imgWidth || "100%";
     img.style.height = data.imgHeight || "100%";
-
-    // Affichage non rogné
     img.style.objectFit = "contain";
-
-    // Interaction
     img.draggable = false;
     img.style.pointerEvents = "auto";
 
     div.appendChild(img);
 
-    // Handles de redimensionnement
     const positions = [
         "top-left", "top", "top-right",
         "right", "bottom-right", "bottom",
@@ -382,7 +381,6 @@ function addImageBlock(data = {}) {
     makeImageDraggableInside(div, img);
     editorArea.appendChild(div);
 }
-
 
 // -------------------------
 // DRAG BLOC
@@ -507,7 +505,8 @@ function makeResizable(el, handle, position) {
 // DRAG IMAGE INTERNE (CROP)
 // -------------------------
 function makeImageDraggableInside(block, img) {
-    // Empêche d'écrire dans l'image
+    // 🚫 ni le bloc ni l'image ne doivent être éditables
+    block.setAttribute("contenteditable", "false");
     img.setAttribute("contenteditable", "false");
 
     let isDraggingImg = false;
@@ -782,6 +781,9 @@ function addElementToCanvas(el) {
                 div.style.height = "150px";
                 div.style.overflow = "hidden";
 
+                // 🚫 on empêche d'écrire dans ce bloc
+                div.setAttribute("contenteditable", "false");
+
                 div.innerHTML = svg;
 
                 const positions = [
@@ -821,8 +823,11 @@ document.addEventListener("selectionchange", () => {
     const range = sel.getRangeAt(0);
     const node = range.startContainer.parentNode;
 
-    if (node && node.closest("#editor-area")) {
-        selectedText = node;
+    // ✅ on ne considère que du texte dans .editable-text
+    const editable = node && node.closest(".editable-text");
+
+    if (editable && editable.closest("#editor-area")) {
+        selectedText = editable;
         selectedBlock = null;
         updatePropertiesPanel("text");
     }
