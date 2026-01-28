@@ -8,7 +8,7 @@ const supabase = createClient(
 async function chargerActusPubliques() {
   const { data, error } = await supabase
     .from("actus")
-    .select("*") // ← IMPORTANT : on récupère TOUT pour voir les vraies colonnes
+    .select("id, titre, texte, date_pub, imageUrl")
     .eq("published", true)
     .order("date_pub", { ascending: false });
 
@@ -17,7 +17,7 @@ async function chargerActusPubliques() {
 
   if (error) {
     container.innerHTML = "<p>Impossible de charger les actualités.</p>";
-    console.error(error);
+    console.error("Erreur Supabase :", error);
     return;
   }
 
@@ -26,8 +26,7 @@ async function chargerActusPubliques() {
     return;
   }
 
-  // Affiche les données reçues pour connaître le vrai nom de la colonne ID
-  console.log("Données actus reçues :", data);
+  console.log("Actus reçues :", data); // ← utile pour debug
 
   if (data.length <= 4) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
@@ -62,7 +61,6 @@ function creerCarteActu(actu) {
   const card = document.createElement("div");
   card.className = "actu-card";
 
-  // ⚠️ ICI : tu dois remplacer actu.id par le vrai nom de ta colonne
   card.innerHTML = `
     <a href="page.html?id=${actu.id}" class="actu-link" onclick="launchTransition(event)">
         <div class="actu-image" style="background-image: url('${actu.imageUrl || "/assets/default.jpg"}');"></div>
