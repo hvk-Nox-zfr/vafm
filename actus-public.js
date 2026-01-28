@@ -126,3 +126,5 @@ async function launchTransition(event) {
 window.launchTransition = launchTransition;
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
+
+console.log(actu);
