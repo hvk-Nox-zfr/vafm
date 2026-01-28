@@ -16,8 +16,8 @@ async function chargerActusPubliques() {
   container.innerHTML = "";
 
   if (error) {
-    container.innerHTML = "<p>Impossible de charger les actualités.</p>";
     console.error("Erreur Supabase :", error);
+    container.innerHTML = "<p>Impossible de charger les actualités.</p>";
     return;
   }
 
@@ -65,7 +65,7 @@ function creerCarteActu(actu) {
   link.href = `page.html?id=${actu.id}`;
   link.className = "actu-link";
 
-  // 🔥 Nouvelle gestion propre du clic
+  // 🔥 Gestion propre du clic
   link.addEventListener("click", event => {
     event.preventDefault();
 
@@ -109,4 +109,3 @@ function activerCarousel(track, btnLeft, btnRight) {
 }
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
-
