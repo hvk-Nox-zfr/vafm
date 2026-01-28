@@ -6,12 +6,15 @@ const supabase = createClient(
 );
 
 const params = new URLSearchParams(window.location.search);
-const actuId = Number(params.get("id"));
+const idParam = params.get("id");
+const actuId = Number(idParam);
 
 const canvas = document.getElementById("actu-content");
 
 async function chargerActu() {
-  if (!actuId || isNaN(actuId)) {
+  // ❌ Mauvais : if (!actuId)
+  // ✔ Bon : vérifier si l’ID n’existe pas ou n’est pas un nombre
+  if (idParam === null || isNaN(actuId)) {
     document.body.innerHTML = "<h2>Article introuvable</h2>";
     console.error("ID d'article manquant ou invalide :", actuId);
     return;
@@ -29,28 +32,24 @@ async function chargerActu() {
     return;
   }
 
+  // 📝 Texte
   if (actu.contenu?.texte) {
     canvas.innerHTML = actu.contenu.texte;
   }
 
+  // 🖼️ Images flottantes
   if (actu.contenu?.images) {
     actu.contenu.images.forEach(block => {
-      const x = block.x || "0px";
-      const y = block.y || "0px";
-      const w = block.width || "200px";
-      const h = block.height || "150px";
-      const imageUrl = block.url || "";
-
       const div = document.createElement("div");
       div.className = "block-public";
       div.style.position = "absolute";
-      div.style.left = x;
-      div.style.top = y;
-      div.style.width = w;
-      div.style.height = h;
+      div.style.left = block.x || "0px";
+      div.style.top = block.y || "0px";
+      div.style.width = block.width || "200px";
+      div.style.height = block.height || "150px";
 
       const img = document.createElement("img");
-      img.src = imageUrl;
+      img.src = block.url || "";
       img.style.width = "100%";
       img.style.height = "100%";
       img.style.objectFit = "contain";
