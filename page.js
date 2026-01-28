@@ -11,11 +11,17 @@ const actuId = Number(params.get("id"));
 const canvas = document.getElementById("actu-content");
 
 async function chargerActu() {
+  if (!actuId || isNaN(actuId)) {
+    document.body.innerHTML = "<h2>Article introuvable</h2>";
+    console.error("ID d'article manquant ou invalide :", actuId);
+    return;
+  }
+
   const { data: actu, error } = await supabase
     .from("actus")
     .select("*")
     .eq("id", actuId)
-    .single();
+    .maybeSingle();
 
   if (error || !actu) {
     document.body.innerHTML = "<h2>Article introuvable</h2>";
@@ -23,10 +29,10 @@ async function chargerActu() {
     return;
   }
 
-  // 1️⃣ Texte principal
-  canvas.innerHTML = actu.contenu?.texte || "";
+  if (actu.contenu?.texte) {
+    canvas.innerHTML = actu.contenu.texte;
+  }
 
-  // 2️⃣ Images flottantes
   if (actu.contenu?.images) {
     actu.contenu.images.forEach(block => {
       const x = block.x || "0px";
