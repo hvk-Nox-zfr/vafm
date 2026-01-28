@@ -26,7 +26,7 @@ async function chargerActusPubliques() {
     return;
   }
 
-  console.log("Actus reçues :", data); // ← utile pour debug
+  console.log("Actus reçues :", data);
 
   if (data.length <= 4) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
@@ -61,15 +61,40 @@ function creerCarteActu(actu) {
   const card = document.createElement("div");
   card.className = "actu-card";
 
-  card.innerHTML = `
-    <a href="page.html?id=${actu.id}" class="actu-link" onclick="launchTransition(event)">
-        <div class="actu-image" style="background-image: url('${actu.imageUrl || "/assets/default.jpg"}');"></div>
-        <h3>${actu.titre}</h3>
-        <p>${actu.texte}</p>
-        <small>Publié le ${actu.date_pub}</small>
-    </a>
-  `;
+  const link = document.createElement("a");
+  link.href = `page.html?id=${actu.id}`;
+  link.className = "actu-link";
 
+  // 🔥 Nouvelle gestion propre du clic
+  link.addEventListener("click", event => {
+    event.preventDefault();
+
+    if (typeof window.launchTransition === "function") {
+      window.launchTransition(event);
+    } else {
+      window.location.href = link.href;
+    }
+  });
+
+  const image = document.createElement("div");
+  image.className = "actu-image";
+  image.style.backgroundImage = `url('${actu.imageUrl || "/assets/default.jpg"}')`;
+
+  const title = document.createElement("h3");
+  title.textContent = actu.titre;
+
+  const text = document.createElement("p");
+  text.textContent = actu.texte;
+
+  const date = document.createElement("small");
+  date.textContent = `Publié le ${actu.date_pub}`;
+
+  link.appendChild(image);
+  link.appendChild(title);
+  link.appendChild(text);
+  link.appendChild(date);
+
+  card.appendChild(link);
   return card;
 }
 
@@ -83,5 +108,5 @@ function activerCarousel(track, btnLeft, btnRight) {
   });
 }
 
-window.launchTransition = launchTransition;
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
+
