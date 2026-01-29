@@ -143,6 +143,7 @@ function reloadEditor(pushHistory = true) {
 if (!editorArea.querySelector(".editable-text")) {
     const wrapper = document.createElement("div");
     wrapper.className = "editable-text";
+    wrapper.setAttribute("contenteditable", "true");
     wrapper.innerHTML = editorArea.innerHTML;
     editorArea.innerHTML = "";
     editorArea.appendChild(wrapper);
@@ -657,23 +658,44 @@ document.getElementById("text-color").addEventListener("input", e => {
     saveTextContent();
 });
 
+// ALIGNEMENT
 textPanel.querySelectorAll("[data-align]").forEach(btn => {
     btn.addEventListener("click", () => {
+        if (!selectedText) return;
         const align = btn.getAttribute("data-align");
-        if (align === "left") document.execCommand("justifyLeft");
-        if (align === "center") document.execCommand("justifyCenter");
-        if (align === "right") document.execCommand("justifyRight");
+        selectedText.style.textAlign = align;
         saveTextContent();
     });
 });
 
+// STYLES (gras, italique, souligné…)
 textPanel.querySelectorAll("[data-style]").forEach(btn => {
     btn.addEventListener("click", () => {
+        if (!selectedText) return;
+
         const style = btn.getAttribute("data-style");
-        document.execCommand(style);
+
+        if (style === "bold") {
+            selectedText.style.fontWeight =
+                selectedText.style.fontWeight === "bold" ? "normal" : "bold";
+        }
+
+        if (style === "italic") {
+            selectedText.style.fontStyle =
+                selectedText.style.fontStyle === "italic" ? "normal" : "italic";
+        }
+
+        if (style === "underline") {
+            selectedText.style.textDecoration =
+                selectedText.style.textDecoration === "underline"
+                    ? "none"
+                    : "underline";
+        }
+
         saveTextContent();
     });
 });
+
 
 // -------------------------
 // SAUVEGARDE IMAGES (EN MÉMOIRE)
