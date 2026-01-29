@@ -138,15 +138,16 @@ function reloadEditor(pushHistory = true) {
     if (!actu) return;
 
     editorArea.innerHTML = actu.contenu.texte || "";
+    
+// Si aucun élément n'a la classe editable-text, on l'ajoute automatiquement
+if (!editorArea.querySelector(".editable-text")) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "editable-text";
+    wrapper.innerHTML = editorArea.innerHTML;
+    editorArea.innerHTML = "";
+    editorArea.appendChild(wrapper);
+}
 
-    // Si aucun élément n'a la classe editable-text, on l'ajoute automatiquement
-    if (!editorArea.querySelector(".editable-text")) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "editable-text";
-        wrapper.innerHTML = editorArea.innerHTML;
-        editorArea.innerHTML = "";
-        editorArea.appendChild(wrapper);
-    }
 
 
     // On enlève d'éventuels blocs images résiduels
