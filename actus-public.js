@@ -62,7 +62,7 @@ function creerCarteActu(actu) {
   card.className = "actu-card";
 
   const link = document.createElement("a");
-  link.href = `page.html?id=${actu.id}`;
+  link.href = `./page.html?id=${actu.id}`;
   link.className = "actu-link";
 
   // 🔥 Gestion propre du clic
