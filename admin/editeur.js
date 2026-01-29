@@ -19,8 +19,8 @@ const textPanel = document.getElementById("text-panel");
 const imagePanel = document.getElementById("image-panel");
 
 // SÉLECTION
-let selectedBlock = null;
-let selectedText = null;
+let selectedBlock = null;   // .block-public (image / svg)
+let selectedText = null;    // .editable-text
 let currentCropBlock = null;
 
 // -------------------------
@@ -58,12 +58,14 @@ async function initEditor() {
 
     if (editorTitle) editorTitle.textContent = actu.titre || "Sans titre";
 
-    // On initialise l'éditeur
     reloadEditor(false);
-    saveState();          // premier état dans l'historique
+    saveState();
     updatePropertiesPanel();
 }
 
+// -------------------------
+// HISTORIQUE
+// -------------------------
 function getState() {
     return JSON.stringify(actu.contenu);
 }
@@ -81,9 +83,7 @@ function saveState() {
     }
 }
 
-// -------------------------
 // UNDO / REDO / RETOUR
-// -------------------------
 document.getElementById("undo-btn")?.addEventListener("click", () => {
     if (history.length > 1) {
         const current = history.pop();
@@ -138,23 +138,26 @@ function reloadEditor(pushHistory = true) {
     if (!actu) return;
 
     editorArea.innerHTML = actu.contenu.texte || "";
-    
-// Si aucun élément n'a la classe editable-text, on l'ajoute automatiquement
-if (!editorArea.querySelector(".editable-text")) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "editable-text";
-    wrapper.setAttribute("contenteditable", "true");
-    wrapper.innerHTML = editorArea.innerHTML;
-    editorArea.innerHTML = "";
-    editorArea.appendChild(wrapper);
-}
 
+    // Si aucun élément n'a la classe editable-text, on en crée un
+    if (!editorArea.querySelector(".editable-text")) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "editable-text";
+        wrapper.setAttribute("contenteditable", "true");
+        wrapper.innerHTML = editorArea.innerHTML || "Tape ton texte ici…";
+        editorArea.innerHTML = "";
+        editorArea.appendChild(wrapper);
+    } else {
+        // S'assurer que tous les blocs texte sont bien éditables
+        editorArea.querySelectorAll(".editable-text").forEach(el => {
+            el.setAttribute("contenteditable", "true");
+        });
+    }
 
-
-    // On enlève d'éventuels blocs images résiduels
+    // On enlève d'éventuels blocs images résiduels (ils seront recréés)
     [...editorArea.querySelectorAll(".block-public")].forEach(el => el.remove());
 
-    // On recrée les images
+    // On recrée les images flottantes
     actu.contenu.images.forEach(imgData => addImageBlock(imgData));
 
     attachTextHandlers();
@@ -246,15 +249,6 @@ function updatePropertiesPanel(type = null) {
         const rect = selectedBlock.getBoundingClientRect();
         document.getElementById("img-frame-width").value = rect.width;
         document.getElementById("img-frame-height").value = rect.height;
-
-        const img = selectedBlock.querySelector("img");
-        if (img) {
-            const zoomInput = document.getElementById("img-zoom");
-            if (zoomInput) {
-                const w = parseFloat(img.style.width) || 100;
-                zoomInput.value = w;
-            }
-        }
         return;
     }
 }
@@ -325,15 +319,16 @@ document.getElementById("delete-selected-btn").addEventListener("click", () => {
     const selected = document.querySelector(".selected");
     if (!selected) return;
 
-    // Autoriser la suppression UNIQUEMENT pour :
-    // - les images flottantes
-    // - les textes éditables
     const isDeletable =
         selected.classList.contains("block-public") ||
         selected.classList.contains("editable-text");
 
     if (isDeletable) {
         selected.remove();
+        saveTextContent();
+        autoSaveImages();
+        saveState();
+        clearSelection();
     } else {
         console.warn("Cet élément ne peut pas être supprimé.");
     }
@@ -345,8 +340,6 @@ document.getElementById("delete-selected-btn").addEventListener("click", () => {
 function addImageBlock(data = {}) {
     const div = document.createElement("div");
     div.className = "block-public";
-
-    // 🚫 on empêche d'écrire dans le conteneur image
     div.setAttribute("contenteditable", "false");
 
     div.style.left = data.x || "100px";
@@ -359,10 +352,7 @@ function addImageBlock(data = {}) {
 
     const img = document.createElement("img");
     img.src = data.url;
-
-    // 🚫 on empêche d'écrire dans l’image elle-même
     img.setAttribute("contenteditable", "false");
-
     img.style.position = "absolute";
     img.style.left = data.offsetX || "0px";
     img.style.top = data.offsetY || "0px";
@@ -390,7 +380,6 @@ function addImageBlock(data = {}) {
     });
 
     makeDraggable(div);
-    makeImageDraggableInside(div, img);
     document.querySelector(".canvas-wrapper").appendChild(div);
 }
 
@@ -408,8 +397,6 @@ function makeDraggable(el) {
         if (el.classList.contains("cropping")) return;
 
         isDown = true;
-
-        // ✅ on prend le bon conteneur (canvas-wrapper)
         parentRect = el.parentElement.getBoundingClientRect();
 
         const elRect = el.getBoundingClientRect();
@@ -516,105 +503,6 @@ function makeResizable(el, handle, position) {
 }
 
 // -------------------------
-// DRAG IMAGE INTERNE (CROP)
-// -------------------------
-function makeImageDraggableInside(block, img) {
-    // 🚫 ni le bloc ni l'image ne doivent être éditables
-    block.setAttribute("contenteditable", "false");
-    img.setAttribute("contenteditable", "false");
-
-    let isDraggingImg = false;
-    let startX, startY, startLeft, startTop;
-
-    img.addEventListener("mousedown", e => {
-        if (!block.classList.contains("cropping")) return;
-        e.stopPropagation();
-        isDraggingImg = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        startLeft = parseFloat(img.style.left || "0");
-        startTop = parseFloat(img.style.top || "0");
-    });
-
-    document.addEventListener("mousemove", e => {
-        if (!isDraggingImg) return;
-
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-
-        let newLeft = startLeft + dx;
-        let newTop = startTop + dy;
-
-        const blockRect = block.getBoundingClientRect();
-        const imgRect = img.getBoundingClientRect();
-
-        const maxLeft = 0;
-        const maxTop = 0;
-        const minLeft = blockRect.width - imgRect.width;
-        const minTop = blockRect.height - imgRect.height;
-
-        newLeft = Math.min(maxLeft, Math.max(minLeft, newLeft));
-        newTop = Math.min(maxTop, Math.max(minTop, newTop));
-
-        img.style.left = newLeft + "px";
-        img.style.top = newTop + "px";
-    });
-
-    document.addEventListener("mouseup", () => {
-        if (isDraggingImg) {
-            autoSaveImages();
-            saveState();
-        }
-        isDraggingImg = false;
-    });
-}
-
-// -------------------------
-// MODE CROP
-// -------------------------
-document.getElementById("crop-toggle-btn").addEventListener("click", () => {
-    const selected = document.querySelector(".block-public.selected");
-    if (!selected) return;
-
-    const img = selected.querySelector("img");
-    const isCropping = selected.classList.toggle("cropping");
-
-    // Basculer les styles
-    selected.style.overflow = isCropping ? "hidden" : "visible";
-    img.style.objectFit = isCropping ? "cover" : "contain";
-
-    // Activer ou désactiver le déplacement interne
-    if (isCropping) {
-        img.style.cursor = "grab";
-        img.onmousedown = function (e) {
-            e.preventDefault();
-            const startX = e.clientX;
-            const startY = e.clientY;
-            const initLeft = parseInt(img.style.left || "0");
-            const initTop = parseInt(img.style.top || "0");
-
-            function onMove(ev) {
-                const dx = ev.clientX - startX;
-                const dy = ev.clientY - startY;
-                img.style.left = initLeft + dx + "px";
-                img.style.top = initTop + dy + "px";
-            }
-
-            function onUp() {
-                document.removeEventListener("mousemove", onMove);
-                document.removeEventListener("mouseup", onUp);
-            }
-
-            document.addEventListener("mousemove", onMove);
-            document.addEventListener("mouseup", onUp);
-        };
-    } else {
-        img.style.cursor = "default";
-        img.onmousedown = null;
-    }
-});
-
-// -------------------------
 // SLIDERS IMAGE
 // -------------------------
 document.getElementById("img-frame-width").addEventListener("input", e => {
@@ -629,20 +517,6 @@ document.getElementById("img-frame-height").addEventListener("input", e => {
     autoSaveImages();
 });
 
-const zoomInput = document.getElementById("img-zoom");
-if (zoomInput) {
-    zoomInput.addEventListener("input", e => {
-        if (!selectedBlock) return;
-        const img = selectedBlock.querySelector("img");
-        if (!img) return;
-        const zoom = e.target.value;
-        img.style.width = zoom + "%";
-        img.style.height = zoom + "%";
-        img.setAttribute("contenteditable", "false");
-        autoSaveImages();
-    });
-}
-
 // -------------------------
 // PROPRIÉTÉS TEXTE
 // -------------------------
@@ -650,25 +524,26 @@ document.getElementById("text-font-size").addEventListener("input", e => {
     if (!selectedText) return;
     selectedText.style.fontSize = e.target.value + "px";
     saveTextContent();
+    saveState();
 });
 
 document.getElementById("text-color").addEventListener("input", e => {
     if (!selectedText) return;
     selectedText.style.color = e.target.value;
     saveTextContent();
+    saveState();
 });
 
-// ALIGNEMENT
 textPanel.querySelectorAll("[data-align]").forEach(btn => {
     btn.addEventListener("click", () => {
         if (!selectedText) return;
         const align = btn.getAttribute("data-align");
         selectedText.style.textAlign = align;
         saveTextContent();
+        saveState();
     });
 });
 
-// STYLES (gras, italique, souligné…)
 textPanel.querySelectorAll("[data-style]").forEach(btn => {
     btn.addEventListener("click", () => {
         if (!selectedText) return;
@@ -693,9 +568,9 @@ textPanel.querySelectorAll("[data-style]").forEach(btn => {
         }
 
         saveTextContent();
+        saveState();
     });
 });
-
 
 // -------------------------
 // SAUVEGARDE IMAGES (EN MÉMOIRE)
@@ -703,7 +578,7 @@ textPanel.querySelectorAll("[data-style]").forEach(btn => {
 function autoSaveImages() {
     if (!actu) return;
 
-    const images = [...editorArea.querySelectorAll(".block-public")].map(div => {
+    const images = [...document.querySelectorAll(".block-public")].map(div => {
         const img = div.querySelector("img");
         return {
             url: img ? img.src : "",
@@ -815,10 +690,7 @@ function addElementToCanvas(el) {
                 div.style.width = "150px";
                 div.style.height = "150px";
                 div.style.overflow = "hidden";
-
-                // 🚫 on empêche d'écrire dans ce bloc
                 div.setAttribute("contenteditable", "false");
-
                 div.innerHTML = svg;
 
                 const positions = [
@@ -837,7 +709,7 @@ function addElementToCanvas(el) {
                 });
 
                 makeDraggable(div);
-                editorArea.appendChild(div);
+                document.querySelector(".canvas-wrapper").appendChild(div);
                 autoSaveImages();
                 saveState();
             });
@@ -847,26 +719,6 @@ function addElementToCanvas(el) {
         saveState();
     }
 }
-
-// -------------------------
-// SÉLECTION TEXTE VIA SELECTIONCHANGE
-// -------------------------
-document.addEventListener("selectionchange", () => {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-
-    const range = sel.getRangeAt(0);
-    const node = range.startContainer.parentNode;
-
-    // ✅ on ne considère que du texte dans .editable-text
-    const editable = node && node.closest(".editable-text");
-
-    if (editable && editable.closest("#editor-area")) {
-        selectedText = editable;
-        selectedBlock = null;
-        updatePropertiesPanel("text");
-    }
-});
 
 // -------------------------
 // LANCEMENT
