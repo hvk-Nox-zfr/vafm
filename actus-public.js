@@ -68,12 +68,7 @@ function creerCarteActu(actu) {
   // 🔥 Gestion propre du clic
   link.addEventListener("click", event => {
     event.preventDefault();
-
-    if (typeof window.launchTransition === "function") {
-      window.launchTransition(event);
-    } else {
-      window.location.href = link.href;
-    }
+    window.location.href = link.href;
   });
 
   const image = document.createElement("div");
