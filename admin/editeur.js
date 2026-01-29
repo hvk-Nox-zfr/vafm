@@ -211,6 +211,7 @@ editorArea.addEventListener("mousedown", e => {
 // PANNEAU PROPRIÉTÉS
 // -------------------------
 function updatePropertiesPanel(type = null) {
+    console.log("updatePropertiesPanel appelé avec type =", type);
     noSelectionPanel.classList.add("hidden");
     textPanel.classList.add("hidden");
     imagePanel.classList.add("hidden");
