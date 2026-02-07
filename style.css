@@ -84,7 +84,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at top left, #9b0a0a 0, #ffffff 50%);
+    background: radial-gradient(circle at top left, #f08080 0, #ffffff 50%);
 }
 
 .hero-content {
