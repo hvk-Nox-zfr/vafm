@@ -84,7 +84,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at top left, #fce9ff 0, #ffffff 50%);
+    background: radial-gradient(circle at top left, #9b0a0a 0, #ffffff 50%);
 }
 
 .hero-content {
@@ -177,7 +177,7 @@ body {
 
 .player-button-rect:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 28px rgba(139,91,255,0.4);
+    box-shadow: 0 10px 28px rgba(155,10,10,0.4);
 }
 
 .player-button-rect:active {
