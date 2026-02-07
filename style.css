@@ -182,7 +182,7 @@ body {
 
 .player-button-rect:active {
     transform: translateY(0);
-    box-shadow: 0 6px 16px rgba(139,91,255,0.25);
+    box-shadow: 0 6px 16px rgba(155,10,10,0.25);
 }
 
 .player-button-rect .icon {
