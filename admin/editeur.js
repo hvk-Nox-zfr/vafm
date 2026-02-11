@@ -1,15 +1,5 @@
 import { supabase } from "./supabase-init.js";
 
-let actu = null;
-let history = [];
-let future = [];
-let selectedBlock = null;
-let selectedText = null;
-let currentCropBlock = null;
-
-// 🔥 AJOUTE-LE ICI
-let isReloading = false;
-
 // -------------------------
 // RÉCUP PARAMÈTRE ID
 // -------------------------
@@ -32,6 +22,9 @@ const imagePanel = document.getElementById("image-panel");
 let selectedBlock = null;   // .block-public (image / svg)
 let selectedText = null;    // .editable-text
 let currentCropBlock = null;
+
+// 🔥 AJOUTE-LE ICI, EXACTEMENT ICI :
+let isReloading = false;
 
 // -------------------------
 // INIT : CHARGER L'ACTU DEPUIS SUPABASE
