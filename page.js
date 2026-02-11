@@ -9,14 +9,13 @@ const params = new URLSearchParams(window.location.search);
 const idParam = params.get("id");
 const actuId = Number(idParam);
 
+// ⚠️ IMPORTANT : on récupère le wrapper, pas seulement le canvas
+const wrapper = document.querySelector(".canvas-wrapper");
 const canvas = document.getElementById("actu-content");
 
 async function chargerActu() {
-  // ❌ Mauvais : if (!actuId)
-  // ✔ Bon : vérifier si l’ID n’existe pas ou n’est pas un nombre
   if (idParam === null || isNaN(actuId)) {
     document.body.innerHTML = "<h2>Article introuvable</h2>";
-    console.error("ID d'article manquant ou invalide :", actuId);
     return;
   }
 
@@ -28,7 +27,6 @@ async function chargerActu() {
 
   if (error || !actu) {
     document.body.innerHTML = "<h2>Article introuvable</h2>";
-    console.error("Erreur chargement actu :", error);
     return;
   }
 
@@ -42,22 +40,32 @@ async function chargerActu() {
     actu.contenu.images.forEach(block => {
       const div = document.createElement("div");
       div.className = "block-public";
+
+      // mêmes positions que dans l’éditeur
+      div.style.left = block.x;
+      div.style.top = block.y;
+      div.style.width = block.width;
+      div.style.height = block.height;
       div.style.position = "absolute";
-      div.style.left = block.x || "0px";
-      div.style.top = block.y || "0px";
-      div.style.width = block.width || "200px";
-      div.style.height = block.height || "150px";
 
       const img = document.createElement("img");
-      img.src = block.url || "";
-      img.style.width = "100%";
-      img.style.height = "100%";
+      img.src = block.url;
+
+      // mêmes offsets internes que dans l’éditeur
+      img.style.position = "absolute";
+      img.style.left = block.offsetX;
+      img.style.top = block.offsetY;
+      img.style.width = block.imgWidth;
+      img.style.height = block.imgHeight;
       img.style.objectFit = "contain";
 
       div.appendChild(img);
-      canvas.appendChild(div);
+
+      // ⚠️ IMPORTANT : on ajoute dans le wrapper, pas dans le canvas
+      wrapper.appendChild(div);
     });
   }
 }
 
 document.addEventListener("DOMContentLoaded", chargerActu);
+
