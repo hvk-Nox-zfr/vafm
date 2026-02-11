@@ -23,6 +23,14 @@
 
 .canvas-wrapper {
     position: relative;
+    width: 100%;          /* même largeur que l’éditeur */
+    max-width: 1000px;    /* ou la largeur que tu veux pour ton site */
+    margin: 40px auto;
+    min-height: 600px;
+}
+
+.canvas {
+    position: relative;
     width: 100%;
     min-height: 600px;
 }
