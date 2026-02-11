@@ -29,12 +29,6 @@
     min-height: 600px;
 }
 
-.canvas {
-    position: relative;
-    width: 100%;
-    min-height: 600px;
-}
-
 .actu-canvas {
     position: relative;      /* 🎯 indispensable */
     width: 100%;             /* 🎯 même largeur que l’éditeur */
