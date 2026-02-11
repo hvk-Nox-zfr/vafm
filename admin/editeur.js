@@ -663,12 +663,14 @@ function autoSaveImages() {
             offsetX: img ? img.style.left : "0px",
             offsetY: img ? img.style.top : "0px",
             imgWidth: img ? img.style.width : "100%",
-            imgHeight: img ? img.style.height : "100%"
+            imgHeight: img ? img.style.height : "100%",
+            rotation: div.dataset.rotation || "0"   // 🔥 AJOUT ICI
         };
     });
 
     actu.contenu.images = images;
 }
+
 
 // -------------------------
 // BOUTON ENREGISTRER (SUPABASE)
