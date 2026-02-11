@@ -1,5 +1,15 @@
 import { supabase } from "./supabase-init.js";
 
+let actu = null;
+let history = [];
+let future = [];
+let selectedBlock = null;
+let selectedText = null;
+let currentCropBlock = null;
+
+// 🔥 AJOUTE-LE ICI
+let isReloading = false;
+
 // -------------------------
 // RÉCUP PARAMÈTRE ID
 // -------------------------
