@@ -536,70 +536,49 @@ function makeResizable(el, handle, position) {
         document.removeEventListener("mousemove", resize);
         document.removeEventListener("mouseup", stopResize);
     }
-}
+} // ←←← FIN NORMALE DE makeResizable()
 
-function makeResizable(el, handle, position) {
-    let isResizing = false;
-    let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+
+// -------------------------
+// ROTATION BLOC
+// -------------------------
+function makeRotatable(el, handle) {
+    let isRotating = false;
 
     handle.addEventListener("mousedown", e => {
         e.stopPropagation();
-        if (el.classList.contains("cropping")) return;
-        isResizing = true;
+        isRotating = true;
 
         const rect = el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
 
-        startX = e.clientX;
-        startY = e.clientY;
-        startWidth = rect.width;
-        startHeight = rect.height;
-        startLeft = el.offsetLeft;
-        startTop = el.offsetTop;
+        function rotate(ev) {
+            if (!isRotating) return;
 
-        document.addEventListener("mousemove", resize);
-        document.addEventListener("mouseup", stopResize);
+            const dx = ev.clientX - centerX;
+            const dy = ev.clientY - centerY;
+
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+            el.style.transform = `rotate(${angle}deg)`;
+            el.dataset.rotation = angle;
+        }
+
+        function stopRotate() {
+            if (isRotating) {
+                autoSaveImages();
+                saveState();
+            }
+            isRotating = false;
+            document.removeEventListener("mousemove", rotate);
+            document.removeEventListener("mouseup", stopRotate);
+        }
+
+        document.addEventListener("mousemove", rotate);
+        document.addEventListener("mouseup", stopRotate);
     });
-
-    function resize(e) {
-        if (!isResizing) return;
-
-        let dx = e.clientX - startX;
-        let dy = e.clientY - startY;
-
-        let newWidth = startWidth;
-        let newHeight = startHeight;
-        let newLeft = startLeft;
-        let newTop = startTop;
-
-        if (position.includes("right")) newWidth = startWidth + dx;
-        if (position.includes("left")) {
-            newWidth = startWidth - dx;
-            newLeft = startLeft + dx;
-        }
-        if (position.includes("bottom")) newHeight = startHeight + dy;
-        if (position.includes("top")) {
-            newHeight = startHeight - dy;
-            newTop = startTop + dy;
-        }
-
-        newWidth = Math.max(50, newWidth);
-        newHeight = Math.max(30, newHeight);
-
-        el.style.width = newWidth + "px";
-        el.style.height = newHeight + "px";
-        el.style.left = newLeft + "px";
-        el.style.top = newTop + "px";
-    }
-
-    function stopResize() {
-        if (isResizing) {
-            autoSaveImages();
-            saveState();
-        }
-        isResizing = false;
-        document.removeEventListener("mousemove", resize);
-        document.removeEventListener("mouseup", stopResize);
-    }
 }
 
 // -------------------------
