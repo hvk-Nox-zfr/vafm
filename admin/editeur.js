@@ -27,7 +27,7 @@ let currentCropBlock = null;
 // INIT : CHARGER L'ACTU DEPUIS SUPABASE
 // -------------------------
 async function initEditor() {
-    if (!actuId) {
+    if (!actuId || Number.isNaN(actuId)) {
         alert("Article introuvable (ID manquant)");
         window.location.href = "index.html";
         return;
@@ -172,8 +172,7 @@ function reloadEditor(pushHistory = true) {
 // -------------------------
 function clearSelection() {
     if (selectedBlock) {
-        selectedBlock.classList.remove("selected");
-        selectedBlock.classList.remove("cropping");
+        selectedBlock.classList.remove("selected", "cropping");
     }
     if (selectedText) {
         selectedText.classList.remove("selected");
@@ -184,19 +183,23 @@ function clearSelection() {
     updatePropertiesPanel();
 }
 
+// Sélection robuste : on remonte toujours au bloc parent
 editorArea.addEventListener("mousedown", e => {
     const block = e.target.closest(".block-public");
     const textEl = e.target.closest(".editable-text");
 
     if (block) {
         e.preventDefault();
-        if (selectedText) selectedText.classList.remove("selected");
-        selectedText = null;
+
+        if (selectedText) {
+            selectedText.classList.remove("selected");
+            selectedText = null;
+        }
 
         if (selectedBlock && selectedBlock !== block) {
-            selectedBlock.classList.remove("selected");
-            selectedBlock.classList.remove("cropping");
+            selectedBlock.classList.remove("selected", "cropping");
         }
+
         selectedBlock = block;
         selectedBlock.classList.add("selected");
         updatePropertiesPanel("image");
@@ -205,14 +208,14 @@ editorArea.addEventListener("mousedown", e => {
 
     if (textEl) {
         if (selectedBlock) {
-            selectedBlock.classList.remove("selected");
-            selectedBlock.classList.remove("cropping");
+            selectedBlock.classList.remove("selected", "cropping");
+            selectedBlock = null;
         }
-        selectedBlock = null;
 
         if (selectedText && selectedText !== textEl) {
             selectedText.classList.remove("selected");
         }
+
         selectedText = textEl;
         selectedText.classList.add("selected");
         updatePropertiesPanel("text");
@@ -270,8 +273,7 @@ function attachTextHandlers() {
         };
         el.onfocus = () => {
             if (selectedBlock) {
-                selectedBlock.classList.remove("selected");
-                selectedBlock.classList.remove("cropping");
+                selectedBlock.classList.remove("selected", "cropping");
                 selectedBlock = null;
             }
             if (selectedText && selectedText !== el) {
@@ -311,27 +313,39 @@ document.getElementById("add-image").addEventListener("click", () => {
 
     input.click();
 });
-
 // -------------------------
 // SUPPRIMER SÉLECTION
 // -------------------------
 document.getElementById("delete-selected-btn").addEventListener("click", () => {
-    const selected = document.querySelector(".selected");
-    if (!selected) return;
+    // On utilise la sélection logique, pas querySelector(".selected")
+    let target = null;
+
+    if (selectedBlock) {
+        target = selectedBlock;
+    } else if (selectedText) {
+        target = selectedText;
+    }
+
+    if (!target) return;
 
     const isDeletable =
-        selected.classList.contains("block-public") ||
-        selected.classList.contains("editable-text");
+        target.classList.contains("block-public") ||
+        target.classList.contains("editable-text");
 
-    if (isDeletable) {
-        selected.remove();
-        saveTextContent();
-        autoSaveImages();
-        saveState();
-        clearSelection();
-    } else {
+    if (!isDeletable) {
         console.warn("Cet élément ne peut pas être supprimé.");
+        return;
     }
+
+    target.remove();
+
+    // Si on supprime un bloc texte, on met à jour le HTML
+    saveTextContent();
+    // Si on supprime une image, on met à jour la liste des images
+    autoSaveImages();
+
+    saveState();
+    clearSelection();
 });
 
 // -------------------------
@@ -618,7 +632,6 @@ document.getElementById("save-btn").addEventListener("click", async () => {
 
     alert("Contenu enregistré !");
 });
-
 // -------------------------
 // LIBRAIRIE D'ÉLÉMENTS
 // -------------------------
@@ -720,19 +733,8 @@ function addElementToCanvas(el) {
     }
 }
 
-document.addEventListener("click", (e) => {
-    const block = e.target.closest(".block"); // ou .block-image / .block-text
-    if (!block) return;
-
-    // Retirer la sélection précédente
-    document.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"));
-
-    // Sélectionner le bon bloc
-    block.classList.add("selected");
-    selectedElement = block;
-
-    e.stopPropagation();
-});
+// ⚠️ IMPORTANT : on supprime complètement ce bloc qui cassait la sélection
+// document.addEventListener("click", (e) => { ... });
 
 // -------------------------
 // LANCEMENT
