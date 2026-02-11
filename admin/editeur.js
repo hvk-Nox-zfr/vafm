@@ -184,7 +184,9 @@ function clearSelection() {
 }
 
 // Sélection robuste : on remonte toujours au bloc parent
-editorArea.addEventListener("mousedown", e => {
+const canvasWrapper = document.querySelector(".canvas-wrapper");
+
+canvasWrapper.addEventListener("mousedown", e => {
     const block = e.target.closest(".block-public");
     const textEl = e.target.closest(".editable-text");
 
@@ -217,7 +219,7 @@ editorArea.addEventListener("mousedown", e => {
         }
 
         selectedText = textEl;
-        selectedText.classList.add("selected");
+        textEl.classList.add("selected");
         updatePropertiesPanel("text");
         return;
     }
