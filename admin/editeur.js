@@ -720,6 +720,20 @@ function addElementToCanvas(el) {
     }
 }
 
+document.addEventListener("click", (e) => {
+    const block = e.target.closest(".block"); // ou .block-image / .block-text
+    if (!block) return;
+
+    // Retirer la sélection précédente
+    document.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"));
+
+    // Sélectionner le bon bloc
+    block.classList.add("selected");
+    selectedElement = block;
+
+    e.stopPropagation();
+});
+
 // -------------------------
 // LANCEMENT
 // -------------------------
