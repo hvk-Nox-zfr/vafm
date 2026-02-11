@@ -319,33 +319,21 @@ document.getElementById("add-image").addEventListener("click", () => {
 // SUPPRIMER SÉLECTION
 // -------------------------
 document.getElementById("delete-selected-btn").addEventListener("click", () => {
-    // On utilise la sélection logique, pas querySelector(".selected")
-    let target = null;
+    // On récupère DIRECTEMENT dans le DOM ce qui est sélectionné
+    const imgBlock = document.querySelector(".block-public.selected");
+    const textBlock = document.querySelector(".editable-text.selected");
 
-    if (selectedBlock) {
-        target = selectedBlock;
-    } else if (selectedText) {
-        target = selectedText;
-    }
-
-    if (!target) return;
-
-    const isDeletable =
-        target.classList.contains("block-public") ||
-        target.classList.contains("editable-text");
-
-    if (!isDeletable) {
-        console.warn("Cet élément ne peut pas être supprimé.");
+    const target = imgBlock || textBlock;
+    if (!target) {
+        console.warn("Aucun élément sélectionné.");
         return;
     }
 
     target.remove();
 
-    // Si on supprime un bloc texte, on met à jour le HTML
+    // On met à jour les données
     saveTextContent();
-    // Si on supprime une image, on met à jour la liste des images
     autoSaveImages();
-
     saveState();
     clearSelection();
 });
