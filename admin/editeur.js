@@ -361,6 +361,12 @@ function addImageBlock(data = {}) {
     div.style.userSelect = "none";
     div.style.overflow = "visible";
 
+    // Rotation restaurée
+    if (data.rotation) {
+        div.style.transform = `rotate(${data.rotation}deg)`;
+        div.dataset.rotation = data.rotation;
+    }
+
     const img = document.createElement("img");
     img.src = data.url;
     img.setAttribute("contenteditable", "false");
@@ -375,6 +381,7 @@ function addImageBlock(data = {}) {
 
     div.appendChild(img);
 
+    // --- Handles de redimensionnement ---
     const positions = [
         "top-left", "top", "top-right",
         "right", "bottom-right", "bottom",
@@ -390,7 +397,25 @@ function addImageBlock(data = {}) {
         makeResizable(div, handle, pos);
     });
 
+    // --- Bouton de rotation ---
+    const rotateHandle = document.createElement("div");
+    rotateHandle.className = "rotate-handle";
+    rotateHandle.style.position = "absolute";
+    rotateHandle.style.bottom = "-25px";
+    rotateHandle.style.left = "50%";
+    rotateHandle.style.transform = "translateX(-50%)";
+    rotateHandle.style.width = "20px";
+    rotateHandle.style.height = "20px";
+    rotateHandle.style.borderRadius = "50%";
+    rotateHandle.style.background = "#fff";
+    rotateHandle.style.border = "2px solid #333";
+    rotateHandle.style.cursor = "grab";
+    rotateHandle.style.zIndex = "9999";
+    div.appendChild(rotateHandle);
+
+    makeRotatable(div, rotateHandle);
     makeDraggable(div);
+
     document.querySelector(".canvas-wrapper").appendChild(div);
 }
 
@@ -470,6 +495,44 @@ function makeResizable(el, handle, position) {
         document.addEventListener("mousemove", resize);
         document.addEventListener("mouseup", stopResize);
     });
+    
+function makeRotatable(el, handle) {
+    let isRotating = false;
+
+    handle.addEventListener("mousedown", e => {
+        e.stopPropagation();
+        isRotating = true;
+
+        const rect = el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        function rotate(ev) {
+            if (!isRotating) return;
+
+            const dx = ev.clientX - centerX;
+            const dy = ev.clientY - centerY;
+
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+            el.style.transform = `rotate(${angle}deg)`;
+            el.dataset.rotation = angle;
+        }
+
+        function stopRotate() {
+            if (isRotating) {
+                autoSaveImages();
+                saveState();
+            }
+            isRotating = false;
+            document.removeEventListener("mousemove", rotate);
+            document.removeEventListener("mouseup", stopRotate);
+        }
+
+        document.addEventListener("mousemove", rotate);
+        document.addEventListener("mouseup", stopRotate);
+    });
+}
 
     function resize(e) {
         if (!isResizing) return;
