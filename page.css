@@ -19,13 +19,18 @@
     object-fit: contain;
 }
 
-/* ---------------- CANVAS PUBLIC (IMPORTANT) ---------------- */
+/* Désactiver complètement le bouton hamburger */
+.nav-toggle {
+    display: none !important;
+}
+
+/* ---------------- CANVAS PUBLIC ---------------- */
 
 .canvas-wrapper {
     position: relative;
     width: 100%;
-    max-width: 1000px; /* même largeur que l’éditeur */
-    margin: 40px auto;
+    max-width: 1000px;   /* largeur identique à l’éditeur */
+    margin: 40px auto;   /* centrage */
     min-height: 600px;
 }
 
@@ -35,11 +40,12 @@
     min-height: 600px;
 }
 
+/* (Optionnel) si tu veux garder .actu-canvas */
 .actu-canvas {
-    position: relative;      /* 🎯 indispensable */
-    width: 100%;             /* 🎯 même largeur que l’éditeur */
-    min-height: 600px;       /* 🎯 même hauteur */
-    margin: 0 auto;
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+    margin: 0;
     padding: 0;
     background: transparent;
 }
@@ -47,7 +53,7 @@
 /* ---------------- BLOCS PUBLIC ---------------- */
 
 .block-public {
-    position: absolute;
+    position: absolute;   /* même comportement que dans l’éditeur */
     background: white;
     border-radius: 6px;
     overflow: hidden;
