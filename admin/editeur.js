@@ -76,6 +76,8 @@ function setState(stateStr) {
 }
 
 function saveState() {
+    if (isReloading) return; // 🔥 empêche les doublons
+
     const state = getState();
     if (history.length === 0 || history[history.length - 1] !== state) {
         history.push(state);
@@ -137,9 +139,10 @@ async function uploadImage(file) {
 function reloadEditor(pushHistory = true) {
     if (!actu) return;
 
+    isReloading = true; // 🔥 empêche saveState() de s’exécuter
+
     editorArea.innerHTML = actu.contenu.texte || "";
 
-    // Si aucun élément n'a la classe editable-text, on en crée un
     if (!editorArea.querySelector(".editable-text")) {
         const wrapper = document.createElement("div");
         wrapper.className = "editable-text";
@@ -148,19 +151,20 @@ function reloadEditor(pushHistory = true) {
         editorArea.innerHTML = "";
         editorArea.appendChild(wrapper);
     } else {
-        // S'assurer que tous les blocs texte sont bien éditables
         editorArea.querySelectorAll(".editable-text").forEach(el => {
             el.setAttribute("contenteditable", "true");
         });
     }
 
-    // On enlève d'éventuels blocs images résiduels (ils seront recréés)
-    [...editorArea.querySelectorAll(".block-public")].forEach(el => el.remove());
+    // Supprimer les anciennes images
+    document.querySelectorAll(".canvas-wrapper .block-public").forEach(el => el.remove());
 
-    // On recrée les images flottantes
+    // Recréer les images
     actu.contenu.images.forEach(imgData => addImageBlock(imgData));
 
     attachTextHandlers();
+
+    isReloading = false; // 🔥 on réactive l’historique
 
     if (pushHistory) {
         saveState();
