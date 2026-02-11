@@ -361,12 +361,23 @@ function addImageBlock(data = {}) {
     div.style.userSelect = "none";
     div.style.overflow = "visible";
 
-    // Rotation restaurée
+    // --- WRAPPER POUR LA ROTATION ---
+    const rot = document.createElement("div");
+    rot.className = "rotatable";
+    rot.style.position = "absolute";
+    rot.style.top = "0";
+    rot.style.left = "0";
+    rot.style.width = "100%";
+    rot.style.height = "100%";
+    rot.style.transformOrigin = "center center";
+
+    // Restaurer la rotation
     if (data.rotation) {
-        div.style.transform = `rotate(${data.rotation}deg)`;
-        div.dataset.rotation = data.rotation;
+        rot.style.transform = `rotate(${data.rotation}deg)`;
+        rot.dataset.rotation = data.rotation;
     }
 
+    // --- IMAGE ---
     const img = document.createElement("img");
     img.src = data.url;
     img.setAttribute("contenteditable", "false");
@@ -379,7 +390,8 @@ function addImageBlock(data = {}) {
     img.draggable = false;
     img.style.pointerEvents = "auto";
 
-    div.appendChild(img);
+    rot.appendChild(img);
+    div.appendChild(rot);
 
     // --- Handles de redimensionnement ---
     const positions = [
@@ -411,6 +423,7 @@ function addImageBlock(data = {}) {
     rotateHandle.style.border = "2px solid #333";
     rotateHandle.style.cursor = "grab";
     rotateHandle.style.zIndex = "9999";
+
     div.appendChild(rotateHandle);
 
     makeRotatable(div, rotateHandle);
