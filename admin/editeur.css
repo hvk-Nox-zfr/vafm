@@ -211,8 +211,11 @@ input[type="range"] {
 }
 
 .block-public.selected {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 1px #2563eb;
+    outline: 2px solid #ff3366;
+}
+
+.editable-text.selected {
+    outline: 2px solid #3366ff;
 }
 
 .block-public.cropping {
