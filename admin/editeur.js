@@ -351,17 +351,15 @@ document.getElementById("delete-selected-btn").addEventListener("click", () => {
 function addImageBlock(data = {}) {
     const div = document.createElement("div");
     div.className = "block-public";
-    div.setAttribute("contenteditable", "false");
-
+    div.style.position = "absolute";
     div.style.left = data.x || "100px";
     div.style.top = data.y || "100px";
     div.style.width = data.width || "300px";
     div.style.height = data.height || "200px";
-    div.style.position = "absolute";
     div.style.userSelect = "none";
     div.style.overflow = "visible";
 
-    // --- WRAPPER POUR LA ROTATION ---
+    // --- WRAPPER ROTATABLE ---
     const rot = document.createElement("div");
     rot.className = "rotatable";
     rot.style.position = "absolute";
@@ -371,7 +369,6 @@ function addImageBlock(data = {}) {
     rot.style.height = "100%";
     rot.style.transformOrigin = "center center";
 
-    // Restaurer la rotation
     if (data.rotation) {
         rot.style.transform = `rotate(${data.rotation}deg)`;
         rot.dataset.rotation = data.rotation;
@@ -380,36 +377,16 @@ function addImageBlock(data = {}) {
     // --- IMAGE ---
     const img = document.createElement("img");
     img.src = data.url;
-    img.setAttribute("contenteditable", "false");
     img.style.position = "absolute";
     img.style.left = data.offsetX || "0px";
     img.style.top = data.offsetY || "0px";
     img.style.width = data.imgWidth || "100%";
     img.style.height = data.imgHeight || "100%";
     img.style.objectFit = "contain";
-    img.draggable = false;
-    img.style.pointerEvents = "auto";
 
     rot.appendChild(img);
-    div.appendChild(rot);
 
-    // --- Handles de redimensionnement ---
-    const positions = [
-        "top-left", "top", "top-right",
-        "right", "bottom-right", "bottom",
-        "bottom-left", "left"
-    ];
-
-    positions.forEach(pos => {
-        const handle = document.createElement("div");
-        handle.className = `resize-handle ${pos}`;
-        handle.style.pointerEvents = "auto";
-        handle.style.zIndex = "9999";
-        div.appendChild(handle);
-        makeResizable(div, handle, pos);
-    });
-
-    // --- Bouton de rotation ---
+    // --- BOUTON DE ROTATION (DANS LE WRAPPER) ---
     const rotateHandle = document.createElement("div");
     rotateHandle.className = "rotate-handle";
     rotateHandle.style.position = "absolute";
@@ -424,7 +401,19 @@ function addImageBlock(data = {}) {
     rotateHandle.style.cursor = "grab";
     rotateHandle.style.zIndex = "9999";
 
-    div.appendChild(rotateHandle);
+    rot.appendChild(rotateHandle);
+
+    div.appendChild(rot);
+
+    // --- HANDLES DE REDIMENSIONNEMENT ---
+    const positions = ["top-left","top","top-right","right","bottom-right","bottom","bottom-left","left"];
+    positions.forEach(pos => {
+        const handle = document.createElement("div");
+        handle.className = `resize-handle ${pos}`;
+        handle.style.zIndex = "9999";
+        div.appendChild(handle);
+        makeResizable(div, handle, pos);
+    });
 
     makeRotatable(div, rotateHandle);
     makeDraggable(div);
