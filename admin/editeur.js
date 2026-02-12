@@ -385,18 +385,19 @@ function addImageBlock(data = {}) {
     img.style.objectFit = "contain";
 
     rot.appendChild(img);
+    div.appendChild(rot);
 
-    // --- HANDLES DE REDIMENSIONNEMENT (DANS LE WRAPPER) ---
+    // --- HANDLES DE REDIMENSIONNEMENT (SUR div, PAS rot) ---
     const positions = ["top-left","top","top-right","right","bottom-right","bottom","bottom-left","left"];
     positions.forEach(pos => {
         const handle = document.createElement("div");
         handle.className = `resize-handle ${pos}`;
         handle.style.zIndex = "9999";
-        rot.appendChild(handle); // 🔥 ICI, PAS SUR div
-        makeResizable(rot, handle, pos);
+        div.appendChild(handle); // 🔥 SUR div
+        makeResizable(div, handle, pos); // 🔥 SUR div
     });
 
-    // --- BOUTON DE ROTATION (DANS LE WRAPPER) ---
+    // --- BOUTON DE ROTATION (DANS rot) ---
     const rotateHandle = document.createElement("div");
     rotateHandle.className = "rotate-handle";
     rotateHandle.style.position = "absolute";
@@ -413,10 +414,8 @@ function addImageBlock(data = {}) {
 
     rot.appendChild(rotateHandle);
 
-    div.appendChild(rot);
-
-    makeRotatable(rot, rotateHandle); // 🔥 rotation sur rot, pas sur div
-    makeDraggable(div);
+    makeRotatable(rot, rotateHandle); // rotation sur rot
+    makeDraggable(div); // drag sur div
 
     document.querySelector(".canvas-wrapper").appendChild(div);
 }
