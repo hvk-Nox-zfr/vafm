@@ -544,14 +544,14 @@ function makeResizable(el, handle, position) {
 // -------------------------
 // ROTATION BLOC
 // -------------------------
-function makeRotatable(el, handle) {
+function makeRotatable(rot, handle) {
     let isRotating = false;
 
     handle.addEventListener("mousedown", e => {
         e.stopPropagation();
         isRotating = true;
 
-        const rect = el.getBoundingClientRect();
+        const rect = rot.parentElement.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
 
@@ -563,8 +563,8 @@ function makeRotatable(el, handle) {
 
             const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-            el.style.transform = `rotate(${angle}deg)`;
-            el.dataset.rotation = angle;
+            rot.style.transform = `rotate(${angle}deg)`;
+            rot.dataset.rotation = angle;
         }
 
         function stopRotate() {
