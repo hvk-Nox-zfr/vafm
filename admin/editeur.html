@@ -15,7 +15,6 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <body class="admin">
 
-<!-- BARRE DU HAUT (éditeur) -->
 <header class="topbar">
     <div class="topbar-left">
         <button id="back-btn" class="btn ghost">← Retour</button>
@@ -32,15 +31,15 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <div class="layout">
 
-    <!-- BARRE CANVA (icônes) -->
+    <!-- BARRE CANVA -->
     <aside class="canva-sidebar">
-        <div class="canva-icon" data-panel="assets" title="Éléments">🧩</div>
-        <div class="canva-icon" data-panel="images" title="Images">🖼</div>
-        <div class="canva-icon" data-panel="text" title="Texte">✏️</div>
-        <div class="canva-icon" data-panel="templates" title="Templates">📄</div>
+        <div class="canva-icon" data-panel="assets">🧩</div>
+        <div class="canva-icon" data-panel="images">🖼</div>
+        <div class="canva-icon" data-panel="text">✏️</div>
+        <div class="canva-icon" data-panel="templates">📄</div>
     </aside>
 
-    <!-- PANNEAUX DÉROULANTS -->
+    <!-- PANNEAUX -->
     <aside class="canva-panel" id="panel-assets">
         <h2>Éléments</h2>
         <input id="element-search" class="search-input" placeholder="Rechercher un élément…">
@@ -64,11 +63,11 @@ if (localStorage.getItem("admin_logged") !== "true") {
         <p>À venir…</p>
     </aside>
 
-    <!-- ZONE CENTRALE : PAGE PUBLIQUE + CALQUE D'ÉDITION -->
+    <!-- ZONE CENTRALE -->
     <main class="main">
         <div class="canvas-wrapper">
 
-            <!-- COPIE EXACTE DE TA PAGE PUBLIQUE -->
+            <!-- PAGE PUBLIQUE -->
             <div id="public-page" class="canvas">
 
                 <header class="public-header">
@@ -76,8 +75,8 @@ if (localStorage.getItem("admin_logged") !== "true") {
                         <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
                     </div>
 
-                    <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
-                        <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
+                    <a href="index.html" class="logo-home">
+                        <svg viewBox="0 0 24 24" class="home-icon">
                             <defs>
                                 <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
                                     <stop offset="0%" stop-color="#ff3366" />
@@ -91,18 +90,18 @@ if (localStorage.getItem("admin_logged") !== "true") {
                     <button class="nav-toggle">☰</button>
                 </header>
 
-                <!-- Zone texte article (injectée par editeur.js) -->
+                <!-- ZONE TEXTE ARTICLE -->
                 <div id="editor-area" class="public-content"></div>
 
             </div>
 
-            <!-- CALQUE D'ÉDITION (blocs flottants) -->
+            <!-- CALQUE D'ÉDITION -->
             <div id="editor-layer" class="editor-layer"></div>
 
         </div>
     </main>
 
-    <!-- PANNEAU DE PROPRIÉTÉS -->
+    <!-- PROPRIÉTÉS -->
     <aside class="properties">
         <h2>Propriétés</h2>
 
@@ -113,10 +112,10 @@ if (localStorage.getItem("admin_logged") !== "true") {
         <div id="text-panel" class="prop-panel hidden">
             <h3>Texte</h3>
             <label>Taille</label>
-            <input type="number" id="text-font-size" min="8" max="80" value="18">
+            <input type="number" id="text-font-size">
 
             <label>Couleur</label>
-            <input type="color" id="text-color" value="#000000">
+            <input type="color" id="text-color">
 
             <label>Alignement</label>
             <div class="btn-group">
@@ -135,20 +134,16 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
         <div id="image-panel" class="prop-panel hidden">
             <h3>Image</h3>
-            <label>Largeur du cadre</label>
-            <input type="range" id="img-frame-width" min="100" max="800" value="200">
+            <label>Largeur</label>
+            <input type="range" id="img-frame-width">
 
-            <label>Hauteur du cadre</label>
-            <input type="range" id="img-frame-height" min="80" max="600" value="150">
-
-            <p style="margin-top:10px;">Mode rognage :</p>
-            <p class="hint">Clique sur “✂️ Rogner l’image”, puis déplace l’image dans le cadre.</p>
+            <label>Hauteur</label>
+            <input type="range" id="img-frame-height">
         </div>
     </aside>
 
 </div>
 
-<!-- SCRIPTS -->
 <script type="module" src="editeur.js"></script>
 <script type="module" src="supabase-init.js"></script>
 
@@ -157,9 +152,7 @@ if (localStorage.getItem("admin_logged") !== "true") {
     const panels = document.querySelectorAll(".canva-panel");
 
     icons.forEach(icon => {
-        const panelId = icon.dataset.panel;
-        const panel = document.getElementById("panel-" + panelId);
-
+        const panel = document.getElementById("panel-" + icon.dataset.panel);
         icon.addEventListener("mouseenter", () => {
             panels.forEach(p => p.classList.remove("open"));
             panel.classList.add("open");
@@ -168,12 +161,11 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
     panels.forEach(panel => {
         panel.addEventListener("mouseleave", () => {
-            panel.classList.remove("open");
+            panel.classList.remove("open"));
         });
     });
 </script>
 
 </body>
 </html>
-
 
