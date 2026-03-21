@@ -1,121 +1,174 @@
 /* RESET */
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-html, body { height: 100%; overflow: hidden; }
-body { background: #f3f4f6; color: #111827; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+body {
+    background: #f3f4f6;
+    color: #111827;
+}
 
-/* TOPBAR */
-.topbar { height: 56px; background: #111827; color: white; display: flex; align-items: center; padding: 0 16px; justify-content: space-between; }
-.topbar-left, .topbar-right { display: flex; gap: 8px; }
+/* TOPBAR (éditeur) */
+.topbar {
+    height: 56px;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    justify-content: space-between;
+}
+.topbar-left, .topbar-right {
+    display: flex;
+    gap: 8px;
+}
 
-/* LAYOUT */
+/* LAYOUT PRINCIPAL */
 .layout {
-  display: grid;
-  grid-template-columns: 56px 0 1fr 260px; 
-  /* 56px = barre d'icônes Canva
-     0 / 220px = panneau déroulant (largeur animée)
-     1fr = zone centrale (page publique + calque)
-     260px = propriétés */
-  height: calc(100vh - 56px);
-  overflow: hidden;
+    display: grid;
+    grid-template-columns: 56px 0 1fr 260px;
+    height: calc(100vh - 56px);
+    overflow: hidden;
 }
 
-/* SIDEBAR */
-.sidebar { background: #1f2937; color: white; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-.sidebar h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; }
-.sidebar hr { border: none; border-top: 1px solid #374151; margin: 8px 0; }
+/* BARRE CANVA (icônes) */
+.canva-sidebar {
+    background: #111827;
+    color: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 8px;
+}
+.canva-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: background 0.15s, transform 0.1s;
+}
+.canva-icon:hover {
+    background: #2563eb;
+    transform: translateX(2px);
+}
 
-/* CANVAS WRAPPER */
-.main { display: flex; flex-direction: column; height: 100%; overflow: hidden; padding: 16px; }
-.canvas-wrapper { position: relative; flex: 1; width: 100%; height: 100%; background: #e5e7eb; border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: auto; }
+/* PANNEAUX DÉROULANTS */
+.canva-panel {
+    background: #111827;
+    color: #f9fafb;
+    overflow: hidden;
+    width: 0;
+    padding: 16px 0;
+    transition: width 0.2s ease, padding 0.2s ease;
+}
+.canva-panel.open {
+    width: 220px;
+    padding: 16px;
+}
+.canva-panel h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+}
 
-/* CANVAS (zone de rendu publique) */
+/* ZONE CENTRALE */
+.main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding: 16px;
+}
+.canvas-wrapper {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background: #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    overflow: auto;
+}
+
+/* PAGE PUBLIQUE (copie) */
 .canvas {
-  background: white;
-  width: 100%;
-  max-width: 1200px; /* largeur de travail / preset desktop */
-  min-height: 100%;
-  border-radius: 8px;
-  box-shadow: 0 0 0 1px #d1d5db;
-  padding: 24px;
-  margin: 0 auto;
-  position: relative;
+    background: white;
+    width: 100%;
+    max-width: 1200px;
+    min-height: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px #d1d5db;
+    padding: 24px;
+    margin: 0 auto;
+    position: relative;
 }
 
-/* EDITOR LAYER (calque d'édition au-dessus du rendu public) */
+/* CALQUE D'ÉDITION */
 .editor-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none; /* par défaut inactif, les blocs ont pointer-events:auto */
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
 }
 
-/* PROPRIÉTÉS */
-.properties { background: #f9fafb; border-left: 1px solid #e5e7eb; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
-.properties h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; }
-.prop-panel { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
-.hidden { display: none !important; }
-
-/* INPUTS */
-label { font-size: 12px; color: #4b5563; }
-input[type="number"], input[type="color"], input[type="range"] { width: 100%; margin-top: 4px; }
-
-/* BOUTONS */
-.btn { border: none; border-radius: 6px; padding: 6px 10px; font-size: 13px; cursor: pointer; background: #e5e7eb; color: #111827; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
-.btn.full { width: 100%; justify-content: flex-start; }
-.btn.small { padding: 4px 8px; font-size: 12px; }
-.btn.primary { background: #2563eb; color: white; }
-.btn.ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); }
-.btn.danger { background: #ef4444; color: white; }
-.btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
-
-/* TEXTE */
-.editable-text { display: inline-block; min-width: 40px; min-height: 20px; padding: 4px 6px; border-radius: 4px; cursor: text; user-select: text; }
-.editable-text.selected { outline: 2px solid #3366ff; }
-
-/* BLOCS IMAGES / BLOC EDITABLE */
+/* BLOCS ÉDITABLES */
 .block-public {
-  position: absolute;
-  border-radius: 4px;
-  border: 1px solid transparent;
-  overflow: visible;
-  pointer-events: auto; /* important: les blocs reçoivent les événements */
-  touch-action: none;
-  transition: box-shadow 120ms ease;
+    position: absolute;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    overflow: visible;
+    pointer-events: auto;
+    touch-action: none;
+    transition: box-shadow 120ms ease;
 }
-.block-public.selected { outline: 2px solid #ff3366; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+.block-public.selected {
+    outline: 2px solid #ff3366;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
 
-/* ROTATABLE WRAPPER (contient l'image et le rotate-handle) */
+/* ROTATION WRAPPER */
 .rotatable {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform-origin: center center;
-  pointer-events: auto; /* reçoit les événements pour la rotation */
-  user-select: none;
+    position: absolute;
+    inset: 0;
+    transform-origin: center center;
+    pointer-events: auto;
+    user-select: none;
 }
 
-/* IMAGE DANS LE BLOC */
+/* IMAGE */
 .block-public img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: auto; /* laisse l'image interagir si besoin (ex: crop) */
-  user-select: none;
-  display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: auto;
+    user-select: none;
+    display: block;
 }
 
-/* HANDLES REDIMENSIONNEMENT */
+/* HANDLES DE REDIMENSIONNEMENT */
 .resize-handle {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: #fff;
-  border: 2px solid #2563eb;
-  border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-  pointer-events: auto;
-  touch-action: none;
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 2px solid #2563eb;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+    pointer-events: auto;
+    touch-action: none;
 }
 .resize-handle.top-left { top: -8px; left: -8px; cursor: nwse-resize; }
 .resize-handle.top { top: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
@@ -128,135 +181,159 @@ input[type="number"], input[type="color"], input[type="range"] { width: 100%; ma
 
 /* BOUTON DE ROTATION */
 .rotate-handle {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #333;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  cursor: grab;
-  z-index: 9999;
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #333;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: grab;
+    z-index: 9999;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
 }
 
+/* TEXTE ÉDITABLE */
+.editable-text {
+    display: inline-block;
+    min-width: 40px;
+    min-height: 20px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: text;
+    user-select: text;
+}
+.editable-text.selected {
+    outline: 2px solid #3366ff;
+}
+
+/* PANNEAU DE PROPRIÉTÉS */
+.properties {
+    background: #f9fafb;
+    border-left: 1px solid #e5e7eb;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+.properties h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+}
+.prop-panel {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.hidden {
+    display: none !important;
+}
+
+/* INPUTS */
+label {
+    font-size: 12px;
+    color: #4b5563;
+}
+input[type="number"],
+input[type="color"],
+input[type="range"] {
+    width: 100%;
+    margin-top: 4px;
+}
+
+/* BOUTONS */
+.btn {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #e5e7eb;
+    color: #111827;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.btn.full { width: 100%; justify-content: flex-start; }
+.btn.small { padding: 4px 8px; font-size: 12px; }
+.btn.primary { background: #2563eb; color: white; }
+.btn.ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); }
+.btn.danger { background: #ef4444; color: white; }
+.btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
 /* RECHERCHE D'ÉLÉMENTS */
-.search-input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #374151; background: #111827; color: white; font-size: 13px; outline: none; transition: 0.2s; }
+.search-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #374151;
+    background: #111827;
+    color: white;
+    font-size: 13px;
+    outline: none;
+    transition: 0.2s;
+}
 .search-input::placeholder { color: #9ca3af; }
-.search-input:focus { border-color: #2563eb; background: #0f172a; }
+.search-input:focus {
+    border-color: #2563eb;
+    background: #0f172a;
+}
 
 /* GRID DES ÉLÉMENTS */
-.elements-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
-.element-item { width: 60px; height: 60px; background: #111827; border: 1px solid #374151; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; padding: 6px; transition: 0.15s; }
-.element-item:hover { background: #1e293b; border-color: #2563eb; }
-.element-item svg { width: 100%; height: 100%; fill: white; }
-.element-item img { width: 100%; height: 100%; object-fit: contain; }
+.elements-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.element-item {
+    width: 60px;
+    height: 60px;
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    padding: 6px;
+    transition: 0.15s;
+}
+.element-item:hover {
+    background: #1e293b;
+    border-color: #2563eb;
+}
+.element-item svg {
+    width: 100%;
+    height: 100%;
+    fill: white;
+}
+.element-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
 
 /* SCROLLBAR */
 .elements-grid::-webkit-scrollbar { width: 6px; }
-.elements-grid::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+.elements-grid::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
+}
 .elements-grid::-webkit-scrollbar-track { background: transparent; }
-
-/* BARRE LATERALE TYPE CANVA (icônes) */
-.canva-sidebar {
-  background: #111827;
-  color: #f9fafb;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 0;
-  gap: 8px;
-}
-
-.canva-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: #1f2937;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 20px;
-  transition: background 0.15s, transform 0.1s;
-}
-
-.canva-icon:hover {
-  background: #2563eb;
-  transform: translateX(2px);
-}
-
-/* PANNEAUX DÉROULANTS LIES AUX ICONES */
-.canva-panel {
-  background: #111827;
-  color: #f9fafb;
-  overflow: hidden;
-  width: 0;
-  padding: 16px 0;
-  transition: width 0.2s ease, padding 0.2s ease;
-}
-
-.canva-panel.open {
-  width: 220px;
-  padding: 16px;
-}
-
-.canva-panel h2 {
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
-}
-
-/* ADAPTATION DE LA ZONE CENTRALE */
-.main {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  padding: 16px;
-}
-
-.canvas-wrapper {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  background: #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-  overflow: auto;
-}
-
-/* PAGE PUBLIQUE (déjà ok) */
-.canvas {
-  background: white;
-  width: 100%;
-  max-width: 1200px;
-  min-height: 100%;
-  border-radius: 8px;
-  box-shadow: 0 0 0 1px #d1d5db;
-  padding: 24px;
-  margin: 0 auto;
-  position: relative;
-}
-
-/* CALQUE D'ÉDITION (déjà ok mais je le remets pour clarté) */
-.editor-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.block-public {
-  position: absolute;
-  pointer-events: auto;
-}
 
