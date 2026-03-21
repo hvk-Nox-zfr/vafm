@@ -33,21 +33,13 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
     <!-- BARRE LATERALE TYPE CANVA -->
     <aside class="canva-sidebar">
-        <div class="canva-icon" data-panel="assets" title="Éléments">
-            🧩
-        </div>
-        <div class="canva-icon" data-panel="images" title="Images">
-            🖼
-        </div>
-        <div class="canva-icon" data-panel="text" title="Texte">
-            ✏️
-        </div>
-        <div class="canva-icon" data-panel="templates" title="Templates">
-            📄
-        </div>
+        <div class="canva-icon" data-panel="assets" title="Éléments">🧩</div>
+        <div class="canva-icon" data-panel="images" title="Images">🖼</div>
+        <div class="canva-icon" data-panel="text" title="Texte">✏️</div>
+        <div class="canva-icon" data-panel="templates" title="Templates">📄</div>
     </aside>
 
-    <!-- PANNEAUX DÉROULANTS LIES AUX ICONES -->
+    <!-- PANNEAUX DÉROULANTS -->
     <aside class="canva-panel" id="panel-assets">
         <h2>Éléments</h2>
         <input id="element-search" class="search-input" placeholder="Rechercher un élément…">
@@ -74,20 +66,39 @@ if (localStorage.getItem("admin_logged") !== "true") {
     <!-- ZONE CENTRALE : PAGE PUBLIQUE + CALQUE D'ÉDITION -->
     <main class="main">
         <div class="canvas-wrapper">
-            <!-- PAGE PUBLIQUE (copie de ta page réelle) -->
+
+            <!-- COPIE EXACTE DE TA PAGE PUBLIQUE -->
             <div id="public-page" class="canvas">
-                <!-- header / logo / etc. -->
-                <header class="public-header">
-                    <img src="logo-vafm.png" alt="VAFM" class="public-logo">
-                    <a href="/" class="public-home">🏠</a>
+
+                <header class="topbar public-header">
+                    <div class="logo">
+                        <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
+                    </div>
+
+                    <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
+                        <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                                    <stop offset="0%" stop-color="#ff3366" />
+                                    <stop offset="100%" stop-color="#8b5bff" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M3 10L12 3L21 10V21H14V14H10V21H3V10Z" />
+                        </svg>
+                    </a>
+
+                    <button class="nav-toggle">☰</button>
                 </header>
 
-                <!-- zone texte article -->
-                <div id="editor-area" class="public-content"></div>
+                <main>
+                    <div id="editor-area" class="public-content"></div>
+                </main>
+
             </div>
 
-            <!-- CALQUE D'ÉDITION POUR LES BLOCS -->
+            <!-- CALQUE D'ÉDITION -->
             <div id="editor-layer" class="editor-layer"></div>
+
         </div>
     </main>
 
@@ -141,7 +152,6 @@ if (localStorage.getItem("admin_logged") !== "true") {
 <script type="module" src="supabase-init.js"></script>
 
 <script>
-    // ouverture au survol façon Canva
     const icons = document.querySelectorAll(".canva-icon");
     const panels = document.querySelectorAll(".canva-panel");
 
@@ -155,7 +165,6 @@ if (localStorage.getItem("admin_logged") !== "true") {
         });
     });
 
-    // fermer quand on sort de la zone panel + sidebar
     panels.forEach(panel => {
         panel.addEventListener("mouseleave", () => {
             panel.classList.remove("open");
@@ -165,4 +174,5 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 </body>
 </html>
+
 
