@@ -67,10 +67,10 @@ if (localStorage.getItem("admin_logged") !== "true") {
     <main class="main">
         <div class="canvas-wrapper">
 
-            <!-- PAGE PUBLIQUE -->
+            <!-- PAGE PUBLIQUE (copie réelle) -->
             <div id="public-page" class="canvas">
 
-                <header class="public-header">
+                <header class="topbar public-header">
                     <div class="logo">
                         <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
                     </div>
@@ -90,8 +90,12 @@ if (localStorage.getItem("admin_logged") !== "true") {
                     <button class="nav-toggle">☰</button>
                 </header>
 
-                <!-- ZONE TEXTE ARTICLE -->
-                <div id="editor-area" class="public-content"></div>
+                <!-- CONTENU PUBLIC -->
+                <main class="public-main">
+                    <div class="public-canvas-wrapper">
+                        <div id="editor-area" class="public-content"></div>
+                    </div>
+                </main>
 
             </div>
 
