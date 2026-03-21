@@ -31,64 +31,63 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <div class="layout">
 
-    <!-- SIDEBAR GAUCHE — STYLE CANVA -->
-    <aside class="sidebar">
-        <h2>Éléments</h2>
-
-        <input id="element-search" class="search-input" placeholder="Rechercher…">
-
-        <div class="sidebar-tabs">
-            <button class="sidebar-tab active" data-tab="elements">🧩 Éléments</button>
-            <button class="sidebar-tab" data-tab="images">🖼 Images</button>
-            <button class="sidebar-tab" data-tab="text">✏️ Texte</button>
-            <button class="sidebar-tab" data-tab="presets">📄 Templates</button>
+    <!-- BARRE LATERALE TYPE CANVA -->
+    <aside class="canva-sidebar">
+        <div class="canva-icon" data-panel="assets" title="Éléments">
+            🧩
         </div>
-
-        <div id="tab-elements" class="sidebar-content active">
-            <div id="elements-results" class="elements-grid"></div>
+        <div class="canva-icon" data-panel="images" title="Images">
+            🖼
         </div>
-
-        <div id="tab-images" class="sidebar-content">
-            <button id="add-image" class="btn full">+ Importer une image</button>
+        <div class="canva-icon" data-panel="text" title="Texte">
+            ✏️
         </div>
-
-        <div id="tab-text" class="sidebar-content">
-            <button id="add-title" class="btn full">+ Titre</button>
-            <button id="add-subtitle" class="btn full">+ Sous-titre</button>
-            <button id="add-paragraph" class="btn full">+ Paragraphe</button>
+        <div class="canva-icon" data-panel="templates" title="Templates">
+            📄
         </div>
-
-        <div id="tab-presets" class="sidebar-content">
-            <p>Templates à venir…</p>
-        </div>
-
-        <hr>
-
-        <h2>Outils</h2>
-        <button id="crop-toggle-btn" class="btn full">✂️ Rogner l’image</button>
-        <button id="delete-selected-btn" class="btn full danger">🗑 Supprimer</button>
     </aside>
 
-    <!-- ZONE CENTRALE — PAGE PUBLIQUE + CALQUE D'ÉDITION -->
+    <!-- PANNEAUX DÉROULANTS LIES AUX ICONES -->
+    <aside class="canva-panel" id="panel-assets">
+        <h2>Éléments</h2>
+        <input id="element-search" class="search-input" placeholder="Rechercher un élément…">
+        <div id="elements-results" class="elements-grid"></div>
+    </aside>
+
+    <aside class="canva-panel" id="panel-images">
+        <h2>Images</h2>
+        <button id="add-image" class="btn full">+ Importer une image</button>
+    </aside>
+
+    <aside class="canva-panel" id="panel-text">
+        <h2>Texte</h2>
+        <button id="add-title" class="btn full">+ Titre</button>
+        <button id="add-subtitle" class="btn full">+ Sous-titre</button>
+        <button id="add-paragraph" class="btn full">+ Paragraphe</button>
+    </aside>
+
+    <aside class="canva-panel" id="panel-templates">
+        <h2>Templates</h2>
+        <p>À venir…</p>
+    </aside>
+
+    <!-- ZONE CENTRALE : PAGE PUBLIQUE + CALQUE D'ÉDITION -->
     <main class="main">
         <div class="canvas-wrapper">
-
-            <!-- PAGE PUBLIQUE EXACTE -->
-            <div id="public-page" class="public-page">
-                <!-- ⚠️ COLLE ICI LE HTML EXACT DE TA PAGE PUBLIQUE -->
+            <!-- PAGE PUBLIQUE (copie de ta page réelle) -->
+            <div id="public-page" class="canvas">
+                <!-- header / logo / etc. -->
                 <header class="public-header">
-                    <img src="logo.png" class="logo">
-                    <a href="/" class="home-btn">🏠</a>
+                    <img src="logo-vafm.png" alt="VAFM" class="public-logo">
+                    <a href="/" class="public-home">🏠</a>
                 </header>
 
-                <div id="editor-area" class="public-content">
-                    <!-- Le texte de l’article sera injecté ici -->
-                </div>
+                <!-- zone texte article -->
+                <div id="editor-area" class="public-content"></div>
             </div>
 
-            <!-- CALQUE D'ÉDITION -->
+            <!-- CALQUE D'ÉDITION POUR LES BLOCS -->
             <div id="editor-layer" class="editor-layer"></div>
-
         </div>
     </main>
 
@@ -125,10 +124,10 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
         <div id="image-panel" class="prop-panel hidden">
             <h3>Image</h3>
-            <label>Largeur</label>
+            <label>Largeur du cadre</label>
             <input type="range" id="img-frame-width" min="100" max="800" value="200">
 
-            <label>Hauteur</label>
+            <label>Hauteur du cadre</label>
             <input type="range" id="img-frame-height" min="80" max="600" value="150">
 
             <p style="margin-top:10px;">Mode rognage :</p>
@@ -140,7 +139,30 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <script type="module" src="editeur.js"></script>
 <script type="module" src="supabase-init.js"></script>
+
+<script>
+    // ouverture au survol façon Canva
+    const icons = document.querySelectorAll(".canva-icon");
+    const panels = document.querySelectorAll(".canva-panel");
+
+    icons.forEach(icon => {
+        const panelId = icon.dataset.panel;
+        const panel = document.getElementById("panel-" + panelId);
+
+        icon.addEventListener("mouseenter", () => {
+            panels.forEach(p => p.classList.remove("open"));
+            panel.classList.add("open");
+        });
+    });
+
+    // fermer quand on sort de la zone panel + sidebar
+    panels.forEach(panel => {
+        panel.addEventListener("mouseleave", () => {
+            panel.classList.remove("open");
+        });
+    });
+</script>
+
 </body>
 </html>
-
 
