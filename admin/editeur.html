@@ -31,28 +31,57 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <div class="layout">
 
-    <!-- SIDEBAR GAUCHE -->
+    <!-- SIDEBAR GAUCHE — VERSION CANVA -->
     <aside class="sidebar">
         <h2>Éléments</h2>
-        <!-- 🔍 Barre de recherche Canva-like -->
-        <input id="element-search" class="search-input" placeholder="Rechercher un élément…">
 
-        <!-- 🧩 Résultats de recherche -->
-        <div id="elements-results" class="elements-grid"></div>
+        <input id="element-search" class="search-input" placeholder="Rechercher…">
 
-        <button id="add-image" class="btn full">+ Image</button>
+        <div class="sidebar-tabs">
+            <button class="sidebar-tab active" data-tab="elements">🧩 Éléments</button>
+            <button class="sidebar-tab" data-tab="images">🖼 Images</button>
+            <button class="sidebar-tab" data-tab="text">✏️ Texte</button>
+            <button class="sidebar-tab" data-tab="presets">📄 Templates</button>
+        </div>
+
+        <!-- CONTENU DES TABS -->
+        <div id="tab-elements" class="sidebar-content active">
+            <div id="elements-results" class="elements-grid"></div>
+        </div>
+
+        <div id="tab-images" class="sidebar-content">
+            <button id="add-image" class="btn full">+ Importer une image</button>
+        </div>
+
+        <div id="tab-text" class="sidebar-content">
+            <button id="add-title" class="btn full">+ Titre</button>
+            <button id="add-subtitle" class="btn full">+ Sous-titre</button>
+            <button id="add-paragraph" class="btn full">+ Paragraphe</button>
+        </div>
+
+        <div id="tab-presets" class="sidebar-content">
+            <p>Templates à venir…</p>
+        </div>
 
         <hr>
 
         <h2>Outils</h2>
         <button id="crop-toggle-btn" class="btn full">✂️ Rogner l’image</button>
-        <button id="delete-selected-btn" class="btn full danger">🗑 Supprimer l’élément</button>
+        <button id="delete-selected-btn" class="btn full danger">🗑 Supprimer</button>
     </aside>
 
-    <!-- ZONE CENTRALE -->
+    <!-- ZONE CENTRALE — PAGE PUBLIQUE + CALQUE D'ÉDITION -->
     <main class="main">
         <div class="canvas-wrapper">
-            <div id="editor-area" class="canvas"></div>
+
+            <!-- PAGE PUBLIQUE (structure identique au site) -->
+            <div id="public-page" class="canvas">
+                <div id="editor-area"></div>
+            </div>
+
+            <!-- CALQUE D'ÉDITION -->
+            <div id="editor-layer"></div>
+
         </div>
     </main>
 
@@ -62,7 +91,6 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
         <div id="no-selection-panel">
             <p>Aucun élément sélectionné.</p>
-            <p>Clique sur un texte ou une image.</p>
         </div>
 
         <div id="text-panel" class="prop-panel hidden">
@@ -90,10 +118,10 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
         <div id="image-panel" class="prop-panel hidden">
             <h3>Image</h3>
-            <label>Largeur du cadre</label>
+            <label>Largeur</label>
             <input type="range" id="img-frame-width" min="100" max="800" value="200">
 
-            <label>Hauteur du cadre</label>
+            <label>Hauteur</label>
             <input type="range" id="img-frame-height" min="80" max="600" value="150">
 
             <p style="margin-top:10px;">Mode rognage :</p>
@@ -107,3 +135,4 @@ if (localStorage.getItem("admin_logged") !== "true") {
 <script type="module" src="supabase-init.js"></script>
 </body>
 </html>
+
