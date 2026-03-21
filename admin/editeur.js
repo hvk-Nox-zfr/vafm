@@ -430,7 +430,8 @@ function makeDraggable(el) {
     let parentRect = null;
 
     el.addEventListener("mousedown", e => {
-        if (e.target.classList.contains("resize-handle")) return;
+        // 🔥 NE PAS DRAG SI ON CLIQUE SUR UN HANDLE (resize ou rotate)
+        if (e.target.closest(".resize-handle") || e.target.closest(".rotate-handle")) return;
         if (el.classList.contains("cropping")) return;
 
         isDown = true;
@@ -546,6 +547,8 @@ function makeResizable(el, handle, position) {
 // -------------------------
 function makeRotatable(rot, handle) {
     let isRotating = false;
+    let startAngle = 0;
+    let baseAngle = 0;
 
     handle.addEventListener("mousedown", e => {
         e.stopPropagation();
@@ -555,6 +558,9 @@ function makeRotatable(rot, handle) {
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
 
+        // 🔥 angle déjà appliqué (si on recharge ou si on a déjà tourné)
+        baseAngle = parseFloat(rot.dataset.rotation || "0") || 0;
+
         function rotate(ev) {
             if (!isRotating) return;
 
@@ -563,8 +569,11 @@ function makeRotatable(rot, handle) {
 
             const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-            rot.style.transform = `rotate(${angle}deg)`;
-            rot.dataset.rotation = angle;
+            // angle relatif + baseAngle
+            const finalAngle = angle + baseAngle;
+
+            rot.style.transform = `rotate(${finalAngle}deg)`;
+            rot.dataset.rotation = finalAngle;
         }
 
         function stopRotate() {
@@ -660,6 +669,8 @@ function autoSaveImages() {
 
     const images = [...document.querySelectorAll(".block-public")].map(div => {
         const img = div.querySelector("img");
+        const rot = div.querySelector(".rotatable");
+
         return {
             url: img ? img.src : "",
             x: div.style.left,
@@ -670,13 +681,12 @@ function autoSaveImages() {
             offsetY: img ? img.style.top : "0px",
             imgWidth: img ? img.style.width : "100%",
             imgHeight: img ? img.style.height : "100%",
-            rotation: div.dataset.rotation || "0"   // 🔥 AJOUT ICI
+            rotation: rot ? (rot.dataset.rotation || "0") : "0"
         };
     });
 
     actu.contenu.images = images;
 }
-
 
 // -------------------------
 // BOUTON ENREGISTRER (SUPABASE)
