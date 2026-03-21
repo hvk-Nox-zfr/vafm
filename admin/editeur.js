@@ -349,6 +349,13 @@ document.getElementById("delete-selected-btn").addEventListener("click", () => {
 // AJOUT D'UNE IMAGE FLOTTANTE
 // -------------------------
 function addImageBlock(data = {}) {
+    const layer = document.getElementById("editor-layer");
+    if (!layer) {
+        console.error("❌ #editor-layer introuvable !");
+        return;
+    }
+
+    // --- BLOC PRINCIPAL ---
     const div = document.createElement("div");
     div.className = "block-public";
     div.style.position = "absolute";
@@ -369,9 +376,12 @@ function addImageBlock(data = {}) {
     rot.style.height = "100%";
     rot.style.transformOrigin = "center center";
 
+    // rotation restaurée
     if (data.rotation) {
         rot.style.transform = `rotate(${data.rotation}deg)`;
         rot.dataset.rotation = data.rotation;
+    } else {
+        rot.dataset.rotation = "0";
     }
 
     // --- IMAGE ---
@@ -387,8 +397,13 @@ function addImageBlock(data = {}) {
     rot.appendChild(img);
     div.appendChild(rot);
 
-    // --- HANDLES DE REDIMENSIONNEMENT (SUR div) ---
-    const positions = ["top-left","top","top-right","right","bottom-right","bottom","bottom-left","left"];
+    // --- HANDLES DE REDIMENSIONNEMENT ---
+    const positions = [
+        "top-left","top","top-right",
+        "right","bottom-right","bottom",
+        "bottom-left","left"
+    ];
+
     positions.forEach(pos => {
         const handle = document.createElement("div");
         handle.className = `resize-handle ${pos}`;
@@ -397,15 +412,15 @@ function addImageBlock(data = {}) {
         makeResizable(div, handle, pos);
     });
 
-    // --- BOUTON DE ROTATION (DANS rot) ---
+    // --- BOUTON DE ROTATION ---
     const rotateHandle = document.createElement("div");
     rotateHandle.className = "rotate-handle";
     rotateHandle.style.position = "absolute";
     rotateHandle.style.bottom = "-25px";
     rotateHandle.style.left = "50%";
     rotateHandle.style.transform = "translateX(-50%)";
-    rotateHandle.style.width = "20px";
-    rotateHandle.style.height = "20px";
+    rotateHandle.style.width = "22px";
+    rotateHandle.style.height = "22px";
     rotateHandle.style.borderRadius = "50%";
     rotateHandle.style.background = "#fff";
     rotateHandle.style.border = "2px solid #333";
@@ -414,10 +429,12 @@ function addImageBlock(data = {}) {
 
     rot.appendChild(rotateHandle);
 
-    makeRotatable(rot, rotateHandle); // rotation sur rot
-    makeDraggable(div); // drag sur div
+    // --- INTERACTIONS ---
+    makeRotatable(rot, rotateHandle);
+    makeDraggable(div);
 
-    document.querySelector(".canvas-wrapper").appendChild(div);
+    // --- AJOUT AU CALQUE D'ÉDITION ---
+    layer.appendChild(div);
 }
 
 // -------------------------
