@@ -64,35 +64,42 @@ if (localStorage.getItem("admin_logged") !== "true") {
     </aside>
 
     <!-- ZONE CENTRALE : PAGE PUBLIQUE + CALQUE D'ÉDITION -->
-    <main class="main">
-        <div class="canvas-wrapper">
+<main class="main">
+    <div class="canvas-wrapper">
 
-            <!-- COPIE EXACTE DE TA PAGE PUBLIQUE -->
-            <div id="public-page" class="canvas">
+        <!-- PAGE PUBLIQUE (copie réelle) -->
+        <div id="public-page" class="canvas">
 
-                <header class="topbar public-header">
-                    <div class="logo">
-                        <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
-                    </div>
+            <header class="public-header">
+                <div class="logo">
+                    <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
+                </div>
 
-                    <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
-                        <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                                    <stop offset="0%" stop-color="#ff3366" />
-                                    <stop offset="100%" stop-color="#8b5bff" />
-                                </linearGradient>
-                            </defs>
-                            <path d="M3 10L12 3L21 10V21H14V14H10V21H3V10Z" />
-                        </svg>
-                    </a>
+                <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
+                    <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                                <stop offset="0%" stop-color="#ff3366" />
+                                <stop offset="100%" stop-color="#8b5bff" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M3 10L12 3L21 10V21H14V14H10V21H3V10Z" />
+                    </svg>
+                </a>
 
-                    <button class="nav-toggle">☰</button>
-                </header>
+                <button class="nav-toggle">☰</button>
+            </header>
 
-                <main>
-                    <div id="editor-area" class="public-content"></div>
-                </main>
+            <!-- zone texte article -->
+            <div id="editor-area" class="public-content"></div>
+
+        </div>
+
+        <!-- CALQUE D'ÉDITION -->
+        <div id="editor-layer" class="editor-layer"></div>
+
+    </div>
+</main>
 
             </div>
 
