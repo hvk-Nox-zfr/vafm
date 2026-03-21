@@ -431,7 +431,7 @@ function addImageBlock(data = {}) {
 
     // --- INTERACTIONS ---
     makeRotatable(rot, rotateHandle);
-    makeDraggable(div);
+    makeDraggable(div); // drag corrigé pour ignorer rotate-handle
 
     // --- AJOUT AU CALQUE D'ÉDITION ---
     layer.appendChild(div);
