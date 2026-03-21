@@ -31,7 +31,7 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <div class="layout">
 
-    <!-- SIDEBAR GAUCHE — VERSION CANVA -->
+    <!-- SIDEBAR GAUCHE — STYLE CANVA -->
     <aside class="sidebar">
         <h2>Éléments</h2>
 
@@ -44,7 +44,6 @@ if (localStorage.getItem("admin_logged") !== "true") {
             <button class="sidebar-tab" data-tab="presets">📄 Templates</button>
         </div>
 
-        <!-- CONTENU DES TABS -->
         <div id="tab-elements" class="sidebar-content active">
             <div id="elements-results" class="elements-grid"></div>
         </div>
@@ -74,13 +73,21 @@ if (localStorage.getItem("admin_logged") !== "true") {
     <main class="main">
         <div class="canvas-wrapper">
 
-            <!-- PAGE PUBLIQUE (structure identique au site) -->
-            <div id="public-page" class="canvas">
-                <div id="editor-area"></div>
+            <!-- PAGE PUBLIQUE EXACTE -->
+            <div id="public-page" class="public-page">
+                <!-- ⚠️ COLLE ICI LE HTML EXACT DE TA PAGE PUBLIQUE -->
+                <header class="public-header">
+                    <img src="logo.png" class="logo">
+                    <a href="/" class="home-btn">🏠</a>
+                </header>
+
+                <div id="editor-area" class="public-content">
+                    <!-- Le texte de l’article sera injecté ici -->
+                </div>
             </div>
 
             <!-- CALQUE D'ÉDITION -->
-            <div id="editor-layer"></div>
+            <div id="editor-layer" class="editor-layer"></div>
 
         </div>
     </main>
@@ -135,4 +142,5 @@ if (localStorage.getItem("admin_logged") !== "true") {
 <script type="module" src="supabase-init.js"></script>
 </body>
 </html>
+
 
