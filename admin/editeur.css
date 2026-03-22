@@ -231,14 +231,14 @@ body.admin .main { overflow: auto; }
 /* Ensure editor-layer allows pointer events */
 .editor-layer { pointer-events: auto; }
 
-/* ---------- Barre style Canva compacte et arrondie ---------- */
+/* Barre style Canva compacte, positionnée à gauche */
 .format-toolbar {
   position: fixed;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 16px;
+  left: 16px;                 /* barre à gauche */
+  transform: none;
   height: 44px;
-  min-width: 520px;
+  min-width: 420px;
   max-width: calc(100% - 40px);
   display: flex;
   align-items: center;
@@ -252,13 +252,19 @@ body.admin .main { overflow: auto; }
   z-index: 140;
   box-shadow: 0 10px 30px rgba(2,6,23,0.08);
   font-size: 13px;
-  transition: transform .12s ease, box-shadow .12s ease;
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 
-/* Compact groups */
-.format-toolbar .ft-left, .format-toolbar .ft-right { display:flex; align-items:center; gap:8px; }
+/* Décalage du contenu sous la toolbar : on garde marge supérieure */
+body.admin .layout { margin-top: 72px; }
+
+/* Si tu veux réduire la largeur sur petits écrans */
+@media (max-width: 900px) {
+  .format-toolbar { min-width: 360px; left: 12px; top: 12px; }
+}
+@media (max-width: 520px) {
+  .format-toolbar { position: fixed; left: 8px; right: 8px; top: 8px; min-width: auto; }
+}
 
 /* Compact controls */
 .ft-control {
