@@ -1,10 +1,10 @@
-// Robust supabase init — remplace toute déclaration let/const supabase existante
+// editeur.js complet corrigé
+
+// Robust supabase init — place this at the very top
 (function(){
   if (window.__supabaseClient) {
-    // réutiliser instance déjà initialisée
     window.__supabaseClient = window.__supabaseClient;
   } else if (window.supabase) {
-    // compat : si un client est exposé sous window.supabase
     window.__supabaseClient = window.supabase;
   } else {
     window.__supabaseClient = null;
@@ -29,78 +29,16 @@ let __supabaseReady = (async () => {
   }
 })();
 
-
+// Logging
 console.log('editeur.js loaded');
 
-// Variables
+// DOM refs (initialized on DOMContentLoaded)
 let wrapper = null;
 let canvas = null;
 let editorLayer = null;
 let selectedBlock = null;
 
-// --- Handlers permanents pour boutons d'ajout
-function insertTextBlockToCanvas(type) {
-  if (!canvas) canvas = document.getElementById('actu-content');
-  if (!canvas) return;
-  const el = document.createElement(type === 'title' ? 'h2' : (type === 'subtitle' ? 'h3' : 'p'));
-  el.textContent = type === 'title' ? 'Nouveau titre' : (type === 'subtitle' ? 'Nouveau sous-titre' : 'Nouveau paragraphe');
-  el.style.margin = '12px 0';
-  canvas.appendChild(el);
-  return el;
-}
-
-function bindAddImageButton(btn) {
-  if (!btn) return;
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.addEventListener('change', async () => {
-      const file = input.files && input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const url = reader.result;
-        // si addImageBlock est exportée et exposée
-        if (typeof window.addImageBlock === 'function') {
-          window.addImageBlock({ url, x: 120, y: 120, width: 320, height: 200 });
-        } else {
-          // fallback simple
-          const div = document.createElement('div');
-          div.className = 'block-public';
-          div.style.position = 'absolute';
-          div.style.left = '120px';
-          div.style.top = '120px';
-          div.style.width = '320px';
-          div.style.height = '200px';
-          const img = document.createElement('img');
-          img.src = url;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'contain';
-          div.appendChild(img);
-          (editorLayer || wrapper || document.body).appendChild(div);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-    input.click();
-  });
-}
-
-// dans DOMContentLoaded, après initialisation des variables
-const btnImage = document.getElementById('add-image');
-const btnTitle = document.getElementById('add-title');
-const btnSubtitle = document.getElementById('add-subtitle');
-const btnParagraph = document.getElementById('add-paragraph');
-
-if (btnTitle) btnTitle.addEventListener('click', () => insertTextBlockToCanvas('title'));
-if (btnSubtitle) btnSubtitle.addEventListener('click', () => insertTextBlockToCanvas('subtitle'));
-if (btnParagraph) btnParagraph.addEventListener('click', () => insertTextBlockToCanvas('paragraph'));
-bindAddImageButton(btnImage);
-
-// Utilities
+// Utilities: drag / resize / select
 function makeDraggable(el) {
   let offsetX = 0, offsetY = 0;
   el.addEventListener("mousedown", e => {
@@ -161,8 +99,8 @@ function selectBlock(el) {
   selectedBlock = el;
 }
 
-// addImageBlock exported and exposed
-export function addImageBlock(data = {}) {
+// addImageBlock: create image block inside editorLayer
+function addImageBlock(data = {}) {
   if (!editorLayer && !wrapper) {
     console.warn('addImageBlock: editorLayer et wrapper non initialisés');
     return null;
@@ -193,233 +131,13 @@ export function addImageBlock(data = {}) {
   return div;
 }
 
-// sauvegarder
-async function sauvegarder() {
-  const client = await __supabaseReady;
-  if (!client) {
-    alert("Supabase non initialisé. Impossible d'enregistrer.");
-    return;
-  }
-  if (!editorLayer || !canvas) {
-    alert("Impossible d'enregistrer : éditeur non initialisé.");
-    return;
-  }
-  const images = [...editorLayer.querySelectorAll(".block-public")].map(div => {
-    const img = div.querySelector("img");
-    return {
-      url: img?.src || "",
-      x: div.style.left || "0px",
-      y: div.style.top || "0px",
-      width: div.style.width || "",
-      height: div.style.height || "",
-      offsetX: img?.style.left || "0px",
-      offsetY: img?.style.top || "0px",
-      imgWidth: img?.style.width || "100%",
-      imgHeight: img?.style.height || "100%"
-    };
-  });
-  const texte = canvas.innerHTML;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const actuId = Number(params.get("id"));
-    if (!actuId || isNaN(actuId)) {
-      alert("ID d'article invalide.");
-      return;
-    }
-    const { error } = await client
-      .from("actus")
-      .update({ contenu: { texte, images } })
-      .eq("id", actuId);
-    if (error) {
-      console.error("Erreur sauvegarde Supabase:", error);
-      alert("Erreur lors de l'enregistrement.");
-      return;
-    }
-    alert("Enregistré !");
-  } catch (err) {
-    console.error("Erreur sauvegarde:", err);
-    alert("Erreur lors de l'enregistrement.");
-  }
-}
-
-// chargerActu
-async function chargerActu() {
-  const client = await __supabaseReady;
-  if (!client) {
-    console.warn('chargerActu: supabase non initialisé, lecture locale uniquement');
-  }
-  const params = new URLSearchParams(window.location.search);
-  const actuId = Number(params.get("id"));
-  if (!actuId || isNaN(actuId)) {
-    if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
-    return;
-  }
-  try {
-    const { data: actu, error } = await (client ? client.from("actus").select("*").eq("id", actuId).maybeSingle() : Promise.resolve({ data: null, error: null }));
-    if (error) {
-      console.error('Supabase error:', error);
-      if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
-      return;
-    }
-    const article = actu || (await fetch(`/public-page.html?id=${actuId}`).then(r=>r.ok? r.text() : null).catch(()=>null));
-    if (!article) {
-      if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
-      return;
-    }
-    const texte = actu?.contenu?.texte || (typeof article === 'string' ? article : "");
-    if (canvas) canvas.innerHTML = texte;
-    const images = Array.isArray(actu?.contenu?.images) ? actu.contenu.images : [];
-    images.forEach(img => addImageBlock(img));
-  } catch (err) {
-    console.error('Erreur chargerActu:', err);
-    if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
-  }
-}
-// editeur.js (module ES) — version fusionnée et corrigée
-
-let supabase = window.supabase || null;
-
-let __supabaseReady = (async () => {
-  if (supabase) return supabase;
-  try {
-    const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
-    const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
-    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    window.supabase = supabase;
-    return supabase;
-  } catch (err) {
-    console.warn('supabase dynamic import failed:', err);
-    return null;
-  }
-})();
-
-console.log('editeur.js loaded');
-
-// --- Variables (initialisées au DOMContentLoaded)
-let wrapper = null;
-let canvas = null;
-let editorLayer = null;
-let selectedBlock = null;
-
-// --- UTILITAIRES (drag / resize / select)
-function makeDraggable(el) {
-  let offsetX = 0, offsetY = 0;
-
-  el.addEventListener("mousedown", e => {
-    if (e.button !== 0) return; // only left click
-    if (e.target.classList.contains("resize-handle")) return;
-
-    selectedBlock = el;
-    selectBlock(el);
-
-    const rect = el.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-
-    function move(e2) {
-      el.style.left = (e2.clientX - offsetX) + "px";
-      el.style.top = (e2.clientY - offsetY) + "px";
-    }
-
-    function stop() {
-      document.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseup", stop);
-    }
-
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", stop);
-  });
-}
-
-function makeResizable(el) {
-  const handle = document.createElement("div");
-  handle.className = "resize-handle bottom-right";
-  el.appendChild(handle);
-
-  handle.addEventListener("mousedown", e => {
-    e.stopPropagation();
-    if (e.button !== 0) return;
-
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startW = el.offsetWidth;
-    const startH = el.offsetHeight;
-
-    function resize(e2) {
-      el.style.width = Math.max(20, startW + (e2.clientX - startX)) + "px";
-      el.style.height = Math.max(20, startH + (e2.clientY - startY)) + "px";
-    }
-
-    function stop() {
-      document.removeEventListener("mousemove", resize);
-      document.removeEventListener("mouseup", stop);
-    }
-
-    document.addEventListener("mousemove", resize);
-    document.addEventListener("mouseup", stop);
-  });
-}
-
-function makeSelectable(el) {
-  el.addEventListener("click", e => {
-    e.stopPropagation();
-    selectBlock(el);
-  });
-}
-
-function selectBlock(el) {
-  document.querySelectorAll(".block-public").forEach(b => b.classList.remove("selected"));
-  if (el) el.classList.add("selected");
-  selectedBlock = el;
-}
-
-// --- addImageBlock (exporté)
-export function addImageBlock(data = {}) {
-  if (!editorLayer && !wrapper) {
-    console.warn('addImageBlock: editorLayer et wrapper non initialisés');
-    return null;
-  }
-
-  const div = document.createElement("div");
-  div.className = "block-public";
-  div.style.position = "absolute";
-  div.style.left = typeof data.x === "number" ? `${data.x}px` : (data.x || "100px");
-  div.style.top = typeof data.y === "number" ? `${data.y}px` : (data.y || "100px");
-  div.style.width = typeof data.width === "number" ? `${data.width}px` : (data.width || "300px");
-  div.style.height = typeof data.height === "number" ? `${data.height}px` : (data.height || "200px");
-
-  const img = document.createElement("img");
-  img.src = data.url || "";
-  img.alt = data.alt || "";
-  img.style.position = "absolute";
-  img.style.left = data.offsetX || "0px";
-  img.style.top = data.offsetY || "0px";
-  img.style.width = data.imgWidth || "100%";
-  img.style.height = data.imgHeight || "100%";
-  img.style.objectFit = "contain";
-  img.draggable = false;
-
-  div.appendChild(img);
-
-  makeDraggable(div);
-  makeResizable(div);
-  makeSelectable(div);
-
-  if (editorLayer) editorLayer.appendChild(div);
-  else if (wrapper) wrapper.appendChild(div);
-
-  return div;
-}
-
-// --- createTextBlock : crée un bloc éditable DANS editorLayer uniquement
+// createTextBlock: create editable text block inside editorLayer
 function createTextBlock({ type = 'paragraph', x = 120, y = 120, width = 360, html = '' } = {}) {
   if (!editorLayer) editorLayer = document.getElementById('editor-layer');
   if (!editorLayer) {
     console.warn('createTextBlock: editorLayer introuvable');
     return null;
   }
-
   const block = document.createElement('div');
   block.className = 'block-public text-block';
   block.style.position = 'absolute';
@@ -431,7 +149,6 @@ function createTextBlock({ type = 'paragraph', x = 120, y = 120, width = 360, ht
   block.style.cursor = 'move';
   block.setAttribute('tabindex', '0');
   block.dataset.type = type;
-
   const content = document.createElement(type === 'title' ? 'h2' : (type === 'subtitle' ? 'h3' : 'p'));
   content.className = 'text-block-content';
   content.contentEditable = 'true';
@@ -440,17 +157,13 @@ function createTextBlock({ type = 'paragraph', x = 120, y = 120, width = 360, ht
   content.style.margin = '0';
   content.style.outline = 'none';
   content.style.cursor = 'text';
-
   const handle = document.createElement('div');
   handle.className = 'resize-handle bottom-right';
-
   block.appendChild(content);
   block.appendChild(handle);
-
   makeDraggable(block);
   makeResizable(block);
   makeSelectable(block);
-
   block.addEventListener('dblclick', (e) => {
     e.stopPropagation();
     content.focus();
@@ -461,17 +174,12 @@ function createTextBlock({ type = 'paragraph', x = 120, y = 120, width = 360, ht
     sel.removeAllRanges();
     sel.addRange(range);
   });
-
   content.addEventListener('mousedown', (e) => e.stopPropagation());
-
   editorLayer.appendChild(block);
   return { block, content };
 }
 
-// Exposer utilitaire
-window.createTextBlock = createTextBlock;
-
-// --- sauvegarder : sérialiser blocs texte + images depuis editorLayer
+// Save function: serialize editorLayer blocks and preview HTML
 async function sauvegarder() {
   const client = await __supabaseReady;
   if (!client) {
@@ -482,8 +190,6 @@ async function sauvegarder() {
     alert("Impossible d'enregistrer : éditeur non initialisé.");
     return;
   }
-
-  // textes
   const texts = [...editorLayer.querySelectorAll('.block-public.text-block')].map(div => {
     const content = div.querySelector('.text-block-content');
     return {
@@ -495,8 +201,6 @@ async function sauvegarder() {
       height: div.style.height || ''
     };
   });
-
-  // images
   const images = [...editorLayer.querySelectorAll('.block-public')].filter(d => d.querySelector('img')).map(div => {
     const img = div.querySelector('img');
     return {
@@ -507,10 +211,7 @@ async function sauvegarder() {
       height: div.style.height || ''
     };
   });
-
-  // Aperçu public (optionnel) : on peut générer un previewHtml simplifié
   const previewHtml = canvas ? canvas.innerHTML : '';
-
   try {
     const params = new URLSearchParams(window.location.search);
     const actuId = Number(params.get("id"));
@@ -518,18 +219,15 @@ async function sauvegarder() {
       alert("ID d'article invalide.");
       return;
     }
-
     const { error } = await client
       .from("actus")
       .update({ contenu: { previewHtml, texts, images } })
       .eq("id", actuId);
-
     if (error) {
       console.error("Erreur sauvegarde Supabase:", error);
       alert("Erreur lors de l'enregistrement.");
       return;
     }
-
     alert("Enregistré !");
   } catch (err) {
     console.error("Erreur sauvegarde:", err);
@@ -537,23 +235,15 @@ async function sauvegarder() {
   }
 }
 
-// Exposer sauvegarder pour compat console
-window.sauvegarder = sauvegarder;
-
-// --- chargerActu : reconstruire preview + blocs éditables dans editorLayer
+// Load article: rebuild preview and editorLayer blocks
 async function chargerActu() {
   const client = await __supabaseReady;
-  if (!client) {
-    console.warn('chargerActu: supabase non initialisé, lecture locale uniquement');
-  }
-
   const params = new URLSearchParams(window.location.search);
   const actuId = Number(params.get("id"));
   if (!actuId || isNaN(actuId)) {
     if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
     return;
   }
-
   try {
     const { data: actu, error } = await (client ? client.from("actus").select("*").eq("id", actuId).maybeSingle() : Promise.resolve({ data: null, error: null }));
     if (error) {
@@ -561,42 +251,19 @@ async function chargerActu() {
       if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
       return;
     }
-
     if (!actu) {
       if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
       return;
     }
-
-    // Aperçu public
     const previewHtml = actu.contenu?.previewHtml || actu.contenu?.texte || "";
     if (canvas) canvas.innerHTML = previewHtml;
-
-    // Recréer blocs éditables
     if (editorLayer) {
       editorLayer.innerHTML = '';
       const texts = Array.isArray(actu.contenu?.texts) ? actu.contenu.texts : [];
       texts.forEach(t => createTextBlock({ type: t.type, x: parseCssPx(t.x), y: parseCssPx(t.y), width: parseCssPx(t.width), html: t.html }));
-
       const images = Array.isArray(actu.contenu?.images) ? actu.contenu.images : [];
       images.forEach(img => {
-        if (typeof window.addImageBlock === 'function') window.addImageBlock(img);
-        else {
-          const div = document.createElement('div');
-          div.className = 'block-public';
-          div.style.position = 'absolute';
-          div.style.left = img.x || '100px';
-          div.style.top = img.y || '100px';
-          div.style.width = img.width || '300px';
-          div.style.height = img.height || '200px';
-          const im = document.createElement('img');
-          im.src = img.url || '';
-          im.style.width = '100%';
-          im.style.height = '100%';
-          im.style.objectFit = 'contain';
-          div.appendChild(im);
-          editorLayer.appendChild(div);
-          makeDraggable(div); makeResizable(div); makeSelectable(div);
-        }
+        addImageBlock(img);
       });
     }
   } catch (err) {
@@ -605,7 +272,6 @@ async function chargerActu() {
   }
 }
 
-// helper pour parser "123px" -> 123 ou retourner valeur si number
 function parseCssPx(val) {
   if (!val && val !== 0) return undefined;
   if (typeof val === 'number') return val;
@@ -613,189 +279,76 @@ function parseCssPx(val) {
   return m ? Number(m[1]) : val;
 }
 
-// --- Panels controller + initialisation DOM (unique handler)
+// DOM ready: attach handlers and panels
 document.addEventListener("DOMContentLoaded", () => {
   wrapper = document.querySelector(".canvas-wrapper");
   canvas = document.getElementById("actu-content");
   editorLayer = document.getElementById("editor-layer");
-
-  // ensure editorLayer exists and is above canvas
   if (editorLayer) {
-    Object.assign(editorLayer.style, {
-      pointerEvents: 'auto',
-      zIndex: '9999',
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: '0',
-      bottom: '0'
-    });
+    Object.assign(editorLayer.style, { pointerEvents: 'auto', zIndex: '9999', position: 'absolute', top: '0', left: '0', right: '0', bottom: '0' });
   }
-
-  // expose for debug
+  // expose for debug and compatibility
   window.addImageBlock = addImageBlock;
+  window.createTextBlock = createTextBlock;
   window.sauvegarder = sauvegarder;
   window.__supabaseReady = __supabaseReady;
-
   // save button
   const saveBtn = document.getElementById("save-btn");
   if (saveBtn) saveBtn.addEventListener("click", sauvegarder);
-
   // deselect on outside click
   document.addEventListener("click", () => {
     document.querySelectorAll(".block-public").forEach(b => b.classList.remove("selected"));
     selectedBlock = null;
   });
-
   // panels
   const icons = Array.from(document.querySelectorAll('.canva-icon'));
   const panels = Array.from(document.querySelectorAll('.canva-panel'));
-  let openTimer = null;
-  let closeTimer = null;
-  const OPEN_DELAY = 80;
-  const CLOSE_DELAY = 160;
-
-  function closeAllPanels() {
-    panels.forEach(p => { p.classList.remove('open'); p.setAttribute('aria-hidden','true'); });
-    icons.forEach(i => i.classList.remove('active'));
-  }
-
+  let openTimer = null, closeTimer = null;
+  const OPEN_DELAY = 80, CLOSE_DELAY = 160;
+  function closeAllPanels() { panels.forEach(p => { p.classList.remove('open'); p.setAttribute('aria-hidden','true'); }); icons.forEach(i => i.classList.remove('active')); }
   icons.forEach(icon => {
     const key = icon.dataset.panel || icon.dataset.tool;
     const panel = document.getElementById('panel-' + key);
     if (!panel) return;
-
-    icon.addEventListener('mouseenter', () => {
-      clearTimeout(closeTimer);
-      openTimer = setTimeout(() => {
-        closeAllPanels();
-        panel.classList.add('open');
-        panel.setAttribute('aria-hidden','false');
-        icon.classList.add('active');
-      }, OPEN_DELAY);
-    });
-
-    icon.addEventListener('mouseleave', () => {
-      clearTimeout(openTimer);
-      closeTimer = setTimeout(() => {
-        if (!panel.matches(':hover')) {
-          panel.classList.remove('open');
-          panel.setAttribute('aria-hidden','true');
-          icon.classList.remove('active');
-        }
-      }, CLOSE_DELAY);
-    });
-
-    icon.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const isOpen = panel.classList.contains('open');
-      closeAllPanels();
-      if (!isOpen) {
-        panel.classList.add('open');
-        panel.setAttribute('aria-hidden','false');
-        icon.classList.add('active');
-      }
-      document.dispatchEvent(new CustomEvent('canva-tool', { detail: { tool: key } }));
-    });
-
-    icon.addEventListener('focus', () => {
-      clearTimeout(closeTimer);
-      closeAllPanels();
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden','false');
-      icon.classList.add('active');
-    });
+    icon.addEventListener('mouseenter', () => { clearTimeout(closeTimer); openTimer = setTimeout(() => { closeAllPanels(); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); icon.classList.add('active'); }, OPEN_DELAY); });
+    icon.addEventListener('mouseleave', () => { clearTimeout(openTimer); closeTimer = setTimeout(() => { if (!panel.matches(':hover')) { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); icon.classList.remove('active'); } }, CLOSE_DELAY); });
+    icon.addEventListener('click', (ev) => { ev.stopPropagation(); const isOpen = panel.classList.contains('open'); closeAllPanels(); if (!isOpen) { panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); icon.classList.add('active'); } document.dispatchEvent(new CustomEvent('canva-tool', { detail: { tool: key } })); });
+    icon.addEventListener('focus', () => { clearTimeout(closeTimer); closeAllPanels(); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); icon.classList.add('active'); });
   });
-
   panels.forEach(panel => {
-    panel.addEventListener('mouseenter', () => {
-      clearTimeout(closeTimer);
-      clearTimeout(openTimer);
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden','false');
-    });
-    panel.addEventListener('mouseleave', () => {
-      closeTimer = setTimeout(() => {
-        panel.classList.remove('open');
-        panel.setAttribute('aria-hidden','true');
-        const id = panel.id.replace(/^panel-/, '');
-        const icon = document.querySelector(`.canva-icon[data-panel="${id}"], .canva-icon[data-tool="${id}"]`);
-        if (icon) icon.classList.remove('active');
-      }, CLOSE_DELAY);
-    });
-    panel.addEventListener('focusin', () => {
-      clearTimeout(closeTimer);
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden','false');
-    });
-    panel.addEventListener('focusout', () => {
-      setTimeout(() => {
-        if (!panel.contains(document.activeElement)) {
-          panel.classList.remove('open');
-          panel.setAttribute('aria-hidden','true');
-        }
-      }, 10);
-    });
+    panel.addEventListener('mouseenter', () => { clearTimeout(closeTimer); clearTimeout(openTimer); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); });
+    panel.addEventListener('mouseleave', () => { closeTimer = setTimeout(() => { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); const id = panel.id.replace(/^panel-/, ''); const icon = document.querySelector(`.canva-icon[data-panel="${id}"], .canva-icon[data-tool="${id}"]`); if (icon) icon.classList.remove('active'); }, CLOSE_DELAY); });
+    panel.addEventListener('focusin', () => { clearTimeout(closeTimer); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); });
+    panel.addEventListener('focusout', () => { setTimeout(() => { if (!panel.contains(document.activeElement)) { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); } }, 10); });
   });
-
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
-      closeAllPanels();
-    }
-  });
-
-  // Attacher boutons d'ajout (créent des blocs DANS editorLayer)
+  document.addEventListener('click', (e) => { if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) closeAllPanels(); });
+  // attach add buttons
   const btnImage = document.getElementById('add-image');
   const btnTitle = document.getElementById('add-title');
   const btnSubtitle = document.getElementById('add-subtitle');
   const btnParagraph = document.getElementById('add-paragraph');
-
   if (btnTitle) btnTitle.addEventListener('click', (e) => { e.preventDefault(); createTextBlock({ type: 'title', x: 140, y: 140, width: 520 }); });
   if (btnSubtitle) btnSubtitle.addEventListener('click', (e) => { e.preventDefault(); createTextBlock({ type: 'subtitle', x: 160, y: 160, width: 420 }); });
   if (btnParagraph) btnParagraph.addEventListener('click', (e) => { e.preventDefault(); createTextBlock({ type: 'paragraph', x: 180, y: 180, width: 360 }); });
-
-  // bind image import button (uses addImageBlock or fallback)
   if (btnImage) {
     btnImage.addEventListener('click', (e) => {
       e.preventDefault();
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
-      input.addEventListener('change', async () => {
+      input.addEventListener('change', () => {
         const file = input.files && input.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = () => {
           const url = reader.result;
-          if (typeof window.addImageBlock === 'function') {
-            window.addImageBlock({ url, x: 120, y: 120, width: 320, height: 200 });
-          } else {
-            const div = document.createElement('div');
-            div.className = 'block-public';
-            div.style.position = 'absolute';
-            div.style.left = '120px';
-            div.style.top = '120px';
-            div.style.width = '320px';
-            div.style.height = '200px';
-            const img = document.createElement('img');
-            img.src = url;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'contain';
-            div.appendChild(img);
-            (editorLayer || wrapper || document.body).appendChild(div);
-            makeDraggable(div); makeResizable(div); makeSelectable(div);
-          }
+          addImageBlock({ url, x: 120, y: 120, width: 320, height: 200 });
         };
         reader.readAsDataURL(file);
       });
       input.click();
     });
   }
-
-  // initial state
   closeAllPanels();
-
-  // lancer le chargement de l'article
   chargerActu();
 });
