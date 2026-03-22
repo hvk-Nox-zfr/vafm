@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Éditeur d’article</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Autoriser le chargement du module Supabase depuis jsdelivr -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
     <link rel="stylesheet" href="editeur.css">
 </head>
 
@@ -15,7 +17,6 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <body class="admin">
 
-<!-- BARRE DU HAUT -->
 <header class="topbar">
     <div class="topbar-left">
         <button id="back-btn" class="btn ghost">← Retour</button>
@@ -73,10 +74,11 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
                 <header class="topbar public-header">
                     <div class="logo">
-                        <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
+                        <!-- Chemin relatif ajusté : si editeur est dans /vafm/admin/, ../logo/ est correct -->
+                        <img src="../logo/VAFM logo rouge.png" alt="Logo de la radio">
                     </div>
 
-                    <a href="index.html" class="logo-home">
+                    <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
                         <svg viewBox="0 0 24 24" class="home-icon">
                             <defs>
                                 <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -93,7 +95,7 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
                 <main>
                     <div class="canvas-wrapper">
-                        <!-- ⚠️ IDENTIQUE À LA PAGE PUBLIQUE -->
+                        <!-- IDENTIQUE À LA PAGE PUBLIQUE -->
                         <div id="actu-content" class="canvas"></div>
                     </div>
                 </main>
@@ -149,9 +151,11 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 </div>
 
+<!-- SCRIPTS : charger les modules après le DOM -->
 <script type="module" src="editeur.js"></script>
 <script type="module" src="supabase-init.js"></script>
 
+<!-- Inline script corrigé : pas de parenthèse en trop -->
 <script>
     const icons = document.querySelectorAll(".canva-icon");
     const panels = document.querySelectorAll(".canva-panel");
@@ -160,18 +164,17 @@ if (localStorage.getItem("admin_logged") !== "true") {
         const panel = document.getElementById("panel-" + icon.dataset.panel);
         icon.addEventListener("mouseenter", () => {
             panels.forEach(p => p.classList.remove("open"));
-            panel.classList.add("open");
+            if (panel) panel.classList.add("open");
         });
     });
 
     panels.forEach(panel => {
         panel.addEventListener("mouseleave", () => {
-            panel.classList.remove("open"));
+            panel.classList.remove("open");
         });
     });
 </script>
 
 </body>
 </html>
-
 
