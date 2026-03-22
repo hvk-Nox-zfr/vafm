@@ -1,46 +1,13 @@
-/* editeur.css — version corrigée pour body.admin */
-
-/* RESET */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-html, body {
-  height: 100%;
-  overflow: auto; /* permettre le scroll dans l'éditeur */
-}
-body {
-  background: #f3f4f6;
-  color: #111827;
-}
-
-/* TOPBAR */
-body.admin .topbar {
-  height: 56px;
-  background: #111827;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  justify-content: space-between;
-}
-body.admin .topbar-left,
-body.admin .topbar-right {
-  display: flex;
-  gap: 8px;
-}
-
-/* LAYOUT PRINCIPAL */
+/* Layout principal : sidebar + zone principale */
 body.admin .layout {
   display: grid;
-  grid-template-columns: 56px 0 1fr 260px;
+  grid-template-columns: 56px 1fr; /* sidebar (56px) + zone principale */
+  gap: 12px;
   height: calc(100vh - 56px);
-  overflow: hidden;
+  position: relative; /* nécessaire pour panels positionnés absolu */
 }
 
-/* BARRE CANVA (icônes) */
+/* Canva sidebar */
 body.admin .canva-sidebar {
   background: #111827;
   color: #f9fafb;
@@ -49,7 +16,10 @@ body.admin .canva-sidebar {
   align-items: center;
   padding: 8px 0;
   gap: 8px;
+  z-index: 70;
 }
+
+/* Icônes */
 body.admin .canva-icon {
   width: 40px;
   height: 40px;
@@ -60,339 +30,61 @@ body.admin .canva-icon {
   justify-content: center;
   cursor: pointer;
   font-size: 20px;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s, transform 0.12s;
+  border: none;
 }
-body.admin .canva-icon:hover {
+body.admin .canva-icon:hover,
+body.admin .canva-icon.active {
   background: #2563eb;
   transform: translateX(2px);
 }
 
-/* PANNEAUX DÉROULANTS */
+/* Panels déroulants : positionnés à droite de la sidebar */
 body.admin .canva-panel {
-  background: #111827;
-  color: #f9fafb;
-  overflow: hidden;
-  width: 0;
-  padding: 16px 0;
-  transition: width 0.2s ease, padding 0.2s ease;
-}
-body.admin .canva-panel.open {
-  width: 220px;
-  padding: 16px;
-}
-body.admin .canva-panel h2 {
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
-}
-
-/* ZONE CENTRALE */
-body.admin .main {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  padding: 16px;
-}
-
-/* WRAPPER : centrer la page publique et permettre le scroll interne */
-body.admin .canvas-wrapper {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  background: #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-  overflow: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-/* PAGE PUBLIQUE (copie) : dimensions raisonnables */
-body.admin .canvas {
-  background: #fff;
-  width: 100%;
-  max-width: 1200px;
-  min-width: 760px;
-  min-height: 600px; /* évite la réduction à 48px */
-  border-radius: 8px;
-  box-shadow: 0 0 0 1px #d1d5db;
-  padding: 24px;
-  margin: 16px auto;
-  position: relative;
-  overflow: visible;
-  box-sizing: border-box;
-}
-
-/* CALQUE D'ÉDITION : interactif et au-dessus */
-body.admin .editor-layer {
   position: absolute;
-  inset: 0;
-  pointer-events: auto; /* permet l'interaction avec les blocs */
-  z-index: 9999;
-  display: block;
-}
-
-/* BLOCS ÉDITABLES */
-body.admin .block-public {
-  position: absolute;
-  border-radius: 4px;
-  border: 1px solid transparent;
-  overflow: visible;
-  pointer-events: auto;
-  touch-action: none;
-  transition: box-shadow 120ms ease, transform 120ms ease;
-  background: transparent;
-}
-body.admin .block-public.selected {
-  outline: 2px solid #ff3366;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-}
-
-/* ROTATION WRAPPER */
-body.admin .rotatable {
-  position: absolute;
-  inset: 0;
-  transform-origin: center center;
-  pointer-events: auto;
-  user-select: none;
-}
-
-/* IMAGE DANS BLOC */
-body.admin .block-public img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: auto;
-  user-select: none;
-  display: block;
-}
-
-/* HANDLES DE REDIMENSIONNEMENT */
-body.admin .resize-handle {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: #fff;
-  border: 2px solid #2563eb;
-  border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-  pointer-events: auto;
-  touch-action: none;
-}
-body.admin .resize-handle.top-left { top: -8px; left: -8px; cursor: nwse-resize; }
-body.admin .resize-handle.top { top: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-body.admin .resize-handle.top-right { top: -8px; right: -8px; cursor: nesw-resize; }
-body.admin .resize-handle.right { top: 50%; right: -8px; transform: translateY(-50%); cursor: ew-resize; }
-body.admin .resize-handle.bottom-right { bottom: -8px; right: -8px; cursor: nwse-resize; }
-body.admin .resize-handle.bottom { bottom: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-body.admin .resize-handle.bottom-left { bottom: -8px; left: -8px; cursor: nesw-resize; }
-body.admin .resize-handle.left { top: 50%; left: -8px; transform: translateY(-50%); cursor: ew-resize; }
-
-/* BOUTON DE ROTATION */
-body.admin .rotate-handle {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #333;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  cursor: grab;
-  z-index: 10000;
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-}
-
-/* TEXTE ÉDITABLE */
-body.admin .editable-text {
-  display: inline-block;
-  min-width: 40px;
-  min-height: 20px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  cursor: text;
-  user-select: text;
-}
-body.admin .editable-text.selected {
-  outline: 2px solid #3366ff;
-}
-
-/* PANNEAU DE PROPRIÉTÉS */
-body.admin .properties {
-  background: #f9fafb;
-  border-left: 1px solid #e5e7eb;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-}
-body.admin .properties h2 {
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #6b7280;
-}
-body.admin .prop-panel {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-body.admin .hidden {
-  display: none !important;
-}
-
-/* INPUTS */
-body.admin label {
-  font-size: 12px;
-  color: #4b5563;
-}
-body.admin input[type="number"],
-body.admin input[type="color"],
-body.admin input[type="range"] {
-  width: 100%;
-  margin-top: 4px;
-}
-
-/* BOUTONS */
-body.admin .btn {
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-  background: #e5e7eb;
-  color: #111827;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-body.admin .btn.full { width: 100%; justify-content: flex-start; }
-body.admin .btn.small { padding: 4px 8px; font-size: 12px; }
-body.admin .btn.primary { background: #2563eb; color: white; }
-body.admin .btn.ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); }
-body.admin .btn.danger { background: #ef4444; color: white; }
-body.admin .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
-
-/* RECHERCHE D'ÉLÉMENTS */
-body.admin .search-input {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #374151;
-  background: #111827;
-  color: white;
-  font-size: 13px;
-  outline: none;
-  transition: 0.2s;
-}
-body.admin .search-input::placeholder { color: #9ca3af; }
-body.admin .search-input:focus {
-  border-color: #2563eb;
-  background: #0f172a;
-}
-
-/* GRID DES ÉLÉMENTS */
-body.admin .elements-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 6px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-body.admin .element-item {
-  width: 60px;
-  height: 60px;
-  background: #111827;
-  border: 1px solid #374151;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  overflow: hidden;
-  padding: 6px;
-  transition: 0.15s;
-}
-body.admin .element-item:hover {
-  background: #1e293b;
-  border-color: #2563eb;
-}
-body.admin .element-item svg {
-  width: 100%;
-  height: 100%;
-  fill: white;
-}
-body.admin .element-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* SCROLLBAR */
-body.admin .elements-grid::-webkit-scrollbar { width: 6px; }
-body.admin .elements-grid::-webkit-scrollbar-thumb {
-  background: #374151;
-  border-radius: 4px;
-}
-body.admin .elements-grid::-webkit-scrollbar-track { background: transparent; }
-
-/* Canva panels: hidden by default, expand on .open */
-.canva-panel {
-  position: absolute;
-  left: 56px;                 /* placé juste à droite de la sidebar */
+  left: 56px; /* juste à droite de la sidebar */
   top: 0;
   height: calc(100vh - 56px);
   width: 0;
   padding: 0;
   overflow: hidden;
-  background: #0f1724;        /* panel dark */
+  background: #0f1724;
   color: #f9fafb;
   transition: width 220ms cubic-bezier(.2,.9,.2,1), padding 180ms;
   box-shadow: 0 8px 24px rgba(2,6,23,0.45);
   z-index: 60;
   border-radius: 0 8px 8px 0;
+  pointer-events: none; /* bloqué quand fermé */
 }
 
-/* panel ouvert */
-.canva-panel.open {
-  width: 260px;               /* largeur d'ouverture souhaitée */
-  padding: 16px;
-}
-
-/* rendre le panel accessible au clavier */
-.canva-panel[aria-hidden="false"] {
+/* Panel ouvert */
+body.admin .canva-panel.open {
   width: 260px;
   padding: 16px;
+  pointer-events: auto;
 }
 
-/* éviter que le panel pousse le layout */
-.layout { position: relative; }
+/* Accessibilité : si aria-hidden false, forcer ouvert */
+body.admin .canva-panel[aria-hidden="false"] {
+  width: 260px;
+  padding: 16px;
+  pointer-events: auto;
+}
 
-/* icône active */
-.canva-icon.active { transform: translateX(2px); background:#2563eb; }
+/* Empêcher le panel de pousser le layout */
+body.admin .canvas-wrapper { z-index: 1; }
+body.admin .canvas { position: relative; z-index: 2; }
+body.admin .editor-layer { z-index: 50; }
 
-/* s'assurer que le panel ne masque pas la page publique (z-index contrôlé) */
-.canvas-wrapper { z-index: 1; }
-.canvas { position: relative; z-index: 2; }
-#editor-layer { z-index: 50; }
-
-/* petit ajustement mobile: panels en bas si écran étroit */
+/* Mobile : panels en bas */
 @media (max-width: 720px) {
-  .canva-panel { left: 0; bottom: 0; top: auto; height: auto; width: 100%; border-radius: 8px 8px 0 0; }
-  .canva-panel.open { width: 100%; padding: 12px; }
+  body.admin .canva-panel {
+    left: 0;
+    bottom: 0;
+    top: auto;
+    height: auto;
+    width: 0;
+    border-radius: 8px 8px 0 0;
+  }
+  body.admin .canva-panel.open { width: 100%; padding: 12px; }
 }
