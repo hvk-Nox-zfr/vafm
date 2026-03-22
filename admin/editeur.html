@@ -4,8 +4,20 @@
     <meta charset="UTF-8">
     <title>Éditeur d’article</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Autoriser le chargement du module Supabase depuis jsdelivr -->
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
+
+    <!-- Content Security Policy minimale pour l'éditeur -->
+    <meta http-equiv="Content-Security-Policy"
+          content="
+            default-src 'self';
+            script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://esm.sh https://unpkg.com;
+            connect-src 'self' https://blronpowdhaumjudtgvn.supabase.co https://*.supabase.co https://cdn.jsdelivr.net https://esm.sh;
+            img-src 'self' data: https://blronpowdhaumjudtgvn.supabase.co https://*.supabase.co;
+            style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+            font-src 'self' https://cdn.jsdelivr.net;
+            frame-ancestors 'self';
+            base-uri 'self';
+          ">
+
     <link rel="stylesheet" href="editeur.css">
 </head>
 
@@ -69,17 +81,17 @@ if (localStorage.getItem("admin_logged") !== "true") {
     <main class="main">
         <div class="canvas-wrapper">
 
-            <!-- COPIE EXACTE DE TA PAGE PUBLIQUE -->
+            <!-- COPIE DE LA PAGE PUBLIQUE (structure identique) -->
             <div id="public-page">
 
                 <header class="topbar public-header">
                     <div class="logo">
-                        <!-- Chemin relatif ajusté : si editeur est dans /vafm/admin/, ../logo/ est correct -->
+                        <!-- Ajuste le chemin si nécessaire -->
                         <img src="../logo/VAFM logo rouge.png" alt="Logo de la radio">
                     </div>
 
                     <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
-                        <svg viewBox="0 0 24 24" class="home-icon">
+                        <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
                                     <stop offset="0%" stop-color="#ff3366" />
@@ -93,12 +105,13 @@ if (localStorage.getItem("admin_logged") !== "true") {
                     <button class="nav-toggle">☰</button>
                 </header>
 
-                <main>
+                <!-- Remplacé le <main> imbriqué par un div pour éviter la nesting -->
+                <div class="public-main">
                     <div class="canvas-wrapper">
-                        <!-- IDENTIQUE À LA PAGE PUBLIQUE -->
+                        <!-- ID attendu par ton JS public -->
                         <div id="actu-content" class="canvas"></div>
                     </div>
-                </main>
+                </div>
 
             </div>
 
@@ -155,7 +168,7 @@ if (localStorage.getItem("admin_logged") !== "true") {
 <script type="module" src="editeur.js"></script>
 <script type="module" src="supabase-init.js"></script>
 
-<!-- Inline script corrigé : pas de parenthèse en trop -->
+<!-- Inline script corrigé -->
 <script>
     const icons = document.querySelectorAll(".canva-icon");
     const panels = document.querySelectorAll(".canva-panel");
