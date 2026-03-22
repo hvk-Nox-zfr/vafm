@@ -1,10 +1,16 @@
-/* editeur.css - version complète adaptée au HTML fourni */
+/* editeur.css — version corrigée et consolidée */
 
 /* Reset léger */
 * { box-sizing: border-box; }
-html,body { height: 100%; margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #0f1724; background: #f8fafc; }
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0f1724;
+  background: #f8fafc;
+}
 
-/* Topbar */
+/* ---------------- TOPBAR (optionnel, masqué par défaut) ---------------- */
 .topbar {
   height: 56px;
   display: flex;
@@ -22,13 +28,22 @@ html,body { height: 100%; margin: 0; font-family: Inter, system-ui, -apple-syste
 .topbar-center { flex: 1; justify-content: center; }
 .topbar h1 { margin: 0; font-size: 16px; font-weight: 600; color: #f8fafc; }
 
-/* Buttons (basic) */
-.btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; }
+/* ---------------- Buttons (basic) ---------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
 .btn.ghost { background: transparent; color: #e6eefc; border: 1px solid rgba(255,255,255,0.04); }
 .btn.primary { background: #2563eb; color: #fff; box-shadow: 0 4px 10px rgba(37,99,235,0.12); }
 .btn.full { width: 100%; justify-content: center; }
 
-/* Layout principal : sidebar + zone principale */
+/* ---------------- Layout principal : sidebar + zone principale ---------------- */
 body.admin .layout {
   display: grid;
   grid-template-columns: 56px 1fr;
@@ -38,7 +53,7 @@ body.admin .layout {
   overflow: hidden;
 }
 
-/* Canva sidebar */
+/* ---------------- Canva sidebar ---------------- */
 body.admin .canva-sidebar {
   background: #0b1220;
   color: #f9fafb;
@@ -47,7 +62,7 @@ body.admin .canva-sidebar {
   align-items: center;
   padding: 8px 0;
   gap: 8px;
-  z-index: 80;
+  z-index: 150; /* au-dessus du canvas/editor-layer */
   border-right: 1px solid rgba(255,255,255,0.02);
 }
 
@@ -86,7 +101,7 @@ body.admin .canva-panel {
   color: #f9fafb;
   transition: width 220ms cubic-bezier(.2,.9,.2,1), padding 180ms ease, opacity 160ms;
   box-shadow: 0 8px 24px rgba(2,6,23,0.45);
-  z-index: 90;
+  z-index: 140;
   border-radius: 0 8px 8px 0;
   pointer-events: none;
   opacity: 0;
@@ -98,34 +113,34 @@ body.admin .canva-panel[aria-hidden="false"] {
   pointer-events: auto;
   opacity: 1;
 }
-
-/* Panel header and content */
 body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.06em; }
 .search-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color: #e6eefc; }
 
-/* Canvas wrapper and public page */
-body.admin .main { overflow: auto; }
+/* ---------------- Canvas wrapper and public page ---------------- */
+/* Harmonisation avec la page publique : mêmes dimensions et centrage */
 .canvas-wrapper {
   position: relative;
   width: 100%;
+  max-width: 1000px;   /* identique à la page publique */
+  margin: 40px auto;   /* centrage identique */
+  min-height: 600px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 16px;
+  padding: 0;
   box-sizing: border-box;
-  overflow: auto;
+  overflow: visible;
   z-index: 1;
 }
+
 .canvas {
+  position: relative;
   width: 100%;
-  max-width: 1200px;
-  min-width: 720px;
   min-height: 600px;
   background: #ffffff;
-  padding: 24px;
-  border-radius: 8px;
+  padding: 24px;       /* même padding que la page publique si souhaité */
+  border-radius: 6px;
   box-sizing: border-box;
-  position: relative;
   overflow: visible;
   z-index: 2;
   color: #0f1724;
@@ -136,16 +151,21 @@ body.admin .main { overflow: auto; }
 .public-content h2 { margin-top: 0; font-size: 28px; color: #0f1724; }
 .public-content p { color: #374151; line-height: 1.6; }
 
-/* Editor layer (au-dessus de la canvas) */
+/* ---------------- Editor layer (au-dessus de la canvas) ---------------- */
+/* editor-layer doit recouvrir exactement la .canvas (positionné dans .canvas-wrapper) */
 #editor-layer, .editor-layer {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: auto;
-  z-index: 9999;
+  z-index: 129; /* sous la sidebar/toolbar mais au-dessus du canvas */
   background: transparent;
+  box-sizing: border-box;
 }
 
-/* Blocks (image blocks) */
+/* ---------------- Blocks (image & texte) ---------------- */
 .block-public {
   position: absolute;
   border: 1px dashed rgba(15,23,42,0.12);
@@ -158,35 +178,6 @@ body.admin .main { overflow: auto; }
   box-shadow: 0 6px 18px rgba(37,99,235,0.12);
 }
 
-/* Resize handle */
-.resize-handle {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  right: 6px;
-  bottom: 6px;
-  background: rgba(15,23,42,0.6);
-  border-radius: 3px;
-  cursor: se-resize;
-  z-index: 10;
-}
-
-/* Utility: hide panels on small screens by default */
-@media (max-width: 720px) {
-  body.admin .layout { grid-template-columns: 1fr; }
-  body.admin .canva-sidebar { position: fixed; left: 8px; top: 64px; z-index: 110; }
-  body.admin .canva-panel { left: 0; bottom: 0; top: auto; height: auto; width: 0; border-radius: 8px 8px 0 0; }
-  body.admin .canva-panel.open { width: 100%; padding: 12px; }
-  .canvas { min-width: auto; width: calc(100% - 32px); }
-}
-
-/* Focus accessibility */
-.canva-icon:focus, .btn:focus, .canva-panel :focus { outline: 3px solid rgba(37,99,235,0.18); outline-offset: 2px; }
-
-/* Small helpers */
-.hidden { display: none !important; }
-.center { display: flex; align-items: center; justify-content: center; }
-
 /* Text block editable */
 .block-public.text-block {
   background: rgba(255,255,255,0.02);
@@ -197,14 +188,10 @@ body.admin .main { overflow: auto; }
   user-select: none;
   min-height: 28px;
 }
-
-/* When selected */
 .block-public.text-block.selected {
   outline: 2px solid #2563eb;
   box-shadow: 0 10px 30px rgba(37,99,235,0.12);
 }
-
-/* contenteditable element inside */
 .block-public .text-block-content {
   color: #0f1724;
   background: transparent;
@@ -216,10 +203,10 @@ body.admin .main { overflow: auto; }
 }
 
 /* Resize handle */
-.block-public .resize-handle.bottom-right {
+.resize-handle {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   right: 6px;
   bottom: 6px;
   background: rgba(15,23,42,0.6);
@@ -227,18 +214,22 @@ body.admin .main { overflow: auto; }
   cursor: se-resize;
   z-index: 20;
 }
+.block-public .resize-handle.bottom-right {
+  width: 12px;
+  height: 12px;
+  right: 6px;
+  bottom: 6px;
+}
 
-/* Ensure editor-layer allows pointer events */
-.editor-layer { pointer-events: auto; }
-
-/* Barre style Canva compacte, positionnée à gauche */
+/* ---------------- Format toolbar (Canva-like) ---------------- */
+/* Barre compacte, arrondie, positionnée à gauche */
 .format-toolbar {
   position: fixed;
   top: 16px;
-  left: 16px;                 /* barre à gauche */
+  left: 16px;
   transform: none;
   height: 44px;
-  min-width: 420px;
+  min-width: 360px;
   max-width: calc(100% - 40px);
   display: flex;
   align-items: center;
@@ -249,87 +240,81 @@ body.admin .main { overflow: auto; }
   color: #0f1724;
   border-radius: 12px;
   border: 1px solid rgba(15,23,42,0.06);
-  z-index: 140;
+  z-index: 160; /* au-dessus de tout */
   box-shadow: 0 10px 30px rgba(2,6,23,0.08);
   font-size: 13px;
   backdrop-filter: blur(6px);
-}
-
-/* Décalage du contenu sous la toolbar : on garde marge supérieure */
-body.admin .layout { margin-top: 72px; }
-
-/* Si tu veux réduire la largeur sur petits écrans */
-@media (max-width: 900px) {
-  .format-toolbar { min-width: 360px; left: 12px; top: 12px; }
-}
-@media (max-width: 520px) {
-  .format-toolbar { position: fixed; left: 8px; right: 8px; top: 8px; min-width: auto; }
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* Compact controls */
 .ft-control {
-  padding:6px 8px;
-  border-radius:8px;
-  border:1px solid rgba(15,23,42,0.06);
-  background:#fff;
-  color:inherit;
-  font-size:13px;
-  height:32px;
-  min-width:44px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: #fff;
+  color: inherit;
+  font-size: 13px;
+  height: 32px;
+  min-width: 44px;
   box-shadow: none;
 }
 .ft-control select { appearance: none; -webkit-appearance: none; }
 
 /* Icon-like buttons */
 .ft-btn {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:34px;
-  height:34px;
-  border-radius:8px;
-  border:1px solid rgba(15,23,42,0.06);
-  background:transparent;
-  cursor:pointer;
-  font-weight:600;
-  color:#0f1724;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #0f1724;
   transition: background .12s, transform .08s;
 }
 .ft-btn:hover { background: rgba(15,23,42,0.03); transform: translateY(-1px); }
-.ft-btn[aria-pressed="true"] { background:#eef2ff; border-color:#c7d2fe; }
+.ft-btn[aria-pressed="true"] { background: #eef2ff; border-color: #c7d2fe; }
 
 /* Color input compact */
 .ft-color {
-  width:34px;
-  height:34px;
-  padding:0;
-  border-radius:8px;
-  border:1px solid rgba(15,23,42,0.06);
-  background:#fff;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: #fff;
   cursor: pointer;
 }
 
-/* Hover effect */
-.format-toolbar:hover { transform: translateX(-50%) translateY(-2px); box-shadow: 0 14px 48px rgba(2,6,23,0.12); }
+/* Hover effect (subtil) */
+.format-toolbar:hover { transform: translateY(-2px); box-shadow: 0 14px 48px rgba(2,6,23,0.12); }
 
-/* Décalage du contenu sous la toolbar (ajuster si nécessaire) */
-body.admin .layout { margin-top: 72px; }
+/* ---------------- Accessibility & helpers ---------------- */
+.canva-icon:focus, .btn:focus, .canva-panel :focus { outline: 3px solid rgba(37,99,235,0.18); outline-offset: 2px; }
+.hidden { display: none !important; }
+.center { display: flex; align-items: center; justify-content: center; }
 
-/* Responsive: réduire et cacher selects si petit écran */
+/* ---------------- Responsive adjustments ---------------- */
 @media (max-width: 900px) {
-  .format-toolbar { min-width: 420px; padding:6px 8px; }
-  .ft-control:nth-of-type(1), .ft-control:nth-of-type(2) { display:none; } /* cacher police/taille */
+  body.admin .layout { grid-template-columns: 56px 1fr; }
+  .format-toolbar { min-width: 320px; left: 12px; top: 12px; }
+  .ft-control:nth-of-type(1), .ft-control:nth-of-type(2) { display: none; } /* cacher police/taille si besoin */
+}
+@media (max-width: 720px) {
+  body.admin .layout { grid-template-columns: 1fr; }
+  body.admin .canva-sidebar { position: fixed; left: 8px; top: 64px; z-index: 150; }
+  body.admin .canva-panel { left: 0; bottom: 0; top: auto; height: auto; width: 0; border-radius: 8px 8px 0 0; }
+  body.admin .canva-panel.open { width: 100%; padding: 12px; }
+  .canvas { min-width: auto; width: calc(100% - 32px); }
 }
 @media (max-width: 520px) {
-  .format-toolbar { left: 12px; transform: none; right: 12px; min-width: auto; max-width: calc(100% - 24px); }
-  .format-toolbar .ft-left { gap:6px; }
-  .format-toolbar .ft-right { gap:6px; }
-  .ft-control { display:none; } /* garder uniquement boutons essentiels */
+  .format-toolbar { left: 8px; right: 8px; top: 8px; min-width: auto; max-width: calc(100% - 24px); }
+  .ft-control { display: none; } /* garder uniquement boutons essentiels */
 }
 
-/* Si tu veux masquer la topbar noire */
+/* ---------------- Optional: hide original topbar if desired ---------------- */
 .topbar { display: none !important; }
-
-/* Ajuster z-index editor-layer pour rester sous la toolbar */
-#editor-layer { z-index: 129; pointer-events: auto; }
-
