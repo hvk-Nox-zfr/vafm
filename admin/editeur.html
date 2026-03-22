@@ -1,191 +1,190 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Éditeur d’article</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <title>Éditeur d’article</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <!-- Content Security Policy minimale pour l'éditeur (sans frame-ancestors) -->
-    <meta http-equiv="Content-Security-Policy"
-          content="
-            default-src 'self';
-            script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://esm.sh https://unpkg.com;
-            connect-src 'self' https://blronpowdhaumjudtgvn.supabase.co https://*.supabase.co https://cdn.jsdelivr.net https://esm.sh;
-            img-src 'self' data: https://blronpowdhaumjudtgvn.supabase.co https://*.supabase.co;
-            style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
-            font-src 'self' https://cdn.jsdelivr.net;
-            base-uri 'self';
-          ">
+  <!-- Content Security Policy minimale pour l'éditeur -->
+  <meta http-equiv="Content-Security-Policy"
+        content="
+          default-src 'self';
+          script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://esm.sh https://unpkg.com;
+          connect-src 'self' https://blronpowdhaumjudtgvn.supabase.co https://*.supabase.co https://cdn.jsdelivr.net https://esm.sh;
+          img-src 'self' data: https://blronpowdhaumjudtgvn.supabase.co https://*.supabase.co;
+          style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+          font-src 'self' https://cdn.jsdelivr.net;
+          base-uri 'self';
+        ">
 
-    <link rel="stylesheet" href="editeur.css">
+  <link rel="stylesheet" href="editeur.css" />
 </head>
-
-<script>
-if (localStorage.getItem("admin_logged") !== "true") {
-    window.location.href = "login.html";
-}
-</script>
 
 <body class="admin">
 
-<header class="topbar">
+  <!-- Vérification d'auth côté client (simple redirection si non connecté) -->
+  <script>
+    if (localStorage.getItem('admin_logged') !== 'true') {
+      // redirection rapide ; si tu veux une page de login différente, adapte l'URL
+      window.location.replace('login.html');
+    }
+  </script>
+
+  <header class="topbar" role="banner">
     <div class="topbar-left">
-        <button id="back-btn" class="btn ghost">← Retour</button>
+      <button id="back-btn" class="btn ghost" aria-label="Retour">← Retour</button>
     </div>
-    <div class="topbar-center">
-        <h1 id="editor-title">Édition de l’article</h1>
+
+    <div class="topbar-center" role="heading" aria-level="1">
+      <h1 id="editor-title">Édition de l’article</h1>
     </div>
+
     <div class="topbar-right">
-        <button id="undo-btn" class="btn ghost">↶ Annuler</button>
-        <button id="redo-btn" class="btn ghost">↷ Refaire</button>
-        <button id="save-btn" class="btn primary">Enregistrer</button>
+      <button id="undo-btn" class="btn ghost" aria-label="Annuler">↶ Annuler</button>
+      <button id="redo-btn" class="btn ghost" aria-label="Refaire">↷ Refaire</button>
+      <button id="save-btn" class="btn primary" aria-label="Enregistrer">Enregistrer</button>
     </div>
-</header>
+  </header>
 
-<div class="layout">
+  <div class="layout" role="application">
 
-    <!-- BARRE CANVA -->
-    <aside class="canva-sidebar">
-        <div class="canva-icon" data-panel="assets">🧩</div>
-        <div class="canva-icon" data-panel="images">🖼</div>
-        <div class="canva-icon" data-panel="text">✏️</div>
-        <div class="canva-icon" data-panel="templates">📄</div>
+    <!-- BARRE CANVA (icônes) -->
+    <aside class="canva-sidebar" aria-label="Barre d'outils">
+      <button class="canva-icon" data-tool="assets" title="Éléments" aria-label="Éléments">🧩</button>
+      <button class="canva-icon" data-tool="images" title="Images" aria-label="Images">🖼</button>
+      <button class="canva-icon" data-tool="text" title="Texte" aria-label="Texte">✏️</button>
+      <button class="canva-icon" data-tool="templates" title="Templates" aria-label="Templates">📄</button>
     </aside>
 
-    <!-- PANNEAUX -->
-    <aside class="canva-panel" id="panel-assets">
-        <h2>Éléments</h2>
-        <input id="element-search" class="search-input" placeholder="Rechercher un élément…">
-        <div id="elements-results" class="elements-grid"></div>
+    <!-- PANNEAUX (déroulants) -->
+    <aside class="canva-panel" id="panel-assets" aria-hidden="true">
+      <h2>Éléments</h2>
+      <input id="element-search" class="search-input" placeholder="Rechercher un élément…" aria-label="Rechercher un élément">
+      <div id="elements-results" class="elements-grid" role="list"></div>
     </aside>
 
-    <aside class="canva-panel" id="panel-images">
-        <h2>Images</h2>
-        <button id="add-image" class="btn full">+ Importer une image</button>
+    <aside class="canva-panel" id="panel-images" aria-hidden="true">
+      <h2>Images</h2>
+      <button id="add-image" class="btn full">+ Importer une image</button>
     </aside>
 
-    <aside class="canva-panel" id="panel-text">
-        <h2>Texte</h2>
-        <button id="add-title" class="btn full">+ Titre</button>
-        <button id="add-subtitle" class="btn full">+ Sous-titre</button>
-        <button id="add-paragraph" class="btn full">+ Paragraphe</button>
+    <aside class="canva-panel" id="panel-text" aria-hidden="true">
+      <h2>Texte</h2>
+      <button id="add-title" class="btn full">+ Titre</button>
+      <button id="add-subtitle" class="btn full">+ Sous-titre</button>
+      <button id="add-paragraph" class="btn full">+ Paragraphe</button>
     </aside>
 
-    <aside class="canva-panel" id="panel-templates">
-        <h2>Templates</h2>
-        <p>À venir…</p>
+    <aside class="canva-panel" id="panel-templates" aria-hidden="true">
+      <h2>Templates</h2>
+      <p>À venir…</p>
     </aside>
 
-    <!-- ZONE CENTRALE -->
-    <main class="main">
-        <div class="canvas-wrapper">
+    <!-- ZONE CENTRALE : aperçu public + calque d'édition -->
+    <main class="main" role="main">
+      <div class="canvas-wrapper">
 
-            <!-- COPIE DE LA PAGE PUBLIQUE (structure identique) -->
-            <div id="public-page">
+        <!-- PAGE PUBLIQUE (aperçu) -->
+        <section id="public-page" class="canvas" aria-label="Aperçu public">
+          <!-- Contenu public (injecté par JS ou statique) -->
+          <div id="actu-content" class="public-content" aria-live="polite">
+            <h2>Titre de l’article</h2>
+            <p>Paragraphe d’introduction. Utilise la barre à gauche pour ajouter du texte ou des images.</p>
+          </div>
+        </section>
 
-                <header class="topbar public-header">
-                    <div class="logo">
-                        <!-- Ajuste le chemin si nécessaire -->
-                        <img src="../logo/VAFM logo rouge.png" alt="Logo de la radio">
-                    </div>
-
-                    <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
-                        <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                                    <stop offset="0%" stop-color="#ff3366" />
-                                    <stop offset="100%" stop-color="#8b5bff" />
-                                </linearGradient>
-                            </defs>
-                            <path d="M3 10L12 3L21 10V21H14V14H10V21H3V10Z" />
-                        </svg>
-                    </a>
-
-                    <button class="nav-toggle">☰</button>
-                </header>
-
-                <!-- Structure publique non imbriquée -->
-                <div class="public-main">
-                    <div class="canvas-wrapper">
-                        <!-- ID attendu par ton JS public -->
-                        <div id="actu-content" class="canvas"></div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- CALQUE D'ÉDITION -->
-            <div id="editor-layer" class="editor-layer"></div>
-
-        </div>
+        <!-- CALQUE D'ÉDITION (au-dessus de l'aperçu) -->
+        <div id="editor-layer" class="editor-layer" aria-hidden="false"></div>
+      </div>
     </main>
 
-    <!-- PROPRIÉTÉS -->
-    <aside class="properties">
-        <h2>Propriétés</h2>
+    <!-- PANNEAU PROPRIÉTÉS -->
+    <aside class="properties" aria-label="Propriétés">
+      <h2>Propriétés</h2>
 
-        <div id="no-selection-panel">
-            <p>Aucun élément sélectionné.</p>
+      <div id="no-selection-panel">
+        <p>Aucun élément sélectionné.</p>
+      </div>
+
+      <div id="text-panel" class="prop-panel hidden" aria-hidden="true">
+        <h3>Texte</h3>
+        <label for="text-font-size">Taille</label>
+        <input type="number" id="text-font-size">
+
+        <label for="text-color">Couleur</label>
+        <input type="color" id="text-color">
+
+        <label>Alignement</label>
+        <div class="btn-group" role="group" aria-label="Alignement">
+          <button data-align="left" class="btn small">←</button>
+          <button data-align="center" class="btn small">≡</button>
+          <button data-align="right" class="btn small">→</button>
         </div>
 
-        <div id="text-panel" class="prop-panel hidden">
-            <h3>Texte</h3>
-            <label>Taille</label>
-            <input type="number" id="text-font-size">
-
-            <label>Couleur</label>
-            <input type="color" id="text-color">
-
-            <label>Alignement</label>
-            <div class="btn-group">
-                <button data-align="left" class="btn small">←</button>
-                <button data-align="center" class="btn small">≡</button>
-                <button data-align="right" class="btn small">→</button>
-            </div>
-
-            <label>Style</label>
-            <div class="btn-group">
-                <button data-style="bold" class="btn small">Gras</button>
-                <button data-style="italic" class="btn small">Italique</button>
-                <button data-style="underline" class="btn small">Souligné</button>
-            </div>
+        <label>Style</label>
+        <div class="btn-group" role="group" aria-label="Style">
+          <button data-style="bold" class="btn small">Gras</button>
+          <button data-style="italic" class="btn small">Italique</button>
+          <button data-style="underline" class="btn small">Souligné</button>
         </div>
+      </div>
 
-        <div id="image-panel" class="prop-panel hidden">
-            <h3>Image</h3>
-            <label>Largeur</label>
-            <input type="range" id="img-frame-width">
+      <div id="image-panel" class="prop-panel hidden" aria-hidden="true">
+        <h3>Image</h3>
+        <label for="img-frame-width">Largeur</label>
+        <input type="range" id="img-frame-width">
 
-            <label>Hauteur</label>
-            <input type="range" id="img-frame-height">
-        </div>
+        <label for="img-frame-height">Hauteur</label>
+        <input type="range" id="img-frame-height">
+      </div>
     </aside>
+  </div>
 
-</div>
+  <!-- SCRIPTS : supabase-init d'abord si tu veux exposer window.supabase, puis editeur.js -->
+  <!-- Si tu préfères que editeur.js crée son propre client Supabase, inverse l'ordre -->
+  <script type="module" src="supabase-init.js"></script>
+  <script type="module" src="editeur.js"></script>
 
-<!-- SCRIPTS : charger les modules après le DOM -->
-<script type="module" src="editeur.js"></script>
-<script type="module" src="supabase-init.js"></script>
+  <!-- Inline : comportement des icônes (léger, non bloquant) -->
+  <script>
+    (function () {
+      const icons = document.querySelectorAll('.canva-icon');
+      const panels = document.querySelectorAll('.canva-panel');
 
-<!-- Inline script corrigé -->
-<script>
-    const icons = document.querySelectorAll(".canva-icon");
-    const panels = document.querySelectorAll(".canva-panel");
-
-    icons.forEach(icon => {
-        const panel = document.getElementById("panel-" + icon.dataset.panel);
-        icon.addEventListener("mouseenter", () => {
-            panels.forEach(p => p.classList.remove("open"));
-            if (panel) panel.classList.add("open");
+      icons.forEach(icon => {
+        const panelId = 'panel-' + (icon.dataset.panel || icon.dataset.tool || '');
+        const panel = document.getElementById(panelId);
+        icon.addEventListener('mouseenter', () => {
+          panels.forEach(p => p.classList.remove('open'));
+          panels.forEach(p => p.setAttribute('aria-hidden', 'true'));
+          if (panel) {
+            panel.classList.add('open');
+            panel.setAttribute('aria-hidden', 'false');
+          }
         });
-    });
-
-    panels.forEach(panel => {
-        panel.addEventListener("mouseleave", () => {
-            panel.classList.remove("open");
+        icon.addEventListener('click', () => {
+          // click toggles panel for keyboard users
+          if (panel) {
+            const isOpen = panel.classList.contains('open');
+            panels.forEach(p => p.classList.remove('open'));
+            panels.forEach(p => p.setAttribute('aria-hidden', 'true'));
+            if (!isOpen) {
+              panel.classList.add('open');
+              panel.setAttribute('aria-hidden', 'false');
+            }
+          }
         });
-    });
-</script>
+      });
+
+      panels.forEach(panel => {
+        panel.addEventListener('mouseleave', () => {
+          panel.classList.remove('open');
+          panel.setAttribute('aria-hidden', 'true');
+        });
+      });
+    })();
+  </script>
 
 </body>
 </html>
+
