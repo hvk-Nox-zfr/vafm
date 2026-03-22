@@ -318,3 +318,32 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 
 /* ---------------- Optional: hide original topbar if desired ---------------- */
 .topbar { display: none !important; }
+
+/* Bouton Enregistrer fixe top-right */
+.save-top {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 200; /* au-dessus de la toolbar */
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.12);
+  transition: transform .08s ease, box-shadow .12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Variante compacte sur petits écrans */
+@media (max-width: 520px) {
+  .save-top {
+    top: 10px;
+    right: 10px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Si tu as déjà un bouton "save" ailleurs, cacher la version secondaire si besoin */
+.save-top.hide-secondary { display: none !important; }
