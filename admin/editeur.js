@@ -386,6 +386,75 @@ document.addEventListener("DOMContentLoaded", () => {
       closeAllPanels();
     }
   });
+// --- Text blocks éditables, déplaçables et redimensionnables
+function createTextBlock({ type = 'paragraph', x = 120, y = 120, width = 360, text = '' } = {}) {
+  const block = document.createElement('div');
+  block.className = 'block-public text-block';
+  block.style.position = 'absolute';
+  block.style.left = (typeof x === 'number' ? x + 'px' : x);
+  block.style.top = (typeof y === 'number' ? y + 'px' : y);
+  block.style.width = (typeof width === 'number' ? width + 'px' : width);
+  block.style.minWidth = '80px';
+  block.style.padding = '8px 10px';
+  block.style.cursor = 'move';
+  block.setAttribute('tabindex', '0');
+
+  // contenu éditable
+  const content = document.createElement(type === 'title' ? 'h2' : (type === 'subtitle' ? 'h3' : 'p'));
+  content.className = 'text-block-content';
+  content.contentEditable = 'true';
+  content.spellcheck = false;
+  content.innerText = text || (type === 'title' ? 'Titre' : (type === 'subtitle' ? 'Sous-titre' : 'Paragraphe'));
+  content.style.margin = '0';
+  content.style.outline = 'none';
+  content.style.cursor = 'text';
+
+  // poignée de redimensionnement
+  const handle = document.createElement('div');
+  handle.className = 'resize-handle bottom-right';
+
+  block.appendChild(content);
+  block.appendChild(handle);
+
+  // interactions
+  makeDraggable(block);
+  makeResizable(block);
+  makeSelectable(block);
+
+  // focus editing on double click
+  block.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    content.focus();
+    // place caret at end
+    const range = document.createRange();
+    range.selectNodeContents(content);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+
+  // prevent dragging while editing
+  content.addEventListener('mousedown', (e) => e.stopPropagation());
+
+  // append to editor layer
+  const parent = editorLayer || wrapper || document.body;
+  parent.appendChild(block);
+
+  return { block, content };
+}
+
+// Attacher aux boutons existants (dans DOMContentLoaded)
+const btnTitle = document.getElementById('add-title');
+const btnSubtitle = document.getElementById('add-subtitle');
+const btnParagraph = document.getElementById('add-paragraph');
+
+if (btnTitle) btnTitle.addEventListener('click', (e) => { e.preventDefault(); createTextBlock({ type: 'title', x: 140, y: 140, width: 520 }); });
+if (btnSubtitle) btnSubtitle.addEventListener('click', (e) => { e.preventDefault(); createTextBlock({ type: 'subtitle', x: 160, y: 160, width: 420 }); });
+if (btnParagraph) btnParagraph.addEventListener('click', (e) => { e.preventDefault(); createTextBlock({ type: 'paragraph', x: 180, y: 180, width: 360 }); });
+
+// Exposer utilitaire pour console ou autres modules
+window.createTextBlock = createTextBlock;
 
   closeAllPanels();
   chargerActu();
