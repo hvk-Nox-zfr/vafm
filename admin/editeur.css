@@ -230,3 +230,48 @@ body.admin .main { overflow: auto; }
 
 /* Ensure editor-layer allows pointer events */
 .editor-layer { pointer-events: auto; }
+
+/* ---------- Barre de mise en page (format toolbar) ---------- */
+.format-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  gap: 8px;
+  background: #ffffff;
+  color: #0f1724;
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+  z-index: 130;
+  box-shadow: 0 2px 8px rgba(2,6,23,0.04);
+  font-size: 14px;
+}
+
+/* Toolbar groups */
+.format-toolbar .ft-left, .format-toolbar .ft-right { display:flex; align-items:center; gap:8px; }
+
+/* Controls */
+.ft-control { padding:6px 8px; border-radius:6px; border:1px solid rgba(15,23,42,0.06); background:#fff; color:inherit; }
+.ft-btn { padding:6px 8px; border-radius:6px; border:1px solid rgba(15,23,42,0.06); background:transparent; cursor:pointer; }
+.ft-btn[aria-pressed="true"] { background:#eef2ff; border-color:#c7d2fe; }
+.ft-color { width:36px; height:36px; padding:0; border-radius:6px; border:1px solid rgba(15,23,42,0.06); }
+
+/* Décaler le contenu sous la toolbar */
+body.admin .layout { margin-top: 56px; }
+
+/* Masquer la topbar noire existante (si tu veux la garder, supprime cette règle) */
+.topbar { display: none !important; }
+
+/* Ajuster editor-layer z-index pour rester sous la toolbar */
+#editor-layer { z-index: 129; pointer-events: auto; }
+
+/* Petite amélioration responsive pour la toolbar */
+@media (max-width: 720px) {
+  .format-toolbar { height: 48px; padding: 6px 8px; gap:6px; font-size:13px; }
+  body.admin .layout { margin-top: 48px; }
+  .ft-left .ft-control, .ft-right .ft-control { display: none; } /* simplifier sur mobile */
+}
