@@ -542,6 +542,39 @@ function applyRelativePosToBlock(div, pos) {
   if (pos.height) div.style.height = (typeof pos.height === 'number' ? pos.height + 'px' : pos.height);
 }
 
+  // Brancher le bouton Enregistrer fixe
+document.addEventListener('DOMContentLoaded', () => {
+  const saveTop = document.getElementById('save-btn-top');
+  if (!saveTop) return;
+
+  // Click handler : appelle la fonction d'enregistrement exposée
+  saveTop.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (typeof window.sauvegarder === 'function') {
+      try {
+        // Optionnel : feedback visuel
+        saveTop.disabled = true;
+        saveTop.textContent = 'Enregistrement…';
+        await window.sauvegarder();
+      } catch (err) {
+        console.error('Erreur sauvegarde via bouton top:', err);
+      } finally {
+        saveTop.disabled = false;
+        saveTop.textContent = 'Enregistrer';
+      }
+    } else {
+      console.warn('sauvegarder() non disponible');
+      // fallback : déclencher l'ancien bouton si présent
+      const old = document.getElementById('save-btn');
+      if (old) old.click();
+    }
+  });
+
+  // Optionnel : masquer le bouton secondaire existant (si tu veux un seul bouton visible)
+  const oldSave = document.getElementById('save-btn');
+  if (oldSave) oldSave.classList.add('hide-secondary');
+});
+
   closeAllPanels();
   chargerActu();
 });
