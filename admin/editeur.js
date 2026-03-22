@@ -367,119 +367,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!ftFont) return; // toolbar non présente
 
-/* editeur.js — version consolidée et prête à coller */
-
-/* ---------------- Utilitaires généraux ---------------- */
-function applyInlineStyleToBlock(block, cssObj) {
-  const content = block.querySelector('.text-block-content') || block;
-  Object.keys(cssObj).forEach(k => {
-    content.style[k] = cssObj[k];
-  });
-}
-
-function rgbToHex(rgb) {
-  if (!rgb) return null;
-  const m = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!m) return null;
-  return "#" + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
-}
-
-/* ---------------- Sélection / bloc courant ---------------- */
-/*
-  selectedBlock doit être maintenu par ta logique d'éditeur (click sur un bloc, etc.).
-  Si tu n'as pas encore cette logique, adapte la sélection pour définir selectedBlock.
-*/
-let selectedBlock = null;
-
-/* Expose helper pour tests/debug si besoin */
-window.__editorHelpers = {
-  setSelectedBlock: (el) => { selectedBlock = el; },
-  getSelectedBlock: () => selectedBlock
-};
-
-/* ---------------- Appliquer style à la sélection ou au bloc ---------------- */
-function applyStyleToSelectionOrBlock(styleFn) {
-  if (selectedBlock && selectedBlock.classList && selectedBlock.classList.contains('text-block')) {
-    styleFn(selectedBlock);
-    return;
+  function applyInlineStyleToBlock(block, cssObj) {
+    const content = block.querySelector('.text-block-content') || block;
+    Object.keys(cssObj).forEach(k => content.style[k] = cssObj[k]);
   }
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-  const range = sel.getRangeAt(0);
-  const span = document.createElement('span');
-  styleFn(span);
-  try {
-    // essayer d'entourer la sélection
-    range.surroundContents(span);
-    sel.removeAllRanges();
-    const newRange = document.createRange();
-    newRange.selectNodeContents(span);
-    sel.addRange(newRange);
-  } catch (e) {
-    // fallback simple : appliquer execCommand pour les formats basiques
+
+  function applyStyleToSelectionOrBlock(styleFn) {
+    if (selectedBlock && selectedBlock.classList.contains('text-block')) {
+      styleFn(selectedBlock);
+      return;
+    }
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    // try to wrap selection in a span
+    const span = document.createElement('span');
+    styleFn(span);
     try {
+      range.surroundContents(span);
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(span);
+      sel.addRange(newRange);
+    } catch (e) {
+      // fallback: use document.execCommand for basic formatting
       if (span.style.fontWeight) document.execCommand('bold');
       if (span.style.fontStyle) document.execCommand('italic');
-      if (span.style.textDecoration && span.style.textDecoration.includes('underline')) document.execCommand('underline');
+      if (span.style.textDecoration) document.execCommand('underline');
       if (span.style.color) document.execCommand('foreColor', false, span.style.color);
       if (span.style.fontSize) {
-        // execCommand fontSize est limité ; on enveloppe en span si possible
+        // execCommand fontSize uses 1-7; approximate by wrapping span
         const wrapper = document.createElement('span');
         wrapper.style.fontSize = span.style.fontSize;
-        try { range.surroundContents(wrapper); } catch(e2) { /* ignore */ }
+        try { range.surroundContents(wrapper); } catch(e2) { console.warn('fontSize fallback failed', e2); }
       }
-    } catch (e2) {
-      console.warn('Fallback formatting failed', e2);
     }
   }
-}
 
-/* ---------------- Toolbar state update ---------------- */
-function updateToolbarState() {
-  const ftFont = document.getElementById('ft-font');
-  const ftSize = document.getElementById('ft-size');
-  const ftLineheight = document.getElementById('ft-lineheight');
-  const ftColor = document.getElementById('ft-color');
-  const ftBold = document.getElementById('ft-bold');
-  const ftItalic = document.getElementById('ft-italic');
-  const ftUnderline = document.getElementById('ft-underline');
-
-  if (selectedBlock && selectedBlock.classList.contains('text-block')) {
-    const content = selectedBlock.querySelector('.text-block-content') || selectedBlock;
-    const cs = window.getComputedStyle(content);
-    if (ftFont) ftFont.value = cs.fontFamily || ftFont.value;
-    if (ftSize) ftSize.value = cs.fontSize || ftSize.value;
-    if (ftLineheight) {
-      const lh = cs.lineHeight;
-      ftLineheight.value = (lh && lh !== 'normal') ? lh : ftLineheight.value;
+  // update toolbar state from selectedBlock
+  function updateToolbarState() {
+    if (selectedBlock && selectedBlock.classList.contains('text-block')) {
+      const content = selectedBlock.querySelector('.text-block-content');
+      if (!content) return;
+      ftFont.value = window.getComputedStyle(content).fontFamily || ftFont.value;
+      ftSize.value = window.getComputedStyle(content).fontSize || ftSize.value;
+      const lh = window.getComputedStyle(content).lineHeight;
+      ftLineheight.value = lh && lh !== 'normal' ? lh : ftLineheight.value;
+      const color = window.getComputedStyle(content).color;
+      if (color) {
+        const m = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (m) ftColor.value = "#" + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
+      }
     }
-    if (ftColor) {
-      const c = rgbToHex(cs.color);
-      if (c) ftColor.value = c;
-    }
-    if (ftBold) ftBold.setAttribute('aria-pressed', cs.fontWeight === '700' || parseInt(cs.fontWeight) >= 700 ? 'true' : 'false');
-    if (ftItalic) ftItalic.setAttribute('aria-pressed', cs.fontStyle === 'italic' ? 'true' : 'false');
-    if (ftUnderline) ftUnderline.setAttribute('aria-pressed', cs.textDecorationLine && cs.textDecorationLine.includes('underline') ? 'true' : 'false');
   }
-}
 
-/* ---------------- Initialisation des handlers de la toolbar ---------------- */
-function initFormatToolbarHandlers() {
-  const ftFont = document.getElementById('ft-font');
-  const ftSize = document.getElementById('ft-size');
-  const ftBold = document.getElementById('ft-bold');
-  const ftItalic = document.getElementById('ft-italic');
-  const ftUnderline = document.getElementById('ft-underline');
-  const ftColor = document.getElementById('ft-color');
-  const ftAlignLeft = document.getElementById('ft-align-left');
-  const ftAlignCenter = document.getElementById('ft-align-center');
-  const ftAlignRight = document.getElementById('ft-align-right');
-  const ftLineheight = document.getElementById('ft-lineheight');
-  const ftSendFront = document.getElementById('ft-send-front');
-  const ftSendBack = document.getElementById('ft-send-back');
-
-  if (!ftFont) return; // toolbar absente
-
+  // handlers
   ftFont.addEventListener('change', () => {
     applyStyleToSelectionOrBlock(el => {
       if (el.classList && el.classList.contains('text-block')) applyInlineStyleToBlock(el, { fontFamily: ftFont.value });
@@ -544,150 +486,23 @@ function initFormatToolbarHandlers() {
     selectedBlock.style.zIndex = Math.max(0, (parseInt(selectedBlock.style.zIndex || 10) - 10)).toString();
   });
 
-  // Mettre à jour l'état de la toolbar quand la sélection change
+  // update toolbar when selection or block changes
   document.addEventListener('selectionchange', updateToolbarState);
   document.addEventListener('click', updateToolbarState);
-}
-
-/* ---------------- sync editor layer ---------------- */
-function syncEditorLayerToCanvas() {
-  const wrapper = document.querySelector('.canvas-wrapper');
-  const canvasEl = document.querySelector('.canvas');
-  const editorLayer = document.getElementById('editor-layer');
-  if (!wrapper || !canvasEl || !editorLayer) return;
-
-  const canvasRect = canvasEl.getBoundingClientRect();
-  const wrapperRect = wrapper.getBoundingClientRect();
-
-  const left = canvasRect.left - wrapperRect.left;
-  const top = canvasRect.top - wrapperRect.top;
-
-  editorLayer.style.left = left + 'px';
-  editorLayer.style.top = top + 'px';
-  editorLayer.style.width = canvasRect.width + 'px';
-  editorLayer.style.height = canvasRect.height + 'px';
-}
-
-window.addEventListener('load', syncEditorLayerToCanvas);
-window.addEventListener('resize', () => {
-  clearTimeout(window.__syncEditorTimer);
-  window.__syncEditorTimer = setTimeout(syncEditorLayerToCanvas, 120);
-});
-document.addEventListener('canva-sync', syncEditorLayerToCanvas);
-
-/* ---------------- position helpers ---------------- */
-function getRelativePosToCanvas(el) {
-  const canvasEl = document.querySelector('.canvas');
-  if (!canvasEl) return { x: 0, y: 0, width: el.offsetWidth, height: el.offsetHeight };
-  const canvasRect = canvasEl.getBoundingClientRect();
-  const elRect = el.getBoundingClientRect();
-  return {
-    x: Math.round(elRect.left - canvasRect.left),
-    y: Math.round(elRect.top - canvasRect.top),
-    width: el.offsetWidth,
-    height: el.offsetHeight
-  };
-}
-
-function applyRelativePosToBlock(div, pos) {
-  div.style.left = (typeof pos.x === 'number' ? pos.x + 'px' : (pos.x || '0px'));
-  div.style.top = (typeof pos.y === 'number' ? pos.y + 'px' : (pos.y || '0px'));
-  if (pos.width) div.style.width = (typeof pos.width === 'number' ? pos.width + 'px' : pos.width);
-  if (pos.height) div.style.height = (typeof pos.height === 'number' ? pos.height + 'px' : pos.height);
-}
-
-/* ---------------- Handler Enregistrer (délégation) ---------------- */
-/*
-  On utilise la délégation sur document pour capter #save-btn-top ou #save-btn
-  même si le bouton est recréé dynamiquement.
-*/
-document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('#save-btn-top, #save-btn');
-  if (!btn) return;
-  e.preventDefault();
-
-  if (btn.disabled) return;
-  btn.disabled = true;
-
-  const originalHTML = btn.innerHTML;
-  try {
-    btn.innerHTML = 'Enregistrement…';
-    if (typeof window.sauvegarder === 'function') {
-      await window.sauvegarder();
-      btn.innerHTML = 'Enregistré';
-      setTimeout(() => { try { btn.innerHTML = originalHTML; } catch (err) {} }, 1100);
-    } else {
-      console.warn('sauvegarder() non disponible');
-      alert('Fonction de sauvegarde indisponible. Voir console.');
-      btn.innerHTML = originalHTML;
-    }
-  } catch (err) {
-    console.error('Erreur lors de la sauvegarde:', err);
-    alert('Erreur lors de l’enregistrement. Voir console.');
-    btn.innerHTML = originalHTML;
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-/* ---------------- Sync après chargement du contenu ---------------- */
-(async function ensureSyncAfterLoad() {
-  try {
-    if (typeof chargerActu === 'function') {
-      const maybePromise = chargerActu();
-      if (maybePromise && typeof maybePromise.then === 'function') {
-        await maybePromise;
-      }
-    }
-  } catch (e) {
-    console.warn('chargerActu() a levé une erreur lors du premier appel', e);
-  } finally {
-    if (typeof syncEditorLayerToCanvas === 'function') {
-      syncEditorLayerToCanvas();
-    } else {
-      document.dispatchEvent(new Event('canva-sync'));
-    }
-  }
 })();
 
-/* ---------------- Observer pour DOM dynamique ---------------- */
-const _toolbarObserver = new MutationObserver((mutations) => {
-  for (const m of mutations) {
-    if (m.addedNodes && m.addedNodes.length) {
-      if (typeof updateToolbarState === 'function') updateToolbarState();
-    }
-  }
-});
-_toolbarObserver.observe(document.body, { childList: true, subtree: true });
-
-/* ---------------- Initialisation au DOM ready ---------------- */
-document.addEventListener('DOMContentLoaded', () => {
-  initFormatToolbarHandlers();
-
-  // masquer l'ancien bouton save si présent (optionnel)
-  const oldSave = document.getElementById('save-btn');
-  if (oldSave) oldSave.classList.add('hide-secondary');
-
-  // si tu veux exposer sauvegarder globalement (si définie ailleurs)
-  if (typeof sauvegarder === 'function') window.sauvegarder = sauvegarder;
-
-  // forcer une sync initiale
-  setTimeout(syncEditorLayerToCanvas, 80);
-});
-
-/* ---------------- Fin du fichier editeur.js ---------------- */
-
-
-  /* ---------------- sync editor layer ---------------- */
+  // syncEditorLayerToCanvas : aligne editor-layer sur la zone .canvas publique
 function syncEditorLayerToCanvas() {
   const wrapper = document.querySelector('.canvas-wrapper');
   const canvasEl = document.querySelector('.canvas');
   const editorLayer = document.getElementById('editor-layer');
   if (!wrapper || !canvasEl || !editorLayer) return;
 
+  // bounding boxes
   const canvasRect = canvasEl.getBoundingClientRect();
   const wrapperRect = wrapper.getBoundingClientRect();
 
+  // left/top relatifs au wrapper
   const left = canvasRect.left - wrapperRect.left;
   const top = canvasRect.top - wrapperRect.top;
 
@@ -697,18 +512,17 @@ function syncEditorLayerToCanvas() {
   editorLayer.style.height = canvasRect.height + 'px';
 }
 
-/* appeler au chargement et au resize */
+// appeler au chargement et au resize
 window.addEventListener('load', syncEditorLayerToCanvas);
 window.addEventListener('resize', () => {
   clearTimeout(window.__syncEditorTimer);
   window.__syncEditorTimer = setTimeout(syncEditorLayerToCanvas, 120);
 });
 
-/* event pour forcer la sync après reconstruction */
+// appeler après reconstruction du contenu (après chargerActu)
 document.addEventListener('canva-sync', syncEditorLayerToCanvas);
 
-/* ---------------- position helpers ---------------- */
-function getRelativePosToCanvas(el) {
+  function getRelativePosToCanvas(el) {
   const canvasEl = document.querySelector('.canvas');
   if (!canvasEl) return { x: 0, y: 0, width: el.offsetWidth, height: el.offsetHeight };
   const canvasRect = canvasEl.getBoundingClientRect();
@@ -722,51 +536,62 @@ function getRelativePosToCanvas(el) {
 }
 
 function applyRelativePosToBlock(div, pos) {
-  div.style.left = (typeof pos.x === 'number' ? pos.x + 'px' : (pos.x || '0px'));
-  div.style.top = (typeof pos.y === 'number' ? pos.y + 'px' : (pos.y || '0px'));
+  div.style.left = (typeof pos.x === 'number' ? pos.x + 'px' : pos.x || '0px');
+  div.style.top = (typeof pos.y === 'number' ? pos.y + 'px' : pos.y || '0px');
   if (pos.width) div.style.width = (typeof pos.width === 'number' ? pos.width + 'px' : pos.width);
   if (pos.height) div.style.height = (typeof pos.height === 'number' ? pos.height + 'px' : pos.height);
 }
 
-/* ---------------- expose sauvegarde et handler robuste ---------------- */
-// Exposer la fonction sauvegarder si elle existe
+  // Brancher le bouton Enregistrer fixe
+document.addEventListener('DOMContentLoaded', () => {
+  const saveTop = document.getElementById('save-btn-top');
+  if (!saveTop) return;
+
+  // Click handler : appelle la fonction d'enregistrement exposée
+  saveTop.addEventListener('click', async (e) => {
+    e.preventDefault();
+// ----------------- Exposer sauvegarde globalement -----------------
 if (typeof sauvegarder === 'function') {
   window.sauvegarder = sauvegarder;
 }
 
-// Délégation de clic pour le bouton Enregistrer (capte #save-btn-top ou #save-btn)
+// ----------------- Attachement robuste du bouton "Enregistrer" -----------------
+// Utilise délégation pour être sûr de capter les clics même si le bouton est recréé.
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('#save-btn-top, #save-btn');
   if (!btn) return;
   e.preventDefault();
 
+  // éviter double clic
   if (btn.disabled) return;
   btn.disabled = true;
 
-  const originalHTML = btn.innerHTML;
+  const originalText = btn.innerHTML;
   try {
     btn.innerHTML = 'Enregistrement…';
     if (typeof window.sauvegarder === 'function') {
       await window.sauvegarder();
       btn.innerHTML = 'Enregistré';
-      setTimeout(() => { try { btn.innerHTML = originalHTML; } catch (err) {} }, 1100);
+      setTimeout(() => { try { btn.innerHTML = originalText; } catch(e){} }, 1100);
     } else {
       console.warn('sauvegarder() non disponible');
       alert('Fonction de sauvegarde indisponible. Voir console.');
-      btn.innerHTML = originalHTML;
+      btn.innerHTML = originalText;
     }
   } catch (err) {
     console.error('Erreur lors de la sauvegarde:', err);
     alert('Erreur lors de l’enregistrement. Voir console.');
-    btn.innerHTML = originalHTML;
+    btn.innerHTML = originalText;
   } finally {
     btn.disabled = false;
   }
 });
 
-/* ---------------- s'assurer de la sync après chargement du contenu ---------------- */
+// ----------------- S'assurer que editor-layer est synchronisé après chargement du contenu -----------------
+// Si chargerActu() est asynchrone, appelle sync après qu'il ait fini.
+// Si chargerActu() retourne une promesse, on peut l'attendre ; sinon on déclenche l'événement après l'appel.
 (async function ensureSyncAfterLoad() {
-  // Si chargerActu est défini et retourne une promesse, attendre son exécution
+  // si chargerActu est défini et retourne une promesse, attendre son exécution
   try {
     if (typeof chargerActu === 'function') {
       const maybePromise = chargerActu();
@@ -775,28 +600,35 @@ document.addEventListener('click', async (e) => {
       }
     }
   } catch (e) {
+    // ignore, on fera la sync quand même
     console.warn('chargerActu() a levé une erreur lors du premier appel', e);
   } finally {
-    // forcer la sync
+    // forcer la sync (au cas où chargerActu a reconstruit le DOM)
     if (typeof syncEditorLayerToCanvas === 'function') {
       syncEditorLayerToCanvas();
     } else {
+      // dispatch event si la fonction est définie plus tard
       document.dispatchEvent(new Event('canva-sync'));
     }
   }
 })();
 
-/* ---------------- observer utile si DOM est reconstruit dynamiquement ---------------- */
-const _toolbarObserver = new MutationObserver((mutations) => {
-  for (const m of mutations) {
+// ----------------- Mettre à jour la toolbar si le DOM change (mutation observer) -----------------
+// utile si des éléments sont recréés dynamiquement
+const toolbarObserver = new MutationObserver((mutations) => {
+  // si le bouton top est ajouté plus tard, on peut forcer un update d'état
+  mutations.forEach(m => {
     if (m.addedNodes && m.addedNodes.length) {
+      // update toolbar state (si fonction disponible)
       if (typeof updateToolbarState === 'function') updateToolbarState();
     }
-  }
+  });
 });
-_toolbarObserver.observe(document.body, { childList: true, subtree: true });
+const bodyEl = document.body;
+if (bodyEl) toolbarObserver.observe(bodyEl, { childList: true, subtree: true });
 
-/* ---------------- fin du bloc corrigé ---------------- */
+// ----------------- Optionnel : nettoyage à la fermeture (si tu veux) -----------------
+// window.addEventListener('beforeunload', () => { toolbarObserver.disconnect(); });
 
   closeAllPanels();
   chargerActu();
