@@ -15,6 +15,7 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 <body class="admin">
 
+<!-- BARRE DU HAUT -->
 <header class="topbar">
     <div class="topbar-left">
         <button id="back-btn" class="btn ghost">← Retour</button>
@@ -67,8 +68,8 @@ if (localStorage.getItem("admin_logged") !== "true") {
     <main class="main">
         <div class="canvas-wrapper">
 
-            <!-- PAGE PUBLIQUE (copie réelle) -->
-            <div id="public-page" class="canvas">
+            <!-- COPIE EXACTE DE TA PAGE PUBLIQUE -->
+            <div id="public-page">
 
                 <header class="topbar public-header">
                     <div class="logo">
@@ -90,10 +91,10 @@ if (localStorage.getItem("admin_logged") !== "true") {
                     <button class="nav-toggle">☰</button>
                 </header>
 
-                <!-- CONTENU PUBLIC -->
-                <main class="public-main">
-                    <div class="public-canvas-wrapper">
-                        <div id="editor-area" class="public-content"></div>
+                <main>
+                    <div class="canvas-wrapper">
+                        <!-- ⚠️ IDENTIQUE À LA PAGE PUBLIQUE -->
+                        <div id="actu-content" class="canvas"></div>
                     </div>
                 </main>
 
@@ -172,4 +173,5 @@ if (localStorage.getItem("admin_logged") !== "true") {
 
 </body>
 </html>
+
 
