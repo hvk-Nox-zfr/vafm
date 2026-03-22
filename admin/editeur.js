@@ -1,837 +1,193 @@
-import { supabase } from "./supabase-init.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// -------------------------
-// RÉCUP PARAMÈTRE ID
-// -------------------------
+const supabase = createClient(
+  "https://blronpowdhaumjudtgvn.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
+);
+
+// ----------------------
+// VARIABLES GLOBALES
+// ----------------------
 const params = new URLSearchParams(window.location.search);
 const actuId = Number(params.get("id"));
 
-let actu = null;        // l'actu en cours d'édition
-let history = [];       // historique pour undo/redo
-let future = [];        // redo
+const wrapper = document.querySelector(".canvas-wrapper");
+const canvas = document.getElementById("actu-content");
+const editorLayer = document.getElementById("editor-layer");
 
-const editorTitle = document.getElementById("editor-title");
-const editorArea = document.getElementById("editor-area");
+let selectedBlock = null;
+let undoStack = [];
+let redoStack = [];
 
-// PANNEAUX PROPRIÉTÉS
-const noSelectionPanel = document.getElementById("no-selection-panel");
-const textPanel = document.getElementById("text-panel");
-const imagePanel = document.getElementById("image-panel");
+// ----------------------
+// CHARGEMENT DE L’ARTICLE
+// ----------------------
+async function chargerActu() {
+  const { data: actu, error } = await supabase
+    .from("actus")
+    .select("*")
+    .eq("id", actuId)
+    .maybeSingle();
 
-// SÉLECTION
-let selectedBlock = null;   // .block-public (image / svg)
-let selectedText = null;    // .editable-text
-let currentCropBlock = null;
+  if (!actu) return;
 
-// 🔥 AJOUTE-LE ICI, EXACTEMENT ICI :
-let isReloading = false;
+  // Texte
+  if (actu.contenu?.texte) {
+    canvas.innerHTML = actu.contenu.texte;
+  }
 
-// -------------------------
-// INIT : CHARGER L'ACTU DEPUIS SUPABASE
-// -------------------------
-async function initEditor() {
-    if (!actuId || Number.isNaN(actuId)) {
-        alert("Article introuvable (ID manquant)");
-        window.location.href = "index.html";
-        return;
-    }
-
-    const { data, error } = await supabase
-        .from("actus")
-        .select("*")
-        .eq("id", actuId)
-        .single();
-
-    if (error || !data) {
-        console.error("Erreur chargement actu :", error);
-        alert("Article introuvable");
-        window.location.href = "index.html";
-        return;
-    }
-
-    actu = data;
-
-    // Normalisation du contenu
-    if (!actu.contenu || typeof actu.contenu !== "object") {
-        actu.contenu = { texte: "", images: [] };
-    } else {
-        if (!actu.contenu.texte) actu.contenu.texte = "";
-        if (!Array.isArray(actu.contenu.images)) actu.contenu.images = [];
-    }
-
-    if (editorTitle) editorTitle.textContent = actu.titre || "Sans titre";
-
-    reloadEditor(false);
-    saveState();
-    updatePropertiesPanel();
+  // Images flottantes
+  if (actu.contenu?.images) {
+    actu.contenu.images.forEach(img => addImageBlock(img));
+  }
 }
 
-// -------------------------
-// HISTORIQUE
-// -------------------------
-function getState() {
-    return JSON.stringify(actu.contenu);
+// ----------------------
+// AJOUT D’UN BLOC IMAGE
+// ----------------------
+export function addImageBlock(data = {}) {
+  const div = document.createElement("div");
+  div.className = "block-public";
+  div.style.position = "absolute";
+  div.style.left = data.x || "100px";
+  div.style.top = data.y || "100px";
+  div.style.width = data.width || "300px";
+  div.style.height = data.height || "200px";
+
+  const img = document.createElement("img");
+  img.src = data.url;
+  img.style.position = "absolute";
+  img.style.left = data.offsetX || "0px";
+  img.style.top = data.offsetY || "0px";
+  img.style.width = data.imgWidth || "100%";
+  img.style.height = data.imgHeight || "100%";
+  img.style.objectFit = "contain";
+
+  div.appendChild(img);
+
+  makeDraggable(div);
+  makeResizable(div);
+  makeSelectable(div);
+
+  editorLayer.appendChild(div);
 }
 
-function setState(stateStr) {
-    actu.contenu = JSON.parse(stateStr);
-    reloadEditor(false);
-}
-
-function saveState() {
-    if (isReloading) return; // 🔥 empêche les doublons
-
-    const state = getState();
-    if (history.length === 0 || history[history.length - 1] !== state) {
-        history.push(state);
-        future = [];
-    }
-}
-
-// UNDO / REDO / RETOUR
-document.getElementById("undo-btn")?.addEventListener("click", () => {
-    if (history.length > 1) {
-        const current = history.pop();
-        future.push(current);
-        const prev = history[history.length - 1];
-        setState(prev);
-        clearSelection();
-        updatePropertiesPanel();
-    }
-});
-
-document.getElementById("redo-btn")?.addEventListener("click", () => {
-    if (future.length > 0) {
-        const next = future.pop();
-        history.push(next);
-        setState(next);
-        clearSelection();
-        updatePropertiesPanel();
-    }
-});
-
-document.getElementById("back-btn")?.addEventListener("click", () => {
-    window.location.href = "index.html";
-});
-
-// -------------------------
-// UPLOAD IMAGE SUPABASE
-// -------------------------
-async function uploadImage(file) {
-    const fileName = Date.now() + "-" + file.name;
-
-    const { data, error } = await supabase.storage
-        .from("uploads")
-        .upload(fileName, file);
-
-    if (error) {
-        console.error("Erreur upload :", error);
-        return null;
-    }
-
-    const { data: publicUrl } = supabase.storage
-        .from("uploads")
-        .getPublicUrl(fileName);
-
-    return publicUrl.publicUrl;
-}
-
-// -------------------------
-// RECHARGER L'ÉDITEUR
-// -------------------------
-function reloadEditor(pushHistory = true) {
-    if (!actu) return;
-
-    isReloading = true; // 🔥 empêche saveState() de s’exécuter
-
-    editorArea.innerHTML = actu.contenu.texte || "";
-
-    if (!editorArea.querySelector(".editable-text")) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "editable-text";
-        wrapper.setAttribute("contenteditable", "true");
-        wrapper.innerHTML = editorArea.innerHTML || "Tape ton texte ici…";
-        editorArea.innerHTML = "";
-        editorArea.appendChild(wrapper);
-    } else {
-        editorArea.querySelectorAll(".editable-text").forEach(el => {
-            el.setAttribute("contenteditable", "true");
-        });
-    }
-
-    // Supprimer les anciennes images
-    document.querySelectorAll(".canvas-wrapper .block-public").forEach(el => el.remove());
-
-    // Recréer les images
-    actu.contenu.images.forEach(imgData => addImageBlock(imgData));
-
-    attachTextHandlers();
-
-    isReloading = false; // 🔥 on réactive l’historique
-
-    if (pushHistory) {
-        saveState();
-    }
-}
-
-// -------------------------
-// SÉLECTION GLOBALE
-// -------------------------
-function clearSelection() {
-    if (selectedBlock) {
-        selectedBlock.classList.remove("selected", "cropping");
-    }
-    if (selectedText) {
-        selectedText.classList.remove("selected");
-    }
-    selectedBlock = null;
-    selectedText = null;
-    currentCropBlock = null;
-    updatePropertiesPanel();
-}
-
-// Sélection robuste : on remonte toujours au bloc parent
-const canvasWrapper = document.querySelector(".canvas-wrapper");
-
-canvasWrapper.addEventListener("mousedown", e => {
-    const block = e.target.closest(".block-public");
-    const textEl = e.target.closest(".editable-text");
-
-    if (block) {
-        e.preventDefault();
-
-        if (selectedText) {
-            selectedText.classList.remove("selected");
-            selectedText = null;
-        }
-
-        if (selectedBlock && selectedBlock !== block) {
-            selectedBlock.classList.remove("selected", "cropping");
-        }
-
-        selectedBlock = block;
-        selectedBlock.classList.add("selected");
-        updatePropertiesPanel("image");
-        return;
-    }
-
-    if (textEl) {
-        if (selectedBlock) {
-            selectedBlock.classList.remove("selected", "cropping");
-            selectedBlock = null;
-        }
-
-        if (selectedText && selectedText !== textEl) {
-            selectedText.classList.remove("selected");
-        }
-
-        selectedText = textEl;
-        textEl.classList.add("selected");
-        updatePropertiesPanel("text");
-        return;
-    }
-
-    clearSelection();
-});
-
-// -------------------------
-// PANNEAU PROPRIÉTÉS
-// -------------------------
-function updatePropertiesPanel(type = null) {
-    noSelectionPanel.classList.add("hidden");
-    textPanel.classList.add("hidden");
-    imagePanel.classList.add("hidden");
-
-    if (!type) {
-        noSelectionPanel.classList.remove("hidden");
-        return;
-    }
-
-    if (type === "text" && selectedText) {
-        textPanel.classList.remove("hidden");
-        const style = window.getComputedStyle(selectedText);
-        const fs = parseInt(style.fontSize);
-        document.getElementById("text-font-size").value = isNaN(fs) ? 18 : fs;
-        document.getElementById("text-color").value = rgbToHex(style.color);
-        return;
-    }
-
-    if (type === "image" && selectedBlock) {
-        imagePanel.classList.remove("hidden");
-        const rect = selectedBlock.getBoundingClientRect();
-        document.getElementById("img-frame-width").value = rect.width;
-        document.getElementById("img-frame-height").value = rect.height;
-        return;
-    }
-}
-
-function rgbToHex(rgb) {
-    const m = rgb.match(/\d+/g);
-    if (!m) return "#000000";
-    const [r, g, b] = m.map(Number);
-    return "#" + [r, g, b].map(v => v.toString(16).padStart(2, "0")).join("");
-}
-
-// -------------------------
-// TEXTE
-// -------------------------
-function attachTextHandlers() {
-    [...editorArea.querySelectorAll(".editable-text")].forEach(el => {
-        el.oninput = () => {
-            saveTextContent();
-        };
-        el.onfocus = () => {
-            if (selectedBlock) {
-                selectedBlock.classList.remove("selected", "cropping");
-                selectedBlock = null;
-            }
-            if (selectedText && selectedText !== el) {
-                selectedText.classList.remove("selected");
-            }
-            selectedText = el;
-            el.classList.add("selected");
-            updatePropertiesPanel("text");
-        };
-    });
-}
-
-function saveTextContent() {
-    if (!actu) return;
-    actu.contenu.texte = editorArea.innerHTML;
-}
-
-// -------------------------
-// AJOUT IMAGE (UPLOAD SUPABASE)
-// -------------------------
-document.getElementById("add-image").addEventListener("click", () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-
-    input.onchange = async () => {
-        const file = input.files[0];
-        if (!file) return;
-
-        const url = await uploadImage(file);
-        if (!url) return;
-
-        addImageBlock({ url });
-        autoSaveImages();
-        saveState();
-    };
-
-    input.click();
-});
-// -------------------------
-// SUPPRIMER SÉLECTION
-// -------------------------
-document.getElementById("delete-selected-btn").addEventListener("click", () => {
-    // On récupère DIRECTEMENT dans le DOM ce qui est sélectionné
-    const imgBlock = document.querySelector(".block-public.selected");
-    const textBlock = document.querySelector(".editable-text.selected");
-
-    const target = imgBlock || textBlock;
-    if (!target) {
-        console.warn("Aucun élément sélectionné.");
-        return;
-    }
-
-    target.remove();
-
-    // On met à jour les données
-    saveTextContent();
-    autoSaveImages();
-    saveState();
-    clearSelection();
-});
-
-// -------------------------
-// AJOUT D'UNE IMAGE FLOTTANTE
-// -------------------------
-function addImageBlock(data = {}) {
-    const layer = document.getElementById("editor-layer");
-    if (!layer) {
-        console.error("❌ #editor-layer introuvable !");
-        return;
-    }
-
-    // --- BLOC PRINCIPAL ---
-    const div = document.createElement("div");
-    div.className = "block-public";
-    div.style.position = "absolute";
-    div.style.left = data.x || "100px";
-    div.style.top = data.y || "100px";
-    div.style.width = data.width || "300px";
-    div.style.height = data.height || "200px";
-    div.style.userSelect = "none";
-    div.style.overflow = "visible";
-
-    // --- WRAPPER ROTATABLE ---
-    const rot = document.createElement("div");
-    rot.className = "rotatable";
-    rot.style.position = "absolute";
-    rot.style.top = "0";
-    rot.style.left = "0";
-    rot.style.width = "100%";
-    rot.style.height = "100%";
-    rot.style.transformOrigin = "center center";
-
-    // rotation restaurée
-    if (data.rotation) {
-        rot.style.transform = `rotate(${data.rotation}deg)`;
-        rot.dataset.rotation = data.rotation;
-    } else {
-        rot.dataset.rotation = "0";
-    }
-
-    // --- IMAGE ---
-    const img = document.createElement("img");
-    img.src = data.url;
-    img.style.position = "absolute";
-    img.style.left = data.offsetX || "0px";
-    img.style.top = data.offsetY || "0px";
-    img.style.width = data.imgWidth || "100%";
-    img.style.height = data.imgHeight || "100%";
-    img.style.objectFit = "contain";
-
-    rot.appendChild(img);
-    div.appendChild(rot);
-
-    // --- HANDLES DE REDIMENSIONNEMENT ---
-    const positions = [
-        "top-left","top","top-right",
-        "right","bottom-right","bottom",
-        "bottom-left","left"
-    ];
-
-    positions.forEach(pos => {
-        const handle = document.createElement("div");
-        handle.className = `resize-handle ${pos}`;
-        handle.style.zIndex = "9999";
-        div.appendChild(handle);
-        makeResizable(div, handle, pos);
-    });
-
-    // --- BOUTON DE ROTATION ---
-    const rotateHandle = document.createElement("div");
-    rotateHandle.className = "rotate-handle";
-    rotateHandle.style.position = "absolute";
-    rotateHandle.style.bottom = "-25px";
-    rotateHandle.style.left = "50%";
-    rotateHandle.style.transform = "translateX(-50%)";
-    rotateHandle.style.width = "22px";
-    rotateHandle.style.height = "22px";
-    rotateHandle.style.borderRadius = "50%";
-    rotateHandle.style.background = "#fff";
-    rotateHandle.style.border = "2px solid #333";
-    rotateHandle.style.cursor = "grab";
-    rotateHandle.style.zIndex = "9999";
-
-    rot.appendChild(rotateHandle);
-
-    // --- INTERACTIONS ---
-    makeRotatable(rot, rotateHandle);
-    makeDraggable(div); // drag corrigé pour ignorer rotate-handle
-
-    // --- AJOUT AU CALQUE D'ÉDITION ---
-    layer.appendChild(div);
-}
-
-// -------------------------
-// DRAG BLOC
-// -------------------------
+// ----------------------
+// DRAG
+// ----------------------
 function makeDraggable(el) {
-    let isDown = false;
-    let offsetX = 0;
-    let offsetY = 0;
-    let parentRect = null;
+  let offsetX, offsetY;
 
-    el.addEventListener("mousedown", e => {
-        // 🔥 NE PAS DRAG SI ON CLIQUE SUR UN HANDLE (resize ou rotate)
-        if (e.target.closest(".resize-handle") || e.target.closest(".rotate-handle")) return;
-        if (el.classList.contains("cropping")) return;
+  el.addEventListener("mousedown", e => {
+    if (e.target.classList.contains("resize-handle")) return;
 
-        isDown = true;
-        parentRect = el.parentElement.getBoundingClientRect();
+    selectedBlock = el;
+    selectBlock(el);
 
-        const elRect = el.getBoundingClientRect();
-        offsetX = e.clientX - elRect.left;
-        offsetY = e.clientY - elRect.top;
+    offsetX = e.clientX - el.offsetLeft;
+    offsetY = e.clientY - el.offsetTop;
 
-        el.style.zIndex = 999;
-    });
-
-    document.addEventListener("mousemove", e => {
-        if (!isDown || !parentRect) return;
-
-        const elRect = el.getBoundingClientRect();
-
-        let newLeft = e.clientX - parentRect.left - offsetX;
-        let newTop = e.clientY - parentRect.top - offsetY;
-
-        const maxLeft = parentRect.width - elRect.width;
-        const maxTop = parentRect.height - elRect.height;
-
-        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-        newTop = Math.max(0, Math.min(newTop, maxTop));
-
-        el.style.left = newLeft + "px";
-        el.style.top = newTop + "px";
-    });
-
-    document.addEventListener("mouseup", () => {
-        if (isDown) {
-            autoSaveImages();
-            saveState();
-        }
-        isDown = false;
-        el.style.zIndex = 1;
-        parentRect = null;
-    });
-}
-
-// -------------------------
-// REDIMENSIONNEMENT BLOC
-// -------------------------
-function makeResizable(el, handle, position) {
-    let isResizing = false;
-    let startX, startY, startWidth, startHeight, startLeft, startTop;
-
-    handle.addEventListener("mousedown", e => {
-        e.stopPropagation();
-        if (el.classList.contains("cropping")) return;
-        isResizing = true;
-
-        const rect = el.getBoundingClientRect();
-
-        startX = e.clientX;
-        startY = e.clientY;
-        startWidth = rect.width;
-        startHeight = rect.height;
-        startLeft = el.offsetLeft;
-        startTop = el.offsetTop;
-
-        document.addEventListener("mousemove", resize);
-        document.addEventListener("mouseup", stopResize);
-    });
-
-    function resize(e) {
-        if (!isResizing) return;
-
-        let dx = e.clientX - startX;
-        let dy = e.clientY - startY;
-
-        let newWidth = startWidth;
-        let newHeight = startHeight;
-        let newLeft = startLeft;
-        let newTop = startTop;
-
-        if (position.includes("right")) newWidth = startWidth + dx;
-        if (position.includes("left")) {
-            newWidth = startWidth - dx;
-            newLeft = startLeft + dx;
-        }
-        if (position.includes("bottom")) newHeight = startHeight + dy;
-        if (position.includes("top")) {
-            newHeight = startHeight - dy;
-            newTop = startTop + dy;
-        }
-
-        newWidth = Math.max(50, newWidth);
-        newHeight = Math.max(30, newHeight);
-
-        el.style.width = newWidth + "px";
-        el.style.height = newHeight + "px";
-        el.style.left = newLeft + "px";
-        el.style.top = newTop + "px";
+    function move(e2) {
+      el.style.left = e2.clientX - offsetX + "px";
+      el.style.top = e2.clientY - offsetY + "px";
     }
 
-    function stopResize() {
-        if (isResizing) {
-            autoSaveImages();
-            saveState();
-        }
-        isResizing = false;
-        document.removeEventListener("mousemove", resize);
-        document.removeEventListener("mouseup", stopResize);
-    }
-} // ←←← FIN NORMALE DE makeResizable()
-
-
-
-// -------------------------
-// ROTATION BLOC
-// -------------------------
-function makeRotatable(rot, handle) {
-    let isRotating = false;
-    let startAngle = 0;
-    let baseAngle = 0;
-
-    handle.addEventListener("mousedown", e => {
-        e.stopPropagation();
-        isRotating = true;
-
-        const rect = rot.parentElement.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        // 🔥 angle déjà appliqué (si on recharge ou si on a déjà tourné)
-        baseAngle = parseFloat(rot.dataset.rotation || "0") || 0;
-
-        function rotate(ev) {
-            if (!isRotating) return;
-
-            const dx = ev.clientX - centerX;
-            const dy = ev.clientY - centerY;
-
-            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-
-            // angle relatif + baseAngle
-            const finalAngle = angle + baseAngle;
-
-            rot.style.transform = `rotate(${finalAngle}deg)`;
-            rot.dataset.rotation = finalAngle;
-        }
-
-        function stopRotate() {
-            if (isRotating) {
-                autoSaveImages();
-                saveState();
-            }
-            isRotating = false;
-            document.removeEventListener("mousemove", rotate);
-            document.removeEventListener("mouseup", stopRotate);
-        }
-
-        document.addEventListener("mousemove", rotate);
-        document.addEventListener("mouseup", stopRotate);
-    });
-}
-
-// -------------------------
-// SLIDERS IMAGE
-// -------------------------
-document.getElementById("img-frame-width").addEventListener("input", e => {
-    if (!selectedBlock) return;
-    selectedBlock.style.width = e.target.value + "px";
-    autoSaveImages();
-});
-
-document.getElementById("img-frame-height").addEventListener("input", e => {
-    if (!selectedBlock) return;
-    selectedBlock.style.height = e.target.value + "px";
-    autoSaveImages();
-});
-
-// -------------------------
-// PROPRIÉTÉS TEXTE
-// -------------------------
-document.getElementById("text-font-size").addEventListener("input", e => {
-    if (!selectedText) return;
-    selectedText.style.fontSize = e.target.value + "px";
-    saveTextContent();
-    saveState();
-});
-
-document.getElementById("text-color").addEventListener("input", e => {
-    if (!selectedText) return;
-    selectedText.style.color = e.target.value;
-    saveTextContent();
-    saveState();
-});
-
-textPanel.querySelectorAll("[data-align]").forEach(btn => {
-    btn.addEventListener("click", () => {
-        if (!selectedText) return;
-        const align = btn.getAttribute("data-align");
-        selectedText.style.textAlign = align;
-        saveTextContent();
-        saveState();
-    });
-});
-
-textPanel.querySelectorAll("[data-style]").forEach(btn => {
-    btn.addEventListener("click", () => {
-        if (!selectedText) return;
-
-        const style = btn.getAttribute("data-style");
-
-        if (style === "bold") {
-            selectedText.style.fontWeight =
-                selectedText.style.fontWeight === "bold" ? "normal" : "bold";
-        }
-
-        if (style === "italic") {
-            selectedText.style.fontStyle =
-                selectedText.style.fontStyle === "italic" ? "normal" : "italic";
-        }
-
-        if (style === "underline") {
-            selectedText.style.textDecoration =
-                selectedText.style.textDecoration === "underline"
-                    ? "none"
-                    : "underline";
-        }
-
-        saveTextContent();
-        saveState();
-    });
-});
-
-// -------------------------
-// SAUVEGARDE IMAGES (EN MÉMOIRE)
-// -------------------------
-function autoSaveImages() {
-    if (!actu) return;
-
-    const images = [...document.querySelectorAll(".block-public")].map(div => {
-        const img = div.querySelector("img");
-        const rot = div.querySelector(".rotatable");
-
-        return {
-            url: img ? img.src : "",
-            x: div.style.left,
-            y: div.style.top,
-            width: div.style.width,
-            height: div.style.height,
-            offsetX: img ? img.style.left : "0px",
-            offsetY: img ? img.style.top : "0px",
-            imgWidth: img ? img.style.width : "100%",
-            imgHeight: img ? img.style.height : "100%",
-            rotation: rot ? (rot.dataset.rotation || "0") : "0"
-        };
-    });
-
-    actu.contenu.images = images;
-}
-
-// -------------------------
-// BOUTON ENREGISTRER (SUPABASE)
-// -------------------------
-document.getElementById("save-btn").addEventListener("click", async () => {
-    if (!actu) return;
-
-    saveTextContent();
-    autoSaveImages();
-
-    const { error } = await supabase
-        .from("actus")
-        .update({ contenu: actu.contenu })
-        .eq("id", actuId);
-
-    if (error) {
-        console.error("Erreur sauvegarde Supabase :", error);
-        alert("Erreur lors de l'enregistrement.");
-        return;
+    function stop() {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", stop);
     }
 
-    alert("Contenu enregistré !");
-});
-// -------------------------
-// LIBRAIRIE D'ÉLÉMENTS
-// -------------------------
-let ELEMENTS_LIBRARY = [];
-
-fetch("./elements.json")
-    .then(res => res.json())
-    .then(data => {
-        ELEMENTS_LIBRARY = data;
-        console.log("Éléments chargés :", ELEMENTS_LIBRARY);
-    });
-
-const searchInput = document.getElementById("element-search");
-const resultsContainer = document.getElementById("elements-results");
-
-searchInput.addEventListener("input", () => {
-    const query = searchInput.value.toLowerCase().trim();
-
-    if (query.length === 0) {
-        resultsContainer.innerHTML = "";
-        return;
-    }
-
-    const results = ELEMENTS_LIBRARY.filter(el => {
-        return (
-            el.name.toLowerCase().includes(query) ||
-            (el.tags && el.tags.some(tag => tag.toLowerCase().includes(query)))
-        );
-    });
-
-    displaySearchResults(results);
-});
-
-function displaySearchResults(list) {
-    resultsContainer.innerHTML = "";
-
-    list.forEach(el => {
-        const item = document.createElement("div");
-        item.className = "element-item";
-
-        if (el.type === "svg") {
-            fetch(el.url)
-                .then(res => res.text())
-                .then(svg => {
-                    item.innerHTML = svg;
-                });
-        } else {
-            const img = document.createElement("img");
-            img.src = el.url;
-            item.appendChild(img);
-        }
-
-        item.addEventListener("click", () => addElementToCanvas(el));
-
-        resultsContainer.appendChild(item);
-    });
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", stop);
+  });
 }
 
-function addElementToCanvas(el) {
-    if (el.type === "svg") {
-        fetch(el.url)
-            .then(res => res.text())
-            .then(svg => {
-                const div = document.createElement("div");
-                div.className = "block-public";
-                div.style.position = "absolute";
-                div.style.left = "100px";
-                div.style.top = "100px";
-                div.style.width = "150px";
-                div.style.height = "150px";
-                div.style.overflow = "hidden";
-                div.setAttribute("contenteditable", "false");
-                div.innerHTML = svg;
+// ----------------------
+// RESIZE
+// ----------------------
+function makeResizable(el) {
+  const handle = document.createElement("div");
+  handle.className = "resize-handle bottom-right";
+  el.appendChild(handle);
 
-                const positions = [
-                    "top-left", "top", "top-right",
-                    "right", "bottom-right", "bottom",
-                    "bottom-left", "left"
-                ];
+  handle.addEventListener("mousedown", e => {
+    e.stopPropagation();
 
-                positions.forEach(pos => {
-                    const handle = document.createElement("div");
-                    handle.className = `resize-handle ${pos}`;
-                    handle.style.pointerEvents = "auto";
-                    handle.style.zIndex = "9999";
-                    div.appendChild(handle);
-                    makeResizable(div, handle, pos);
-                });
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = el.offsetWidth;
+    const startH = el.offsetHeight;
 
-                makeDraggable(div);
-                document.querySelector(".canvas-wrapper").appendChild(div);
-                autoSaveImages();
-                saveState();
-            });
-    } else {
-        addImageBlock({ url: el.url });
-        autoSaveImages();
-        saveState();
+    function resize(e2) {
+      el.style.width = startW + (e2.clientX - startX) + "px";
+      el.style.height = startH + (e2.clientY - startY) + "px";
     }
+
+    function stop() {
+      document.removeEventListener("mousemove", resize);
+      document.removeEventListener("mouseup", stop);
+    }
+
+    document.addEventListener("mousemove", resize);
+    document.addEventListener("mouseup", stop);
+  });
 }
 
-// ⚠️ IMPORTANT : on supprime complètement ce bloc qui cassait la sélection
-// document.addEventListener("click", (e) => { ... });
+// ----------------------
+// SÉLECTION
+// ----------------------
+function makeSelectable(el) {
+  el.addEventListener("click", e => {
+    e.stopPropagation();
+    selectBlock(el);
+  });
+}
 
-// -------------------------
-// LANCEMENT
-// -------------------------
-initEditor();
+function selectBlock(el) {
+  document.querySelectorAll(".block-public").forEach(b => b.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedBlock = el;
+}
+
+// ----------------------
+// SAUVEGARDE SUPABASE
+// ----------------------
+async function sauvegarder() {
+  const images = [...editorLayer.querySelectorAll(".block-public")].map(div => {
+    const img = div.querySelector("img");
+
+    return {
+      url: img.src,
+      x: div.style.left,
+      y: div.style.top,
+      width: div.style.width,
+      height: div.style.height,
+      offsetX: img.style.left,
+      offsetY: img.style.top,
+      imgWidth: img.style.width,
+      imgHeight: img.style.height
+    };
+  });
+
+  const texte = canvas.innerHTML;
+
+  await supabase
+    .from("actus")
+    .update({
+      contenu: {
+        texte,
+        images
+      }
+    })
+    .eq("id", actuId);
+
+  alert("Enregistré !");
+}
+
+document.getElementById("save-btn").addEventListener("click", sauvegarder);
+
+// ----------------------
+// INIT
+// ----------------------
+document.addEventListener("DOMContentLoaded", chargerActu);
+
