@@ -22,10 +22,9 @@
 
 <body class="admin">
 
-  <!-- Vérification d'auth côté client (simple redirection si non connecté) -->
   <script>
+    // simple auth redirect (client-side)
     if (localStorage.getItem('admin_logged') !== 'true') {
-      // redirection rapide ; si tu veux une page de login différente, adapte l'URL
       window.location.replace('login.html');
     }
   </script>
@@ -82,11 +81,11 @@
 
     <!-- ZONE CENTRALE : aperçu public + calque d'édition -->
     <main class="main" role="main">
-      <div class="canvas-wrapper">
+      <!-- Wrapper unique : contient la page publique ET le calque d'édition -->
+      <div class="canvas-wrapper" id="main-canvas-wrapper" style="position:relative;">
 
         <!-- PAGE PUBLIQUE (aperçu) -->
         <section id="public-page" class="canvas" aria-label="Aperçu public">
-          <!-- Contenu public (injecté par JS ou statique) -->
           <div id="actu-content" class="public-content" aria-live="polite">
             <h2>Titre de l’article</h2>
             <p>Paragraphe d’introduction. Utilise la barre à gauche pour ajouter du texte ou des images.</p>
@@ -141,7 +140,6 @@
   </div>
 
   <!-- SCRIPTS : supabase-init d'abord si tu veux exposer window.supabase, puis editeur.js -->
-  <!-- Si tu préfères que editeur.js crée son propre client Supabase, inverse l'ordre -->
   <script type="module" src="supabase-init.js"></script>
   <script type="module" src="editeur.js"></script>
 
@@ -163,7 +161,6 @@
           }
         });
         icon.addEventListener('click', () => {
-          // click toggles panel for keyboard users
           if (panel) {
             const isOpen = panel.classList.contains('open');
             panels.forEach(p => p.classList.remove('open'));
@@ -182,6 +179,21 @@
           panel.setAttribute('aria-hidden', 'true');
         });
       });
+
+      // Safety: if editor-layer was injected elsewhere, move it into the wrapper
+      const wrapper = document.getElementById('main-canvas-wrapper');
+      const layer = document.getElementById('editor-layer');
+      if (wrapper && layer && layer.parentElement !== wrapper) {
+        wrapper.appendChild(layer);
+        layer.style.position = 'absolute';
+        layer.style.top = '0';
+        layer.style.left = '0';
+        layer.style.right = '0';
+        layer.style.bottom = '0';
+        layer.style.pointerEvents = 'auto';
+        layer.style.zIndex = '9999';
+        console.log('editor-layer repositionné dans canvas-wrapper');
+      }
     })();
   </script>
 
