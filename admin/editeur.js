@@ -5,7 +5,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 console.log('editeur.js loaded');
 
-// --- CONFIG SUPABASE (remplace si tu veux une autre clé)
+// --- CONFIG SUPABASE
 const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
 
@@ -90,6 +90,7 @@ function selectBlock(el) {
 
 // --- AJOUT D'UN BLOC IMAGE (exporté si besoin)
 export function addImageBlock(data = {}) {
+  // s'assurer que le DOM est prêt
   if (!editorLayer && !wrapper) {
     console.warn('addImageBlock: editorLayer et wrapper non initialisés');
     return null;
@@ -105,6 +106,7 @@ export function addImageBlock(data = {}) {
 
   const img = document.createElement("img");
   img.src = data.url || "";
+  img.alt = data.alt || "";
   img.style.position = "absolute";
   img.style.left = data.offsetX || "0px";
   img.style.top = data.offsetY || "0px";
@@ -118,7 +120,6 @@ export function addImageBlock(data = {}) {
   makeResizable(div);
   makeSelectable(div);
 
-  // Ajouter dans editorLayer si présent, sinon dans wrapper
   if (editorLayer) editorLayer.appendChild(div);
   else wrapper.appendChild(div);
 
@@ -136,10 +137,10 @@ async function sauvegarder() {
     const img = div.querySelector("img");
     return {
       url: img?.src || "",
-      x: div.style.left,
-      y: div.style.top,
-      width: div.style.width,
-      height: div.style.height,
+      x: div.style.left || "0px",
+      y: div.style.top || "0px",
+      width: div.style.width || "",
+      height: div.style.height || "",
       offsetX: img?.style.left || "0px",
       offsetY: img?.style.top || "0px",
       imgWidth: img?.style.width || "100%",
@@ -205,6 +206,9 @@ async function chargerActu() {
       if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
       return;
     }
+
+    // DEBUG: afficher l'objet brut si besoin
+    console.log('actu raw:', actu);
 
     // Texte
     const texte = actu.contenu?.texte || "";
