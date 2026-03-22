@@ -256,3 +256,116 @@ document.addEventListener("DOMContentLoaded", () => {
   // lancer le chargement
   chargerActu();
 });
+
+// Contrôleur d'ouverture/fermeture des panels Canva
+document.addEventListener('DOMContentLoaded', () => {
+  const icons = Array.from(document.querySelectorAll('.canva-icon'));
+  const panels = Array.from(document.querySelectorAll('.canva-panel'));
+  let openTimer = null;
+  let closeTimer = null;
+  const OPEN_DELAY = 80;   // ms
+  const CLOSE_DELAY = 160; // ms
+
+  function closeAll() {
+    panels.forEach(p => {
+      p.classList.remove('open');
+      p.setAttribute('aria-hidden', 'true');
+    });
+    icons.forEach(i => i.classList.remove('active'));
+  }
+
+  icons.forEach(icon => {
+    const key = icon.dataset.panel || icon.dataset.tool;
+    const panel = document.getElementById('panel-' + key);
+    if (!panel) return;
+
+    // Hover: ouvrir avec petit délai (évite flicker)
+    icon.addEventListener('mouseenter', () => {
+      clearTimeout(closeTimer);
+      openTimer = setTimeout(() => {
+        closeAll();
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        icon.classList.add('active');
+      }, OPEN_DELAY);
+    });
+
+    // Leave icon: démarrer timer de fermeture si on ne va pas vers le panel
+    icon.addEventListener('mouseleave', (e) => {
+      clearTimeout(openTimer);
+      // si la souris va vers le panel, ne pas fermer
+      closeTimer = setTimeout(() => {
+        if (!panel.matches(':hover')) {
+          panel.classList.remove('open');
+          panel.setAttribute('aria-hidden', 'true');
+          icon.classList.remove('active');
+        }
+      }, CLOSE_DELAY);
+    });
+
+    // Click toggle (utile sur mobile/tactile)
+    icon.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const isOpen = panel.classList.contains('open');
+      closeAll();
+      if (!isOpen) {
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        icon.classList.add('active');
+      }
+    });
+
+    // Keyboard: open on focus
+    icon.addEventListener('focus', () => {
+      clearTimeout(closeTimer);
+      closeAll();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      icon.classList.add('active');
+    });
+  });
+
+  // Panels: keep open while hovered or focused, close after leave
+  panels.forEach(panel => {
+    panel.addEventListener('mouseenter', () => {
+      clearTimeout(closeTimer);
+      clearTimeout(openTimer);
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+    });
+    panel.addEventListener('mouseleave', () => {
+      closeTimer = setTimeout(() => {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        const id = panel.id.replace(/^panel-/, '');
+        const icon = document.querySelector(`.canva-icon[data-panel="${id}"], .canva-icon[data-tool="${id}"]`);
+        if (icon) icon.classList.remove('active');
+      }, CLOSE_DELAY);
+    });
+
+    // focus handling for keyboard users
+    panel.addEventListener('focusin', () => {
+      clearTimeout(closeTimer);
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+    });
+    panel.addEventListener('focusout', () => {
+      setTimeout(() => {
+        if (!panel.contains(document.activeElement)) {
+          panel.classList.remove('open');
+          panel.setAttribute('aria-hidden', 'true');
+        }
+      }, 10);
+    });
+  });
+
+  // Click outside closes panels
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
+      closeAll();
+    }
+  });
+
+  // Ensure initial state closed
+  closeAll();
+});
