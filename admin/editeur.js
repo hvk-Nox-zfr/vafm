@@ -1,5 +1,17 @@
-// editeur.js (version corrigée, module ES)
-let supabase = window.supabase || null;
+// Robust supabase init — remplace toute déclaration let/const supabase existante
+(function(){
+  if (window.__supabaseClient) {
+    // réutiliser instance déjà initialisée
+    window.__supabaseClient = window.__supabaseClient;
+  } else if (window.supabase) {
+    // compat : si un client est exposé sous window.supabase
+    window.__supabaseClient = window.supabase;
+  } else {
+    window.__supabaseClient = null;
+  }
+})();
+
+let supabase = window.__supabaseClient || null;
 
 let __supabaseReady = (async () => {
   if (supabase) return supabase;
@@ -8,6 +20,7 @@ let __supabaseReady = (async () => {
     const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
     supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    window.__supabaseClient = supabase;
     window.supabase = supabase;
     return supabase;
   } catch (err) {
@@ -15,6 +28,7 @@ let __supabaseReady = (async () => {
     return null;
   }
 })();
+
 
 console.log('editeur.js loaded');
 
