@@ -351,3 +351,48 @@ body.admin .elements-grid::-webkit-scrollbar-thumb {
 }
 body.admin .elements-grid::-webkit-scrollbar-track { background: transparent; }
 
+/* Canva panels: hidden by default, expand on .open */
+.canva-panel {
+  position: absolute;
+  left: 56px;                 /* placé juste à droite de la sidebar */
+  top: 0;
+  height: calc(100vh - 56px);
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0f1724;        /* panel dark */
+  color: #f9fafb;
+  transition: width 220ms cubic-bezier(.2,.9,.2,1), padding 180ms;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.45);
+  z-index: 60;
+  border-radius: 0 8px 8px 0;
+}
+
+/* panel ouvert */
+.canva-panel.open {
+  width: 260px;               /* largeur d'ouverture souhaitée */
+  padding: 16px;
+}
+
+/* rendre le panel accessible au clavier */
+.canva-panel[aria-hidden="false"] {
+  width: 260px;
+  padding: 16px;
+}
+
+/* éviter que le panel pousse le layout */
+.layout { position: relative; }
+
+/* icône active */
+.canva-icon.active { transform: translateX(2px); background:#2563eb; }
+
+/* s'assurer que le panel ne masque pas la page publique (z-index contrôlé) */
+.canvas-wrapper { z-index: 1; }
+.canvas { position: relative; z-index: 2; }
+#editor-layer { z-index: 50; }
+
+/* petit ajustement mobile: panels en bas si écran étroit */
+@media (max-width: 720px) {
+  .canva-panel { left: 0; bottom: 0; top: auto; height: auto; width: 100%; border-radius: 8px 8px 0 0; }
+  .canva-panel.open { width: 100%; padding: 12px; }
+}
