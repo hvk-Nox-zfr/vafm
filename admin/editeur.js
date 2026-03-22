@@ -227,8 +227,237 @@ async function chargerActu() {
     if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
   }
 }
+// editeur.js
+// Module ES autonome : supabase client, gestion de l'éditeur, panels et interactions.
 
-// --- INITIALISATION AU DOM READY
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+console.log('editeur.js loaded');
+
+// --- CONFIG SUPABASE
+const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// --- VARIABLES (assignées après DOMContentLoaded)
+let wrapper = null;
+let canvas = null;
+let editorLayer = null;
+let selectedBlock = null;
+let undoStack = [];
+let redoStack = [];
+
+// --- UTILITAIRES (drag / resize / select)
+function makeDraggable(el) {
+  let offsetX = 0, offsetY = 0;
+
+  el.addEventListener("mousedown", e => {
+    if (e.button !== 0) return; // only left click
+    if (e.target.classList.contains("resize-handle")) return;
+
+    selectedBlock = el;
+    selectBlock(el);
+
+    const rect = el.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    function move(e2) {
+      el.style.left = (e2.clientX - offsetX) + "px";
+      el.style.top = (e2.clientY - offsetY) + "px";
+    }
+
+    function stop() {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", stop);
+    }
+
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", stop);
+  });
+}
+
+function makeResizable(el) {
+  const handle = document.createElement("div");
+  handle.className = "resize-handle bottom-right";
+  el.appendChild(handle);
+
+  handle.addEventListener("mousedown", e => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = el.offsetWidth;
+    const startH = el.offsetHeight;
+
+    function resize(e2) {
+      el.style.width = Math.max(20, startW + (e2.clientX - startX)) + "px";
+      el.style.height = Math.max(20, startH + (e2.clientY - startY)) + "px";
+    }
+
+    function stop() {
+      document.removeEventListener("mousemove", resize);
+      document.removeEventListener("mouseup", stop);
+    }
+
+    document.addEventListener("mousemove", resize);
+    document.addEventListener("mouseup", stop);
+  });
+}
+
+function makeSelectable(el) {
+  el.addEventListener("click", e => {
+    e.stopPropagation();
+    selectBlock(el);
+  });
+}
+
+function selectBlock(el) {
+  document.querySelectorAll(".block-public").forEach(b => b.classList.remove("selected"));
+  if (el) el.classList.add("selected");
+  selectedBlock = el;
+}
+
+// --- AJOUT D'UN BLOC IMAGE (exporté)
+export function addImageBlock(data = {}) {
+  if (!editorLayer && !wrapper) {
+    console.warn('addImageBlock: editorLayer et wrapper non initialisés');
+    return null;
+  }
+
+  const div = document.createElement("div");
+  div.className = "block-public";
+  div.style.position = "absolute";
+  div.style.left = typeof data.x === "number" ? `${data.x}px` : (data.x || "100px");
+  div.style.top = typeof data.y === "number" ? `${data.y}px` : (data.y || "100px");
+  div.style.width = typeof data.width === "number" ? `${data.width}px` : (data.width || "300px");
+  div.style.height = typeof data.height === "number" ? `${data.height}px` : (data.height || "200px");
+
+  const img = document.createElement("img");
+  img.src = data.url || "";
+  img.alt = data.alt || "";
+  img.style.position = "absolute";
+  img.style.left = data.offsetX || "0px";
+  img.style.top = data.offsetY || "0px";
+  img.style.width = data.imgWidth || "100%";
+  img.style.height = data.imgHeight || "100%";
+  img.style.objectFit = "contain";
+  img.draggable = false;
+
+  div.appendChild(img);
+
+  makeDraggable(div);
+  makeResizable(div);
+  makeSelectable(div);
+
+  if (editorLayer) editorLayer.appendChild(div);
+  else if (wrapper) wrapper.appendChild(div);
+
+  return div;
+}
+
+// --- SAUVEGARDE
+async function sauvegarder() {
+  if (!editorLayer || !canvas) {
+    alert("Impossible d'enregistrer : éditeur non initialisé.");
+    return;
+  }
+
+  const images = [...editorLayer.querySelectorAll(".block-public")].map(div => {
+    const img = div.querySelector("img");
+    return {
+      url: img?.src || "",
+      x: div.style.left || "0px",
+      y: div.style.top || "0px",
+      width: div.style.width || "",
+      height: div.style.height || "",
+      offsetX: img?.style.left || "0px",
+      offsetY: img?.style.top || "0px",
+      imgWidth: img?.style.width || "100%",
+      imgHeight: img?.style.height || "100%"
+    };
+  });
+
+  const texte = canvas.innerHTML;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const actuId = Number(params.get("id"));
+    if (!actuId || isNaN(actuId)) {
+      alert("ID d'article invalide.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("actus")
+      .update({ contenu: { texte, images } })
+      .eq("id", actuId);
+
+    if (error) {
+      console.error("Erreur sauvegarde Supabase:", error);
+      alert("Erreur lors de l'enregistrement.");
+      return;
+    }
+
+    alert("Enregistré !");
+  } catch (err) {
+    console.error("Erreur sauvegarde:", err);
+    alert("Erreur lors de l'enregistrement.");
+  }
+}
+
+// --- CHARGEMENT DE L'ARTICLE
+async function chargerActu() {
+  console.log('chargerActu start');
+  const params = new URLSearchParams(window.location.search);
+  const actuId = Number(params.get("id"));
+
+  if (!actuId || isNaN(actuId)) {
+    console.warn('chargerActu: actuId invalide');
+    if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
+    return;
+  }
+
+  try {
+    const { data: actu, error } = await supabase
+      .from("actus")
+      .select("*")
+      .eq("id", actuId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
+      return;
+    }
+
+    if (!actu) {
+      console.warn('Aucun article retourné');
+      if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
+      return;
+    }
+
+    console.log('actu raw:', actu);
+
+    const texte = actu.contenu?.texte || "";
+    if (canvas) {
+      canvas.innerHTML = texte;
+      console.log('texte injecté length:', texte.length);
+    }
+
+    const images = Array.isArray(actu.contenu?.images) ? actu.contenu.images : [];
+    images.forEach(img => addImageBlock(img));
+    console.log('images ajoutées:', images.length);
+
+  } catch (err) {
+    console.error('Erreur chargerActu:', err);
+    if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
+  }
+}
+
+// --- INITIALISATION AU DOM READY (unique handler)
 document.addEventListener("DOMContentLoaded", () => {
   // récupérer les éléments après que le DOM soit prêt
   wrapper = document.querySelector(".canvas-wrapper");
@@ -253,20 +482,15 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedBlock = null;
   });
 
-  // lancer le chargement
-  chargerActu();
-});
-
-// Contrôleur d'ouverture/fermeture des panels Canva
-document.addEventListener('DOMContentLoaded', () => {
+  // panels controller
   const icons = Array.from(document.querySelectorAll('.canva-icon'));
   const panels = Array.from(document.querySelectorAll('.canva-panel'));
   let openTimer = null;
   let closeTimer = null;
-  const OPEN_DELAY = 80;   // ms
-  const CLOSE_DELAY = 160; // ms
+  const OPEN_DELAY = 80;
+  const CLOSE_DELAY = 160;
 
-  function closeAll() {
+  function closeAllPanels() {
     panels.forEach(p => {
       p.classList.remove('open');
       p.setAttribute('aria-hidden', 'true');
@@ -279,21 +503,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const panel = document.getElementById('panel-' + key);
     if (!panel) return;
 
-    // Hover: ouvrir avec petit délai (évite flicker)
     icon.addEventListener('mouseenter', () => {
       clearTimeout(closeTimer);
       openTimer = setTimeout(() => {
-        closeAll();
+        closeAllPanels();
         panel.classList.add('open');
         panel.setAttribute('aria-hidden', 'false');
         icon.classList.add('active');
       }, OPEN_DELAY);
     });
 
-    // Leave icon: démarrer timer de fermeture si on ne va pas vers le panel
-    icon.addEventListener('mouseleave', (e) => {
+    icon.addEventListener('mouseleave', () => {
       clearTimeout(openTimer);
-      // si la souris va vers le panel, ne pas fermer
       closeTimer = setTimeout(() => {
         if (!panel.matches(':hover')) {
           panel.classList.remove('open');
@@ -303,29 +524,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }, CLOSE_DELAY);
     });
 
-    // Click toggle (utile sur mobile/tactile)
     icon.addEventListener('click', (ev) => {
       ev.stopPropagation();
       const isOpen = panel.classList.contains('open');
-      closeAll();
+      closeAllPanels();
       if (!isOpen) {
         panel.classList.add('open');
         panel.setAttribute('aria-hidden', 'false');
         icon.classList.add('active');
       }
+      // dispatch event for external handlers
+      document.dispatchEvent(new CustomEvent('canva-tool', { detail: { tool: key } }));
     });
 
-    // Keyboard: open on focus
     icon.addEventListener('focus', () => {
       clearTimeout(closeTimer);
-      closeAll();
+      closeAllPanels();
       panel.classList.add('open');
       panel.setAttribute('aria-hidden', 'false');
       icon.classList.add('active');
     });
   });
 
-  // Panels: keep open while hovered or focused, close after leave
   panels.forEach(panel => {
     panel.addEventListener('mouseenter', () => {
       clearTimeout(closeTimer);
@@ -343,7 +563,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }, CLOSE_DELAY);
     });
 
-    // focus handling for keyboard users
     panel.addEventListener('focusin', () => {
       clearTimeout(closeTimer);
       panel.classList.add('open');
@@ -359,13 +578,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Click outside closes panels
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
-      closeAll();
+      closeAllPanels();
     }
   });
 
-  // Ensure initial state closed
-  closeAll();
+  // Ensure editor-layer is inside wrapper and covers canvas
+  if (wrapper && editorLayer && editorLayer.parentElement !== wrapper) {
+    wrapper.appendChild(editorLayer);
+    Object.assign(editorLayer.style, {
+      position: 'absolute',
+      top: '0',
+      left: '0',
+      right: '0',
+      bottom: '0',
+      pointerEvents: 'auto',
+      zIndex: '9999'
+    });
+  }
+
+  // initial state
+  closeAllPanels();
+
+  // lancer le chargement de l'article
+  chargerActu();
 });
