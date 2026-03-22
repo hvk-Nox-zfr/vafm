@@ -349,6 +349,148 @@ document.addEventListener("DOMContentLoaded", () => {
       input.click();
     });
   }
+
+  // ---------- Format toolbar handlers (à placer dans DOMContentLoaded) ----------
+(function attachFormatToolbarHandlers() {
+  const ftFont = document.getElementById('ft-font');
+  const ftSize = document.getElementById('ft-size');
+  const ftBold = document.getElementById('ft-bold');
+  const ftItalic = document.getElementById('ft-italic');
+  const ftUnderline = document.getElementById('ft-underline');
+  const ftColor = document.getElementById('ft-color');
+  const ftAlignLeft = document.getElementById('ft-align-left');
+  const ftAlignCenter = document.getElementById('ft-align-center');
+  const ftAlignRight = document.getElementById('ft-align-right');
+  const ftLineheight = document.getElementById('ft-lineheight');
+  const ftSendFront = document.getElementById('ft-send-front');
+  const ftSendBack = document.getElementById('ft-send-back');
+
+  if (!ftFont) return; // toolbar non présente
+
+  function applyInlineStyleToBlock(block, cssObj) {
+    const content = block.querySelector('.text-block-content') || block;
+    Object.keys(cssObj).forEach(k => content.style[k] = cssObj[k]);
+  }
+
+  function applyStyleToSelectionOrBlock(styleFn) {
+    if (selectedBlock && selectedBlock.classList.contains('text-block')) {
+      styleFn(selectedBlock);
+      return;
+    }
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    // try to wrap selection in a span
+    const span = document.createElement('span');
+    styleFn(span);
+    try {
+      range.surroundContents(span);
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(span);
+      sel.addRange(newRange);
+    } catch (e) {
+      // fallback: use document.execCommand for basic formatting
+      if (span.style.fontWeight) document.execCommand('bold');
+      if (span.style.fontStyle) document.execCommand('italic');
+      if (span.style.textDecoration) document.execCommand('underline');
+      if (span.style.color) document.execCommand('foreColor', false, span.style.color);
+      if (span.style.fontSize) {
+        // execCommand fontSize uses 1-7; approximate by wrapping span
+        const wrapper = document.createElement('span');
+        wrapper.style.fontSize = span.style.fontSize;
+        try { range.surroundContents(wrapper); } catch(e2) { console.warn('fontSize fallback failed', e2); }
+      }
+    }
+  }
+
+  // update toolbar state from selectedBlock
+  function updateToolbarState() {
+    if (selectedBlock && selectedBlock.classList.contains('text-block')) {
+      const content = selectedBlock.querySelector('.text-block-content');
+      if (!content) return;
+      ftFont.value = window.getComputedStyle(content).fontFamily || ftFont.value;
+      ftSize.value = window.getComputedStyle(content).fontSize || ftSize.value;
+      const lh = window.getComputedStyle(content).lineHeight;
+      ftLineheight.value = lh && lh !== 'normal' ? lh : ftLineheight.value;
+      const color = window.getComputedStyle(content).color;
+      if (color) {
+        const m = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (m) ftColor.value = "#" + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
+      }
+    }
+  }
+
+  // handlers
+  ftFont.addEventListener('change', () => {
+    applyStyleToSelectionOrBlock(el => {
+      if (el.classList && el.classList.contains('text-block')) applyInlineStyleToBlock(el, { fontFamily: ftFont.value });
+      else el.style.fontFamily = ftFont.value;
+    });
+  });
+
+  ftSize.addEventListener('change', () => {
+    applyStyleToSelectionOrBlock(el => {
+      if (el.classList && el.classList.contains('text-block')) applyInlineStyleToBlock(el, { fontSize: ftSize.value });
+      else el.style.fontSize = ftSize.value;
+    });
+  });
+
+  ftBold.addEventListener('click', () => {
+    const pressed = ftBold.getAttribute('aria-pressed') === 'true';
+    ftBold.setAttribute('aria-pressed', String(!pressed));
+    applyStyleToSelectionOrBlock(el => {
+      if (el.classList && el.classList.contains('text-block')) applyInlineStyleToBlock(el, { fontWeight: !pressed ? '700' : '400' });
+      else el.style.fontWeight = !pressed ? '700' : '400';
+    });
+  });
+
+  ftItalic.addEventListener('click', () => {
+    const pressed = ftItalic.getAttribute('aria-pressed') === 'true';
+    ftItalic.setAttribute('aria-pressed', String(!pressed));
+    applyStyleToSelectionOrBlock(el => {
+      if (el.classList && el.classList.contains('text-block')) applyInlineStyleToBlock(el, { fontStyle: !pressed ? 'italic' : 'normal' });
+      else el.style.fontStyle = !pressed ? 'italic' : 'normal';
+    });
+  });
+
+  ftUnderline.addEventListener('click', () => {
+    const pressed = ftUnderline.getAttribute('aria-pressed') === 'true';
+    ftUnderline.setAttribute('aria-pressed', String(!pressed));
+    applyStyleToSelectionOrBlock(el => {
+      if (el.classList && el.classList.contains('text-block')) applyInlineStyleToBlock(el, { textDecoration: !pressed ? 'underline' : 'none' });
+      else el.style.textDecoration = !pressed ? 'underline' : 'none';
+    });
+  });
+
+  ftColor.addEventListener('input', () => {
+    const color = ftColor.value;
+    applyStyleToSelectionOrBlock(el => {
+      if (el.classList && el.classList.contains('text-block')) applyInlineStyleToBlock(el, { color });
+      else el.style.color = color;
+    });
+  });
+
+  ftAlignLeft.addEventListener('click', () => { if (selectedBlock) applyInlineStyleToBlock(selectedBlock, { textAlign: 'left' }); });
+  ftAlignCenter.addEventListener('click', () => { if (selectedBlock) applyInlineStyleToBlock(selectedBlock, { textAlign: 'center' }); });
+  ftAlignRight.addEventListener('click', () => { if (selectedBlock) applyInlineStyleToBlock(selectedBlock, { textAlign: 'right' }); });
+
+  ftLineheight.addEventListener('change', () => { if (selectedBlock) applyInlineStyleToBlock(selectedBlock, { lineHeight: ftLineheight.value }); });
+
+  ftSendFront.addEventListener('click', () => {
+    if (!selectedBlock) return;
+    selectedBlock.style.zIndex = (parseInt(selectedBlock.style.zIndex || 10) + 10).toString();
+  });
+  ftSendBack.addEventListener('click', () => {
+    if (!selectedBlock) return;
+    selectedBlock.style.zIndex = Math.max(0, (parseInt(selectedBlock.style.zIndex || 10) - 10)).toString();
+  });
+
+  // update toolbar when selection or block changes
+  document.addEventListener('selectionchange', updateToolbarState);
+  document.addEventListener('click', updateToolbarState);
+})();
+
   closeAllPanels();
   chargerActu();
 });
