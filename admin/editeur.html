@@ -46,48 +46,46 @@
   -->
 
   <!-- Barre de mise en page blanche (format toolbar) -->
-  <header id="format-toolbar" class="format-toolbar" role="toolbar" aria-label="Barre de mise en page">
-    <div class="ft-left">
-      <select id="ft-font" class="ft-control" aria-label="Police">
-        <option value="Inter, system-ui, sans-serif">Inter</option>
-        <option value="Georgia, serif">Georgia</option>
-        <option value="Times New Roman, serif">Times</option>
-        <option value="Arial, Helvetica, sans-serif">Arial</option>
-      </select>
+<header id="format-toolbar" class="format-toolbar" role="toolbar" aria-label="Barre de mise en page">
+  <div class="ft-left">
+    <select id="ft-font" class="ft-control" aria-label="Police">
+      <option value="Inter, system-ui, sans-serif">Inter</option>
+      <option value="Georgia, serif">Georgia</option>
+      <option value="Times New Roman, serif">Times</option>
+      <option value="Arial, Helvetica, sans-serif">Arial</option>
+    </select>
 
-      <select id="ft-size" class="ft-control" aria-label="Taille">
-        <option value="14px">14</option>
-        <option value="16px" selected>16</option>
-        <option value="18px">18</option>
-        <option value="20px">20</option>
-        <option value="24px">24</option>
-        <option value="32px">32</option>
-      </select>
+    <select id="ft-size" class="ft-control" aria-label="Taille">
+      <option value="14px">14</option>
+      <option value="16px" selected>16</option>
+      <option value="18px">18</option>
+      <option value="20px">20</option>
+    </select>
 
-      <button id="ft-bold" class="ft-btn" title="Gras" aria-pressed="false"><strong>B</strong></button>
-      <button id="ft-italic" class="ft-btn" title="Italique" aria-pressed="false"><em>I</em></button>
-      <button id="ft-underline" class="ft-btn" title="Souligné" aria-pressed="false">U</button>
+    <button id="ft-bold" class="ft-btn" aria-pressed="false" title="Gras">B</button>
+    <button id="ft-italic" class="ft-btn" aria-pressed="false" title="Italique">I</button>
+    <button id="ft-underline" class="ft-btn" aria-pressed="false" title="Souligné">U</button>
 
-      <input id="ft-color" class="ft-color" type="color" title="Couleur du texte" aria-label="Couleur du texte">
-    </div>
+    <input id="ft-color" class="ft-color" type="color" title="Couleur du texte" aria-label="Couleur">
+  </div>
 
-    <div class="ft-right">
-      <button id="ft-align-left" class="ft-btn" title="Aligner à gauche">⟵</button>
-      <button id="ft-align-center" class="ft-btn" title="Centrer">≡</button>
-      <button id="ft-align-right" class="ft-btn" title="Aligner à droite">⟶</button>
+  <div class="ft-right">
+    <button id="ft-align-left" class="ft-btn" title="Aligner à gauche">⟵</button>
+    <button id="ft-align-center" class="ft-btn" title="Centrer">≡</button>
+    <button id="ft-align-right" class="ft-btn" title="Aligner à droite">⟶</button>
 
-      <select id="ft-lineheight" class="ft-control" aria-label="Interligne">
-        <option value="1">1</option>
-        <option value="1.2">1.2</option>
-        <option value="1.4" selected>1.4</option>
-        <option value="1.6">1.6</option>
-        <option value="2">2</option>
-      </select>
+    <select id="ft-lineheight" class="ft-control" aria-label="Interligne">
+      <option value="1">1</option>
+      <option value="1.2">1.2</option>
+      <option value="1.4" selected>1.4</option>
+      <option value="1.6">1.6</option>
+    </select>
 
-      <button id="ft-send-front" class="ft-btn" title="Mettre au premier plan">↑</button>
-      <button id="ft-send-back" class="ft-btn" title="Mettre en arrière">↓</button>
-    </div>
-  </header>
+    <button id="ft-send-front" class="ft-btn" title="Mettre au premier plan">↑</button>
+    <button id="ft-send-back" class="ft-btn" title="Mettre en arrière">↓</button>
+  </div>
+</header>
+
 
   <div class="layout" role="application">
 
