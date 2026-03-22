@@ -24,6 +24,68 @@ let canvas = null;
 let editorLayer = null;
 let selectedBlock = null;
 
+// --- Handlers permanents pour boutons d'ajout
+function insertTextBlockToCanvas(type) {
+  if (!canvas) canvas = document.getElementById('actu-content');
+  if (!canvas) return;
+  const el = document.createElement(type === 'title' ? 'h2' : (type === 'subtitle' ? 'h3' : 'p'));
+  el.textContent = type === 'title' ? 'Nouveau titre' : (type === 'subtitle' ? 'Nouveau sous-titre' : 'Nouveau paragraphe');
+  el.style.margin = '12px 0';
+  canvas.appendChild(el);
+  return el;
+}
+
+function bindAddImageButton(btn) {
+  if (!btn) return;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result;
+        // si addImageBlock est exportée et exposée
+        if (typeof window.addImageBlock === 'function') {
+          window.addImageBlock({ url, x: 120, y: 120, width: 320, height: 200 });
+        } else {
+          // fallback simple
+          const div = document.createElement('div');
+          div.className = 'block-public';
+          div.style.position = 'absolute';
+          div.style.left = '120px';
+          div.style.top = '120px';
+          div.style.width = '320px';
+          div.style.height = '200px';
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'contain';
+          div.appendChild(img);
+          (editorLayer || wrapper || document.body).appendChild(div);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    input.click();
+  });
+}
+
+// dans DOMContentLoaded, après initialisation des variables
+const btnImage = document.getElementById('add-image');
+const btnTitle = document.getElementById('add-title');
+const btnSubtitle = document.getElementById('add-subtitle');
+const btnParagraph = document.getElementById('add-paragraph');
+
+if (btnTitle) btnTitle.addEventListener('click', () => insertTextBlockToCanvas('title'));
+if (btnSubtitle) btnSubtitle.addEventListener('click', () => insertTextBlockToCanvas('subtitle'));
+if (btnParagraph) btnParagraph.addEventListener('click', () => insertTextBlockToCanvas('paragraph'));
+bindAddImageButton(btnImage);
+
 // Utilities
 function makeDraggable(el) {
   let offsetX = 0, offsetY = 0;
