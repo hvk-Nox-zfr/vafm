@@ -1,15 +1,22 @@
-// editeur.js (corrigé)
-// Crée son propre client Supabase et s'assure que le DOM est prêt avant d'agir.
+// Remplacer l'import statique par une initialisation dynamique et sûre
+// (colle ceci à la place de : import { createClient } from "...";)
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+let supabase = window.supabase || null;
 
-console.log('editeur.js loaded');
+// Promise indiquant que supabase est prêt
+let __supabaseReady = (async () => {
+  if (supabase) return supabase;
 
-// --- CONFIG SUPABASE
-const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
+  // Import dynamique uniquement si nécessaire (évite double déclaration)
+  const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+  const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  // Optionnel : exposer globalement si tu veux réutiliser ailleurs
+  window.supabase = supabase;
+  return supabase;
+})();
 
 // --- VARIABLES (assignées après DOMContentLoaded)
 let wrapper = null;
