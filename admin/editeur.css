@@ -15,7 +15,7 @@ body {
 }
 
 /* TOPBAR (éditeur) */
-.topbar {
+body.admin .topbar {
     height: 56px;
     background: #111827;
     color: white;
@@ -24,13 +24,14 @@ body {
     padding: 0 16px;
     justify-content: space-between;
 }
-.topbar-left, .topbar-right {
+body.admin .topbar-left,
+body.admin .topbar-right {
     display: flex;
     gap: 8px;
 }
 
 /* LAYOUT PRINCIPAL */
-.layout {
+body.admin .layout {
     display: grid;
     grid-template-columns: 56px 0 1fr 260px;
     height: calc(100vh - 56px);
@@ -38,7 +39,7 @@ body {
 }
 
 /* BARRE CANVA (icônes) */
-.canva-sidebar {
+body.admin .canva-sidebar {
     background: #111827;
     color: #f9fafb;
     display: flex;
@@ -47,7 +48,7 @@ body {
     padding: 8px 0;
     gap: 8px;
 }
-.canva-icon {
+body.admin .canva-icon {
     width: 40px;
     height: 40px;
     border-radius: 12px;
@@ -59,13 +60,13 @@ body {
     font-size: 20px;
     transition: background 0.15s, transform 0.1s;
 }
-.canva-icon:hover {
+body.admin .canva-icon:hover {
     background: #2563eb;
     transform: translateX(2px);
 }
 
 /* PANNEAUX DÉROULANTS */
-.canva-panel {
+body.admin .canva-panel {
     background: #111827;
     color: #f9fafb;
     overflow: hidden;
@@ -73,11 +74,11 @@ body {
     padding: 16px 0;
     transition: width 0.2s ease, padding 0.2s ease;
 }
-.canva-panel.open {
+body.admin .canva-panel.open {
     width: 220px;
     padding: 16px;
 }
-.canva-panel h2 {
+body.admin .canva-panel h2 {
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -85,14 +86,14 @@ body {
 }
 
 /* ZONE CENTRALE */
-.main {
+body.admin .main {
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
     padding: 16px;
 }
-.canvas-wrapper {
+body.admin .canvas-wrapper {
     position: relative;
     flex: 1;
     width: 100%;
@@ -105,7 +106,7 @@ body {
 }
 
 /* PAGE PUBLIQUE (copie) */
-.canvas {
+body.admin .canvas {
     background: white;
     width: 100%;
     max-width: 1200px;
@@ -118,14 +119,14 @@ body {
 }
 
 /* CALQUE D'ÉDITION */
-.editor-layer {
+body.admin .editor-layer {
     position: absolute;
     inset: 0;
     pointer-events: none;
 }
 
 /* BLOCS ÉDITABLES */
-.block-public {
+body.admin .block-public {
     position: absolute;
     border-radius: 4px;
     border: 1px solid transparent;
@@ -134,13 +135,13 @@ body {
     touch-action: none;
     transition: box-shadow 120ms ease;
 }
-.block-public.selected {
+body.admin .block-public.selected {
     outline: 2px solid #ff3366;
     box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
 /* ROTATION WRAPPER */
-.rotatable {
+body.admin .rotatable {
     position: absolute;
     inset: 0;
     transform-origin: center center;
@@ -149,7 +150,7 @@ body {
 }
 
 /* IMAGE */
-.block-public img {
+body.admin .block-public img {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -159,7 +160,7 @@ body {
 }
 
 /* HANDLES DE REDIMENSIONNEMENT */
-.resize-handle {
+body.admin .resize-handle {
     position: absolute;
     width: 12px;
     height: 12px;
@@ -170,17 +171,17 @@ body {
     pointer-events: auto;
     touch-action: none;
 }
-.resize-handle.top-left { top: -8px; left: -8px; cursor: nwse-resize; }
-.resize-handle.top { top: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-.resize-handle.top-right { top: -8px; right: -8px; cursor: nesw-resize; }
-.resize-handle.right { top: 50%; right: -8px; transform: translateY(-50%); cursor: ew-resize; }
-.resize-handle.bottom-right { bottom: -8px; right: -8px; cursor: nwse-resize; }
-.resize-handle.bottom { bottom: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-.resize-handle.bottom-left { bottom: -8px; left: -8px; cursor: nesw-resize; }
-.resize-handle.left { top: 50%; left: -8px; transform: translateY(-50%); cursor: ew-resize; }
+body.admin .resize-handle.top-left { top: -8px; left: -8px; cursor: nwse-resize; }
+body.admin .resize-handle.top { top: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+body.admin .resize-handle.top-right { top: -8px; right: -8px; cursor: nesw-resize; }
+body.admin .resize-handle.right { top: 50%; right: -8px; transform: translateY(-50%); cursor: ew-resize; }
+body.admin .resize-handle.bottom-right { bottom: -8px; right: -8px; cursor: nwse-resize; }
+body.admin .resize-handle.bottom { bottom: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+body.admin .resize-handle.bottom-left { bottom: -8px; left: -8px; cursor: nesw-resize; }
+body.admin .resize-handle.left { top: 50%; left: -8px; transform: translateY(-50%); cursor: ew-resize; }
 
 /* BOUTON DE ROTATION */
-.rotate-handle {
+body.admin .rotate-handle {
     position: absolute;
     width: 22px;
     height: 22px;
@@ -200,7 +201,7 @@ body {
 }
 
 /* TEXTE ÉDITABLE */
-.editable-text {
+body.admin .editable-text {
     display: inline-block;
     min-width: 40px;
     min-height: 20px;
@@ -209,12 +210,12 @@ body {
     cursor: text;
     user-select: text;
 }
-.editable-text.selected {
+body.admin .editable-text.selected {
     outline: 2px solid #3366ff;
 }
 
 /* PANNEAU DE PROPRIÉTÉS */
-.properties {
+body.admin .properties {
     background: #f9fafb;
     border-left: 1px solid #e5e7eb;
     padding: 16px;
@@ -223,36 +224,36 @@ body {
     gap: 12px;
     overflow-y: auto;
 }
-.properties h2 {
+body.admin .properties h2 {
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #6b7280;
 }
-.prop-panel {
+body.admin .prop-panel {
     margin-top: 8px;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
-.hidden {
+body.admin .hidden {
     display: none !important;
 }
 
 /* INPUTS */
-label {
+body.admin label {
     font-size: 12px;
     color: #4b5563;
 }
-input[type="number"],
-input[type="color"],
-input[type="range"] {
+body.admin input[type="number"],
+body.admin input[type="color"],
+body.admin input[type="range"] {
     width: 100%;
     margin-top: 4px;
 }
 
 /* BOUTONS */
-.btn {
+body.admin .btn {
     border: none;
     border-radius: 6px;
     padding: 6px 10px;
@@ -265,15 +266,15 @@ input[type="range"] {
     justify-content: center;
     gap: 4px;
 }
-.btn.full { width: 100%; justify-content: flex-start; }
-.btn.small { padding: 4px 8px; font-size: 12px; }
-.btn.primary { background: #2563eb; color: white; }
-.btn.ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); }
-.btn.danger { background: #ef4444; color: white; }
-.btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+body.admin .btn.full { width: 100%; justify-content: flex-start; }
+body.admin .btn.small { padding: 4px 8px; font-size: 12px; }
+body.admin .btn.primary { background: #2563eb; color: white; }
+body.admin .btn.ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); }
+body.admin .btn.danger { background: #ef4444; color: white; }
+body.admin .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* RECHERCHE D'ÉLÉMENTS */
-.search-input {
+body.admin .search-input {
     width: 100%;
     padding: 8px 10px;
     border-radius: 6px;
@@ -284,14 +285,14 @@ input[type="range"] {
     outline: none;
     transition: 0.2s;
 }
-.search-input::placeholder { color: #9ca3af; }
-.search-input:focus {
+body.admin .search-input::placeholder { color: #9ca3af; }
+body.admin .search-input:focus {
     border-color: #2563eb;
     background: #0f172a;
 }
 
 /* GRID DES ÉLÉMENTS */
-.elements-grid {
+body.admin .elements-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
@@ -300,7 +301,7 @@ input[type="range"] {
     overflow-y: auto;
     padding-right: 4px;
 }
-.element-item {
+body.admin .element-item {
     width: 60px;
     height: 60px;
     background: #111827;
@@ -314,26 +315,26 @@ input[type="range"] {
     padding: 6px;
     transition: 0.15s;
 }
-.element-item:hover {
+body.admin .element-item:hover {
     background: #1e293b;
     border-color: #2563eb;
 }
-.element-item svg {
+body.admin .element-item svg {
     width: 100%;
     height: 100%;
     fill: white;
 }
-.element-item img {
+body.admin .element-item img {
     width: 100%;
     height: 100%;
     object-fit: contain;
 }
 
 /* SCROLLBAR */
-.elements-grid::-webkit-scrollbar { width: 6px; }
-.elements-grid::-webkit-scrollbar-thumb {
+body.admin .elements-grid::-webkit-scrollbar { width: 6px; }
+body.admin .elements-grid::-webkit-scrollbar-thumb {
     background: #374151;
     border-radius: 4px;
 }
-.elements-grid::-webkit-scrollbar-track { background: transparent; }
+body.admin .elements-grid::-webkit-scrollbar-track { background: transparent; }
 
