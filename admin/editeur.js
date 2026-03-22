@@ -550,30 +550,85 @@ document.addEventListener('DOMContentLoaded', () => {
   // Click handler : appelle la fonction d'enregistrement exposée
   saveTop.addEventListener('click', async (e) => {
     e.preventDefault();
+// ----------------- Exposer sauvegarde globalement -----------------
+if (typeof sauvegarder === 'function') {
+  window.sauvegarder = sauvegarder;
+}
+
+// ----------------- Attachement robuste du bouton "Enregistrer" -----------------
+// Utilise délégation pour être sûr de capter les clics même si le bouton est recréé.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('#save-btn-top, #save-btn');
+  if (!btn) return;
+  e.preventDefault();
+
+  // éviter double clic
+  if (btn.disabled) return;
+  btn.disabled = true;
+
+  const originalText = btn.innerHTML;
+  try {
+    btn.innerHTML = 'Enregistrement…';
     if (typeof window.sauvegarder === 'function') {
-      try {
-        // Optionnel : feedback visuel
-        saveTop.disabled = true;
-        saveTop.textContent = 'Enregistrement…';
-        await window.sauvegarder();
-      } catch (err) {
-        console.error('Erreur sauvegarde via bouton top:', err);
-      } finally {
-        saveTop.disabled = false;
-        saveTop.textContent = 'Enregistrer';
-      }
+      await window.sauvegarder();
+      btn.innerHTML = 'Enregistré';
+      setTimeout(() => { try { btn.innerHTML = originalText; } catch(e){} }, 1100);
     } else {
       console.warn('sauvegarder() non disponible');
-      // fallback : déclencher l'ancien bouton si présent
-      const old = document.getElementById('save-btn');
-      if (old) old.click();
+      alert('Fonction de sauvegarde indisponible. Voir console.');
+      btn.innerHTML = originalText;
+    }
+  } catch (err) {
+    console.error('Erreur lors de la sauvegarde:', err);
+    alert('Erreur lors de l’enregistrement. Voir console.');
+    btn.innerHTML = originalText;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ----------------- S'assurer que editor-layer est synchronisé après chargement du contenu -----------------
+// Si chargerActu() est asynchrone, appelle sync après qu'il ait fini.
+// Si chargerActu() retourne une promesse, on peut l'attendre ; sinon on déclenche l'événement après l'appel.
+(async function ensureSyncAfterLoad() {
+  // si chargerActu est défini et retourne une promesse, attendre son exécution
+  try {
+    if (typeof chargerActu === 'function') {
+      const maybePromise = chargerActu();
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        await maybePromise;
+      }
+    }
+  } catch (e) {
+    // ignore, on fera la sync quand même
+    console.warn('chargerActu() a levé une erreur lors du premier appel', e);
+  } finally {
+    // forcer la sync (au cas où chargerActu a reconstruit le DOM)
+    if (typeof syncEditorLayerToCanvas === 'function') {
+      syncEditorLayerToCanvas();
+    } else {
+      // dispatch event si la fonction est définie plus tard
+      document.dispatchEvent(new Event('canva-sync'));
+    }
+  }
+})();
+
+// ----------------- Mettre à jour la toolbar si le DOM change (mutation observer) -----------------
+// utile si des éléments sont recréés dynamiquement
+const toolbarObserver = new MutationObserver((mutations) => {
+  // si le bouton top est ajouté plus tard, on peut forcer un update d'état
+  mutations.forEach(m => {
+    if (m.addedNodes && m.addedNodes.length) {
+      // update toolbar state (si fonction disponible)
+      if (typeof updateToolbarState === 'function') updateToolbarState();
     }
   });
-
-  // Optionnel : masquer le bouton secondaire existant (si tu veux un seul bouton visible)
-  const oldSave = document.getElementById('save-btn');
-  if (oldSave) oldSave.classList.add('hide-secondary');
 });
+const bodyEl = document.body;
+if (bodyEl) toolbarObserver.observe(bodyEl, { childList: true, subtree: true });
+
+// ----------------- Optionnel : nettoyage à la fermeture (si tu veux) -----------------
+// window.addEventListener('beforeunload', () => { toolbarObserver.disconnect(); });
 
   closeAllPanels();
   chargerActu();
