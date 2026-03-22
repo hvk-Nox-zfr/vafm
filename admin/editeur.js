@@ -491,6 +491,57 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener('click', updateToolbarState);
 })();
 
+  // syncEditorLayerToCanvas : aligne editor-layer sur la zone .canvas publique
+function syncEditorLayerToCanvas() {
+  const wrapper = document.querySelector('.canvas-wrapper');
+  const canvasEl = document.querySelector('.canvas');
+  const editorLayer = document.getElementById('editor-layer');
+  if (!wrapper || !canvasEl || !editorLayer) return;
+
+  // bounding boxes
+  const canvasRect = canvasEl.getBoundingClientRect();
+  const wrapperRect = wrapper.getBoundingClientRect();
+
+  // left/top relatifs au wrapper
+  const left = canvasRect.left - wrapperRect.left;
+  const top = canvasRect.top - wrapperRect.top;
+
+  editorLayer.style.left = left + 'px';
+  editorLayer.style.top = top + 'px';
+  editorLayer.style.width = canvasRect.width + 'px';
+  editorLayer.style.height = canvasRect.height + 'px';
+}
+
+// appeler au chargement et au resize
+window.addEventListener('load', syncEditorLayerToCanvas);
+window.addEventListener('resize', () => {
+  clearTimeout(window.__syncEditorTimer);
+  window.__syncEditorTimer = setTimeout(syncEditorLayerToCanvas, 120);
+});
+
+// appeler après reconstruction du contenu (après chargerActu)
+document.addEventListener('canva-sync', syncEditorLayerToCanvas);
+
+  function getRelativePosToCanvas(el) {
+  const canvasEl = document.querySelector('.canvas');
+  if (!canvasEl) return { x: 0, y: 0, width: el.offsetWidth, height: el.offsetHeight };
+  const canvasRect = canvasEl.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  return {
+    x: Math.round(elRect.left - canvasRect.left),
+    y: Math.round(elRect.top - canvasRect.top),
+    width: el.offsetWidth,
+    height: el.offsetHeight
+  };
+}
+
+function applyRelativePosToBlock(div, pos) {
+  div.style.left = (typeof pos.x === 'number' ? pos.x + 'px' : pos.x || '0px');
+  div.style.top = (typeof pos.y === 'number' ? pos.y + 'px' : pos.y || '0px');
+  if (pos.width) div.style.width = (typeof pos.width === 'number' ? pos.width + 'px' : pos.width);
+  if (pos.height) div.style.height = (typeof pos.height === 'number' ? pos.height + 'px' : pos.height);
+}
+
   closeAllPanels();
   chargerActu();
 });
