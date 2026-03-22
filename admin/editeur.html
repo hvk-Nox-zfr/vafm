@@ -18,6 +18,52 @@
         ">
 
   <link rel="stylesheet" href="editeur.css" />
+
+  <!-- Overrides rapides pour garantir le layout après suppression du panneau propriétés -->
+  <style>
+    /* Layout : sidebar (56px) + zone principale */
+    body.admin .layout {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 12px;
+      height: calc(100vh - 56px);
+    }
+
+    /* Assurer que la zone principale occupe tout l'espace */
+    body.admin .main { overflow: auto; }
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px;
+      box-sizing: border-box;
+      overflow: auto;
+    }
+
+    .canvas {
+      width: 100%;
+      max-width: 1200px;
+      min-width: 720px;
+      min-height: 600px;
+      background: #fff;
+      padding: 24px;
+      border-radius: 8px;
+      box-sizing: border-box;
+      position: relative;
+      overflow: visible;
+    }
+
+    /* editor-layer doit recouvrir la canvas */
+    #editor-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: auto;
+      z-index: 9999;
+      background: transparent;
+    }
+  </style>
 </head>
 
 <body class="admin">
@@ -55,34 +101,10 @@
       <button class="canva-icon" data-tool="templates" title="Templates" aria-label="Templates">📄</button>
     </aside>
 
-    <!-- PANNEAUX (déroulants) -->
-    <aside class="canva-panel" id="panel-assets" aria-hidden="true">
-      <h2>Éléments</h2>
-      <input id="element-search" class="search-input" placeholder="Rechercher un élément…" aria-label="Rechercher un élément">
-      <div id="elements-results" class="elements-grid" role="list"></div>
-    </aside>
-
-    <aside class="canva-panel" id="panel-images" aria-hidden="true">
-      <h2>Images</h2>
-      <button id="add-image" class="btn full">+ Importer une image</button>
-    </aside>
-
-    <aside class="canva-panel" id="panel-text" aria-hidden="true">
-      <h2>Texte</h2>
-      <button id="add-title" class="btn full">+ Titre</button>
-      <button id="add-subtitle" class="btn full">+ Sous-titre</button>
-      <button id="add-paragraph" class="btn full">+ Paragraphe</button>
-    </aside>
-
-    <aside class="canva-panel" id="panel-templates" aria-hidden="true">
-      <h2>Templates</h2>
-      <p>À venir…</p>
-    </aside>
-
     <!-- ZONE CENTRALE : aperçu public + calque d'édition -->
     <main class="main" role="main">
       <!-- Wrapper unique : contient la page publique ET le calque d'édition -->
-      <div class="canvas-wrapper" id="main-canvas-wrapper" style="position:relative;">
+      <div class="canvas-wrapper" id="main-canvas-wrapper">
 
         <!-- PAGE PUBLIQUE (aperçu) -->
         <section id="public-page" class="canvas" aria-label="Aperçu public">
@@ -97,46 +119,6 @@
       </div>
     </main>
 
-    <!-- PANNEAU PROPRIÉTÉS -->
-    <aside class="properties" aria-label="Propriétés">
-      <h2>Propriétés</h2>
-
-      <div id="no-selection-panel">
-        <p>Aucun élément sélectionné.</p>
-      </div>
-
-      <div id="text-panel" class="prop-panel hidden" aria-hidden="true">
-        <h3>Texte</h3>
-        <label for="text-font-size">Taille</label>
-        <input type="number" id="text-font-size">
-
-        <label for="text-color">Couleur</label>
-        <input type="color" id="text-color">
-
-        <label>Alignement</label>
-        <div class="btn-group" role="group" aria-label="Alignement">
-          <button data-align="left" class="btn small">←</button>
-          <button data-align="center" class="btn small">≡</button>
-          <button data-align="right" class="btn small">→</button>
-        </div>
-
-        <label>Style</label>
-        <div class="btn-group" role="group" aria-label="Style">
-          <button data-style="bold" class="btn small">Gras</button>
-          <button data-style="italic" class="btn small">Italique</button>
-          <button data-style="underline" class="btn small">Souligné</button>
-        </div>
-      </div>
-
-      <div id="image-panel" class="prop-panel hidden" aria-hidden="true">
-        <h3>Image</h3>
-        <label for="img-frame-width">Largeur</label>
-        <input type="range" id="img-frame-width">
-
-        <label for="img-frame-height">Hauteur</label>
-        <input type="range" id="img-frame-height">
-      </div>
-    </aside>
   </div>
 
   <!-- SCRIPTS : supabase-init d'abord si tu veux exposer window.supabase, puis editeur.js -->
@@ -147,53 +129,34 @@
   <script>
     (function () {
       const icons = document.querySelectorAll('.canva-icon');
-      const panels = document.querySelectorAll('.canva-panel');
 
+      // panels are removed for now; icons trigger actions directly in editeur.js
       icons.forEach(icon => {
-        const panelId = 'panel-' + (icon.dataset.panel || icon.dataset.tool || '');
-        const panel = document.getElementById(panelId);
-        icon.addEventListener('mouseenter', () => {
-          panels.forEach(p => p.classList.remove('open'));
-          panels.forEach(p => p.setAttribute('aria-hidden', 'true'));
-          if (panel) {
-            panel.classList.add('open');
-            panel.setAttribute('aria-hidden', 'false');
-          }
-        });
         icon.addEventListener('click', () => {
-          if (panel) {
-            const isOpen = panel.classList.contains('open');
-            panels.forEach(p => p.classList.remove('open'));
-            panels.forEach(p => p.setAttribute('aria-hidden', 'true'));
-            if (!isOpen) {
-              panel.classList.add('open');
-              panel.setAttribute('aria-hidden', 'false');
-            }
-          }
-        });
-      });
-
-      panels.forEach(panel => {
-        panel.addEventListener('mouseleave', () => {
-          panel.classList.remove('open');
-          panel.setAttribute('aria-hidden', 'true');
+          const tool = icon.dataset.tool;
+          // dispatch a custom event so editeur.js can handle it
+          document.dispatchEvent(new CustomEvent('canva-tool', { detail: { tool } }));
         });
       });
 
       // Safety: if editor-layer was injected elsewhere, move it into the wrapper
-      const wrapper = document.getElementById('main-canvas-wrapper');
-      const layer = document.getElementById('editor-layer');
-      if (wrapper && layer && layer.parentElement !== wrapper) {
-        wrapper.appendChild(layer);
-        layer.style.position = 'absolute';
-        layer.style.top = '0';
-        layer.style.left = '0';
-        layer.style.right = '0';
-        layer.style.bottom = '0';
-        layer.style.pointerEvents = 'auto';
-        layer.style.zIndex = '9999';
-        console.log('editor-layer repositionné dans canvas-wrapper');
-      }
+      document.addEventListener('DOMContentLoaded', () => {
+        const wrapper = document.getElementById('main-canvas-wrapper');
+        const layer = document.getElementById('editor-layer');
+        if (wrapper && layer && layer.parentElement !== wrapper) {
+          wrapper.appendChild(layer);
+          Object.assign(layer.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            pointerEvents: 'auto',
+            zIndex: '9999'
+          });
+          console.log('editor-layer repositionné dans canvas-wrapper');
+        }
+      });
     })();
   </script>
 
