@@ -1,3 +1,5 @@
+/* editeur.css — version corrigée pour body.admin */
+
 /* RESET */
 * {
   box-sizing: border-box;
@@ -7,8 +9,7 @@
 }
 html, body {
   height: 100%;
-  /* Permettre le scroll dans l'éditeur (évite que la page soit réduite) */
-  overflow: auto;
+  overflow: auto; /* permettre le scroll dans l'éditeur */
 }
 body {
   background: #f3f4f6;
@@ -19,7 +20,7 @@ body {
 body.admin .topbar {
   height: 56px;
   background: #111827;
-  color: white;
+  color: #fff;
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -111,13 +112,13 @@ body.admin .canvas-wrapper {
   align-items: flex-start;
 }
 
-/* PAGE PUBLIQUE (copie) : forcer des dimensions raisonnables */
+/* PAGE PUBLIQUE (copie) : dimensions raisonnables */
 body.admin .canvas {
-  background: white;
+  background: #fff;
   width: 100%;
   max-width: 1200px;
   min-width: 760px;
-  min-height: 600px;
+  min-height: 600px; /* évite la réduction à 48px */
   border-radius: 8px;
   box-shadow: 0 0 0 1px #d1d5db;
   padding: 24px;
@@ -131,7 +132,7 @@ body.admin .canvas {
 body.admin .editor-layer {
   position: absolute;
   inset: 0;
-  pointer-events: auto;
+  pointer-events: auto; /* permet l'interaction avec les blocs */
   z-index: 9999;
   display: block;
 }
