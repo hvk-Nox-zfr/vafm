@@ -425,7 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     }
-  }
+  });
 })();
 
 /* editeur.js — fichier consolidé prêt à coller */
