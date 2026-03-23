@@ -642,28 +642,46 @@ async function sauvegarder() {
     alert("Impossible d'enregistrer : éditeur non initialisé.");
     return;
   }
+
   const texts = [...editorLayer.querySelectorAll('.block-public.text-block')].map(div => {
     const content = div.querySelector('.text-block-content');
+
+    const left  = parseCssPx(div.style.left);
+    const top   = parseCssPx(div.style.top);
+    const width = parseCssPx(div.style.width);
+    const height = parseCssPx(div.style.height);
+
     return {
       type: div.dataset.type || 'paragraph',
       html: content ? content.innerHTML : '',
-      x: parseCssPx(div.style.left) ?? div.style.left || '0px',
-      y: parseCssPx(div.style.top) ?? div.style.top || '0px',
-      width: parseCssPx(div.style.width) ?? div.style.width || '',
-      height: parseCssPx(div.style.height) ?? div.style.height || ''
+      x: left !== undefined ? left : (div.style.left || '0px'),
+      y: top !== undefined ? top : (div.style.top || '0px'),
+      width: width !== undefined ? width : (div.style.width || ''),
+      height: height !== undefined ? height : (div.style.height || '')
     };
   });
-  const images = [...editorLayer.querySelectorAll('.block-public')].filter(d => d.querySelector('img')).map(div => {
-    const img = div.querySelector('img');
-    return {
-      url: img?.src || '',
-      x: parseCssPx(div.style.left) ?? div.style.left || '0px',
-      y: parseCssPx(div.style.top) ?? div.style.top || '0px',
-      width: parseCssPx(div.style.width) ?? div.style.width || '',
-      height: parseCssPx(div.style.height) ?? div.style.height || ''
-    };
-  });
+
+  const images = [...editorLayer.querySelectorAll('.block-public')]
+    .filter(d => d.querySelector('img'))
+    .map(div => {
+      const img = div.querySelector('img');
+
+      const left  = parseCssPx(div.style.left);
+      const top   = parseCssPx(div.style.top);
+      const width = parseCssPx(div.style.width);
+      const height = parseCssPx(div.style.height);
+
+      return {
+        url: img ? img.src : '',
+        x: left !== undefined ? left : (div.style.left || '0px'),
+        y: top !== undefined ? top : (div.style.top || '0px'),
+        width: width !== undefined ? width : (div.style.width || ''),
+        height: height !== undefined ? height : (div.style.height || '')
+      };
+    });
+
   const previewHtml = canvas ? canvas.innerHTML : '';
+
   try {
     const params = new URLSearchParams(window.location.search);
     const actuId = Number(params.get("id"));
@@ -671,15 +689,18 @@ async function sauvegarder() {
       alert("ID d'article invalide.");
       return;
     }
+
     const { error } = await client
       .from("actus")
       .update({ contenu: { previewHtml, texts, images } })
       .eq("id", actuId);
+
     if (error) {
       console.error("Erreur sauvegarde Supabase:", error);
       alert("Erreur lors de l'enregistrement.");
       return;
     }
+
     alert("Enregistré !");
   } catch (err) {
     console.error("Erreur sauvegarde:", err);
