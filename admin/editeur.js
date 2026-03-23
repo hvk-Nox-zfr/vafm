@@ -958,7 +958,9 @@ function applyRelativePosToBlock(div, pos) {
 /* ---------------- Handler Enregistrer (boutons) ---------------- */
 
 // s'assurer que la fonction est bien exposée
-window.sauvegarder = window.sauvegarder || sauvegarder;
+if (typeof window.sauvegarder !== "function") {
+  window.sauvegarder = sauvegarder;
+}
 
 // câblage direct des boutons une fois le DOM prêt
 document.addEventListener('DOMContentLoaded', () => {
