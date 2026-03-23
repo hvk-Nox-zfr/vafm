@@ -350,7 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Format toolbar handlers (à placer dans DOMContentLoaded) ----------
+// ---------- Format toolbar handlers (à placer dans DOMContentLoaded) ----------
 (function attachFormatToolbarHandlers() {
   const ftFont = document.getElementById('ft-font');
   const ftSize = document.getElementById('ft-size');
@@ -380,9 +380,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
-    // try to wrap selection in a span
+
     const span = document.createElement('span');
     styleFn(span);
+
     try {
       range.surroundContents(span);
       sel.removeAllRanges();
@@ -390,36 +391,40 @@ document.addEventListener("DOMContentLoaded", () => {
       newRange.selectNodeContents(span);
       sel.addRange(newRange);
     } catch (e) {
-      // fallback: use document.execCommand for basic formatting
       if (span.style.fontWeight) document.execCommand('bold');
       if (span.style.fontStyle) document.execCommand('italic');
       if (span.style.textDecoration) document.execCommand('underline');
       if (span.style.color) document.execCommand('foreColor', false, span.style.color);
       if (span.style.fontSize) {
-        // execCommand fontSize uses 1-7; approximate by wrapping span
         const wrapper = document.createElement('span');
         wrapper.style.fontSize = span.style.fontSize;
-        try { range.surroundContents(wrapper); } catch(e2) { console.warn('fontSize fallback failed', e2); }
+        try { range.surroundContents(wrapper); } catch(e2) {}
       }
     }
   }
 
-  // update toolbar state from selectedBlock
   function updateToolbarState() {
     if (selectedBlock && selectedBlock.classList.contains('text-block')) {
       const content = selectedBlock.querySelector('.text-block-content');
       if (!content) return;
+
       ftFont.value = window.getComputedStyle(content).fontFamily || ftFont.value;
       ftSize.value = window.getComputedStyle(content).fontSize || ftSize.value;
+
       const lh = window.getComputedStyle(content).lineHeight;
       ftLineheight.value = lh && lh !== 'normal' ? lh : ftLineheight.value;
+
       const color = window.getComputedStyle(content).color;
       if (color) {
         const m = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (m) ftColor.value = "#" + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
+        if (m) ftColor.value = "#" + [1,2,3].map(i =>
+          parseInt(m[i]).toString(16).padStart(2,'0')
+        ).join('');
       }
     }
   }
+})();
+
 /* editeur.js — fichier consolidé prêt à coller */
 
 /* ---------------- Robust supabase init — place this at the very top ---------------- */
@@ -802,7 +807,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try { chargerActu(); } catch(e) { console.warn('chargerActu() error on initial call', e); }
   }
 });
-});
+  
 /* ---------------- Format toolbar handlers (definition) ---------------- */
 function initFormatToolbarHandlers() {
   const ftFont = document.getElementById('ft-font');
