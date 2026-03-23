@@ -802,7 +802,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try { chargerActu(); } catch(e) { console.warn('chargerActu() error on initial call', e); }
   }
 });
-
+});
 /* ---------------- Format toolbar handlers (definition) ---------------- */
 function initFormatToolbarHandlers() {
   const ftFont = document.getElementById('ft-font');
