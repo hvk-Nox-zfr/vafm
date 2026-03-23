@@ -365,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const ftSendFront = document.getElementById('ft-send-front');
   const ftSendBack = document.getElementById('ft-send-back');
 
-  if (!ftFont) return; // toolbar non présente
+  if (!ftFont) return;
 
   function applyInlineStyleToBlock(block, cssObj) {
     const content = block.querySelector('.text-block-content') || block;
@@ -379,8 +379,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
 
+    const range = sel.getRangeAt(0);
     const span = document.createElement('span');
     styleFn(span);
 
@@ -395,6 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (span.style.fontStyle) document.execCommand('italic');
       if (span.style.textDecoration) document.execCommand('underline');
       if (span.style.color) document.execCommand('foreColor', false, span.style.color);
+
       if (span.style.fontSize) {
         const wrapper = document.createElement('span');
         wrapper.style.fontSize = span.style.fontSize;
@@ -417,9 +418,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const color = window.getComputedStyle(content).color;
       if (color) {
         const m = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (m) ftColor.value = "#" + [1,2,3].map(i =>
-          parseInt(m[i]).toString(16).padStart(2,'0')
-        ).join('');
+        if (m) {
+          ftColor.value = "#" + [1,2,3].map(i =>
+            parseInt(m[i]).toString(16).padStart(2,'0')
+          ).join('');
+        }
       }
     }
   }
