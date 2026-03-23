@@ -646,9 +646,9 @@ async function sauvegarder() {
   const texts = [...editorLayer.querySelectorAll('.block-public.text-block')].map(div => {
     const content = div.querySelector('.text-block-content');
 
-    const left  = parseCssPx(div.style.left);
-    const top   = parseCssPx(div.style.top);
-    const width = parseCssPx(div.style.width);
+    const left   = parseCssPx(div.style.left);
+    const top    = parseCssPx(div.style.top);
+    const width  = parseCssPx(div.style.width);
     const height = parseCssPx(div.style.height);
 
     return {
@@ -662,13 +662,13 @@ async function sauvegarder() {
   });
 
   const images = [...editorLayer.querySelectorAll('.block-public')]
-    .filter(d => d.querySelector('img'))
+    .filter(div => div.querySelector('img'))
     .map(div => {
       const img = div.querySelector('img');
 
-      const left  = parseCssPx(div.style.left);
-      const top   = parseCssPx(div.style.top);
-      const width = parseCssPx(div.style.width);
+      const left   = parseCssPx(div.style.left);
+      const top    = parseCssPx(div.style.top);
+      const width  = parseCssPx(div.style.width);
       const height = parseCssPx(div.style.height);
 
       return {
