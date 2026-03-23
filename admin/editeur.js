@@ -955,41 +955,54 @@ function applyRelativePosToBlock(div, pos) {
   if (pos.height) div.style.height = (typeof pos.height === 'number' ? pos.height + 'px' : pos.height);
 }
 
-/* ---------------- Handler Enregistrer (delegation) ---------------- */
-/* Expose sauvegarder globally if defined */
-if (typeof sauvegarder === 'function') {
-  window.sauvegarder = sauvegarder;
-}
+/* ---------------- Handler Enregistrer (boutons) ---------------- */
 
-/* Delegated click handler captures #save-btn-top or #save-btn even if recreated */
-document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('#save-btn-top, #save-btn');
-  if (!btn) return;
-  e.preventDefault();
+// s'assurer que la fonction est bien exposée
+window.sauvegarder = window.sauvegarder || sauvegarder;
 
-  if (btn.disabled) return;
-  btn.disabled = true;
+// câblage direct des boutons une fois le DOM prêt
+document.addEventListener('DOMContentLoaded', () => {
+  const topBtn = document.getElementById('save-btn-top');
+  const oldBtn = document.getElementById('save-btn');
 
-  const originalHTML = btn.innerHTML;
-  try {
-    btn.innerHTML = 'Enregistrement…';
-    if (typeof window.sauvegarder === 'function') {
-      await window.sauvegarder();
-      btn.innerHTML = 'Enregistré';
-      setTimeout(() => { try { btn.innerHTML = originalHTML; } catch (err) {} }, 1100);
-    } else {
-      console.warn('sauvegarder() non disponible');
-      alert('Fonction de sauvegarde indisponible. Voir console.');
+  async function handleSaveClick(e, btn) {
+    e.preventDefault();
+    if (!btn || btn.disabled) return;
+
+    btn.disabled = true;
+    const originalHTML = btn.innerHTML;
+
+    try {
+      btn.innerHTML = 'Enregistrement…';
+      if (typeof window.sauvegarder === 'function') {
+        await window.sauvegarder();
+        btn.innerHTML = 'Enregistré';
+        setTimeout(() => { try { btn.innerHTML = originalHTML; } catch {} }, 1100);
+      } else {
+        console.warn('window.sauvegarder non dispo');
+        alert('Fonction de sauvegarde indisponible.');
+        btn.innerHTML = originalHTML;
+      }
+    } catch (err) {
+      console.error('Erreur lors de la sauvegarde:', err);
+      alert('Erreur lors de l’enregistrement. Voir console.');
       btn.innerHTML = originalHTML;
+    } finally {
+      btn.disabled = false;
     }
-  } catch (err) {
-    console.error('Erreur lors de la sauvegarde:', err);
-    alert('Erreur lors de l’enregistrement. Voir console.');
-    btn.innerHTML = originalHTML;
-  } finally {
-    btn.disabled = false;
+  }
+
+  if (topBtn) {
+    topBtn.addEventListener('click', (e) => handleSaveClick(e, topBtn));
+  }
+
+  if (oldBtn) {
+    oldBtn.addEventListener('click', (e) => handleSaveClick(e, oldBtn));
+    // si tu veux le masquer :
+    // oldBtn.classList.add('hide-secondary');
   }
 });
+
 
 /* ---------------- Ensure sync after load / chargerActu ---------------- */
 (async function ensureSyncAfterLoad() {
