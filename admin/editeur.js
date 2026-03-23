@@ -1069,4 +1069,6 @@ if (typeof MutationObserver !== 'undefined') {
 }
 
 /* ---------------- End of file ---------------- */
+// DEBUG
+console.log("FIN DU FICHIER OK");
 
