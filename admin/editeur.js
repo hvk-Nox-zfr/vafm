@@ -503,203 +503,222 @@ async function sauvegarder() {
     document.addEventListener('selectionchange', updateToolbarState);
   }
 
-  /* ---------------- Initialization ---------------- */
-  function initEditor() {
-    wrapper = document.querySelector('.canvas-wrapper') || document.body;
-    canvas = document.getElementById('actu-content') || wrapper;
-    editorLayer = document.getElementById('editor-layer') || wrapper;
+/* ---------------- Initialization ---------------- */
+function initEditor() {
+  wrapper = document.querySelector('.canvas-wrapper') || document.body;
+  canvas = document.getElementById('actu-content') || wrapper;
+  editorLayer = document.getElementById('editor-layer') || wrapper;
 
-    // expose for debug and compatibility
-    window.addImageBlock = addImageBlock;
-    window.createTextBlock = createTextBlock;
-    window.sauvegarder = sauvegarder;
-    window.__supabaseReady = __supabaseReady;
-    window.chargerActu = chargerActu;
+  // expose for debug and compatibility
+  window.addImageBlock = addImageBlock;
+  window.createTextBlock = createTextBlock;
+  window.sauvegarder = sauvegarder;
+  window.__supabaseReady = __supabaseReady;
+  window.chargerActu = chargerActu;
 
-    // attach toolbar handlers (after DOM elements exist)
-    attachFormatToolbarHandlers();
+  // attach toolbar handlers (after DOM elements exist)
+  attachFormatToolbarHandlers();
 
-    // --- Robust toolbar wiring: place this inside initEditor() right after attachFormatToolbarHandlers(); ---
-(function robustToolbarInit(){
-  // find toolbar container (fallbacks)
-  const toolbar = document.querySelector('.toolbar, .editor-toolbar, #toolbar, header, .canva-panel') || document.body;
-
-  // 1) ensure save button exists and is wired
-  let saveBtn = document.getElementById('save-btn');
-  if (!saveBtn) {
-    saveBtn = document.createElement('button');
-    saveBtn.id = 'save-btn';
-    saveBtn.type = 'button';
-    saveBtn.textContent = 'Enregistrer';
-    saveBtn.className = 'canva-save-btn';
-    Object.assign(saveBtn.style, {
-      margin: '6px',
-      padding: '6px 10px',
-      background: '#0b74de',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      zIndex: 10000
-    });
-    toolbar.prepend(saveBtn);
-    console.log('robustToolbarInit: save button created');
-  }
-  if (!saveBtn._attached) {
-    saveBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      console.log('save-btn clicked');
-      if (typeof sauvegarder === 'function') sauvegarder();
-      else console.error('sauvegarder() introuvable');
-    });
-    saveBtn._attached = true;
+  // --- TROUVER LE BON format-toolbar (celui qui contient les boutons) ---
+  function getRealFormatToolbar() {
+    const all = Array.from(document.querySelectorAll('#format-toolbar'));
+    if (all.length === 1) return all[0];
+    // choisir celui qui contient des boutons
+    return all.find(t => t.querySelector('button, [data-action], input, .ft-btn')) || all[0];
   }
 
-  // 2) delegated click handler for toolbar actions (works even if buttons are added later)
-  const root = toolbar || document;
-  if (!root._toolbarDelegationAttached) {
-    root.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('button, [data-action], .canva-icon, .ft-button, .format-btn, input[type="color"]');
-      if (!btn) return;
-      // debug
-      console.log('toolbar click:', btn, 'data-action=', btn.dataset && btn.dataset.action, 'id=', btn.id);
-      ev.preventDefault();
-      ev.stopPropagation();
-
-      // ensure pointer-events enabled on clicked element and parents (in case CSS blocked it)
-      let p = btn;
-      for (let i = 0; i < 6 && p; i++, p = p.parentElement) {
-        if (getComputedStyle(p).pointerEvents === 'none') p.style.pointerEvents = 'auto';
-      }
-
-      const action = (btn.dataset && btn.dataset.action) || btn.id || btn.getAttribute('data-action') || btn.className || btn.textContent.trim().toLowerCase();
-
-      switch (action) {
-        case 'save':
-        case 'save-btn':
-        case 'ft-save':
-        case 'canva-save-btn':
-          if (typeof sauvegarder === 'function') sauvegarder(); else console.error('sauvegarder() introuvable');
-          break;
-        case 'bold':
-        case 'ft-bold':
-          document.execCommand('bold'); break;
-        case 'italic':
-        case 'ft-italic':
-          document.execCommand('italic'); break;
-        case 'underline':
-        case 'ft-underline':
-          document.execCommand('underline'); break;
-        case 'align-left':
-        case 'ft-align-left':
-          document.execCommand('justifyLeft'); break;
-        case 'align-center':
-        case 'ft-align-center':
-          document.execCommand('justifyCenter'); break;
-        case 'align-right':
-        case 'ft-align-right':
-          document.execCommand('justifyRight'); break;
-        default:
-          // try custom handler named window[action]
-          if (action && typeof window[action] === 'function') {
-            try { window[action](btn); } catch (err) { console.error('Erreur handler custom', action, err); }
-          } else {
-            console.log('toolbar action non mappée:', action);
-          }
-      }
-    }, { passive: false });
-    root._toolbarDelegationAttached = true;
-    console.log('robustToolbarInit: delegation attached to', root);
-  }
-
-  // 3) debug helper: detect overlay covering toolbar and temporarily disable it
-  (function detectOverlay(){
-    const t = toolbar;
-    if (!t) return;
-    const r = t.getBoundingClientRect();
-    const el = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
-    if (el && el !== t && !t.contains(el)) {
-      console.warn('robustToolbarInit: overlay detected covering toolbar:', el, 'classes:', el.className);
-      // temporarily allow clicks through the overlay for debugging
-      el.style.pointerEvents = 'none';
-      el.dataset._pointerEventsDisabledByRobustInit = 'true';
-      console.log('robustToolbarInit: pointer-events disabled on overlay for debug. Reload to restore.');
-    } else {
-      console.log('robustToolbarInit: no overlay detected at toolbar center');
+  // --- ATTACHER LES HANDLERS DIRECTEMENT SUR LA BONNE TOOLBAR ---
+  (function attachRealToolbarHandlers(){
+    const toolbar = getRealFormatToolbar();
+    if (!toolbar) {
+      console.error('Aucun format-toolbar trouvé');
+      return;
     }
+
+    console.log('REAL TOOLBAR FOUND:', toolbar);
+
+    // activer pointer-events
+    toolbar.style.pointerEvents = 'auto';
+    Array.from(toolbar.querySelectorAll('*')).forEach(el => {
+      if (getComputedStyle(el).pointerEvents === 'none') el.style.pointerEvents = 'auto';
+    });
+
+    function bind(sel, fn, ev = 'click') {
+      const el = toolbar.querySelector(sel);
+      if (!el) {
+        console.warn('Bouton introuvable:', sel);
+        return;
+      }
+      el.addEventListener(ev, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('CLICK:', sel);
+        fn(e);
+      });
+    }
+
+    bind('#ft-bold', () => document.execCommand('bold'));
+    bind('#ft-italic', () => document.execCommand('italic'));
+    bind('#ft-underline', () => document.execCommand('underline'));
+    bind('#ft-align-left', () => document.execCommand('justifyLeft'));
+    bind('#ft-align-center', () => document.execCommand('justifyCenter'));
+    bind('#ft-align-right', () => document.execCommand('justifyRight'));
+    bind('#ft-color', e => document.execCommand('foreColor', false, e.target.value), 'input');
+
+    // bouton enregistrer
+    let saveBtn = toolbar.querySelector('#save-btn');
+    if (!saveBtn) {
+      saveBtn = document.createElement('button');
+      saveBtn.id = 'save-btn';
+      saveBtn.textContent = 'Enregistrer';
+      toolbar.prepend(saveBtn);
+    }
+    saveBtn.addEventListener('click', e => {
+      e.preventDefault();
+      console.log('CLICK: save');
+      if (typeof sauvegarder === 'function') {
+        sauvegarder();
+      } else {
+        console.error('sauvegarder() introuvable');
+      }
+    });
   })();
 
-  // 4) reattach behaviors to existing blocks (safety)
-  document.querySelectorAll('.block-public').forEach(b => {
-    try {
-      if (typeof makeDraggable === 'function') makeDraggable(b);
-      if (typeof makeResizable === 'function') makeResizable(b);
-      if (typeof makeSelectable === 'function') makeSelectable(b);
-    } catch (err) { console.error('robustToolbarInit: réattache handlers pour', b, err); }
+  // create a default block if none exist
+  if (editorLayer && !editorLayer.querySelector('.block-public')) {
+    createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
+  }
+
+  // deselect on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.block-public')) selectBlock(null);
   });
-  console.log('robustToolbarInit: reattached handlers on .block-public');
-})();
 
-    // create a default block if none exist
-    if (editorLayer && !editorLayer.querySelector('.block-public')) {
-      createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
-    }
+  // panels (if present)
+  const icons = Array.from(document.querySelectorAll('.canva-icon'));
+  const panels = Array.from(document.querySelectorAll('.canva-panel'));
+  let openTimer = null, closeTimer = null;
+  const OPEN_DELAY = 80, CLOSE_DELAY = 160;
 
-    // save button
-    const saveBtn = document.getElementById("save-btn");
-    if (saveBtn) saveBtn.addEventListener("click", sauvegarder);
+  function closeAllPanels() {
+    panels.forEach(p => {
+      p.classList.remove('open');
+      p.setAttribute('aria-hidden', 'true');
+    });
+    icons.forEach(i => i.classList.remove('active'));
+  }
 
-    // deselect on outside click
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.block-public')) selectBlock(null);
+  icons.forEach(icon => {
+    const key = icon.dataset.panel || icon.dataset.tool;
+    const panel = document.getElementById('panel-' + key);
+    if (!panel) return;
+
+    icon.addEventListener('mouseenter', () => {
+      clearTimeout(closeTimer);
+      openTimer = setTimeout(() => {
+        closeAllPanels();
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        icon.classList.add('active');
+      }, OPEN_DELAY);
     });
 
-    // panels (if present)
-    const icons = Array.from(document.querySelectorAll('.canva-icon'));
-    const panels = Array.from(document.querySelectorAll('.canva-panel'));
-    let openTimer = null, closeTimer = null;
-    const OPEN_DELAY = 80, CLOSE_DELAY = 160;
-    function closeAllPanels() { panels.forEach(p => { p.classList.remove('open'); p.setAttribute('aria-hidden','true'); }); icons.forEach(i => i.classList.remove('active')); }
-    icons.forEach(icon => {
-      const key = icon.dataset.panel || icon.dataset.tool;
-      const panel = document.getElementById('panel-' + key);
-      if (!panel) return;
-      icon.addEventListener('mouseenter', () => { clearTimeout(closeTimer); openTimer = setTimeout(() => { closeAllPanels(); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); icon.classList.add('active'); }, OPEN_DELAY); });
-      icon.addEventListener('mouseleave', () => { clearTimeout(openTimer); closeTimer = setTimeout(() => { if (!panel.matches(':hover')) { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); icon.classList.remove('active'); } }, CLOSE_DELAY); });
-      icon.addEventListener('click', (ev) => { ev.stopPropagation(); const isOpen = panel.classList.contains('open'); closeAllPanels(); if (!isOpen) { panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); icon.classList.add('active'); } document.dispatchEvent(new CustomEvent('canva-tool', { detail: { tool: key } })); });
-      icon.addEventListener('focus', () => { clearTimeout(closeTimer); closeAllPanels(); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); icon.classList.add('active'); });
-    });
-    panels.forEach(panel => {
-      panel.addEventListener('mouseenter', () => { clearTimeout(closeTimer); clearTimeout(openTimer); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); });
-      panel.addEventListener('mouseleave', () => { closeTimer = setTimeout(() => { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); const id = panel.id.replace(/^panel-/, ''); const icon = document.querySelector(`.canva-icon[data-panel="${id}"], .canva-icon[data-tool="${id}"]`); if (icon) icon.classList.remove('active'); }, CLOSE_DELAY); });
-      panel.addEventListener('focusin', () => { clearTimeout(closeTimer); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); });
-      panel.addEventListener('focusout', () => { setTimeout(() => { if (!panel.contains(document.activeElement)) { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); } }, 10); });
-    });
-    document.addEventListener('click', (e) => { if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) closeAllPanels(); });
-
-    // MutationObserver to update toolbar when content changes
-    if (typeof MutationObserver !== 'undefined') {
-      const toolbarObserver = new MutationObserver((mutations) => {
-        for (const m of mutations) {
-          if (m.addedNodes && m.addedNodes.length) {
-            document.dispatchEvent(new Event('selectionchange'));
-          }
+    icon.addEventListener('mouseleave', () => {
+      clearTimeout(openTimer);
+      closeTimer = setTimeout(() => {
+        if (!panel.matches(':hover')) {
+          panel.classList.remove('open');
+          panel.setAttribute('aria-hidden', 'true');
+          icon.classList.remove('active');
         }
-      });
-      try { toolbarObserver.observe(document.body, { childList: true, subtree: true }); } catch (e) { /* ignore */ }
+      }, CLOSE_DELAY);
+    });
+
+    icon.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const isOpen = panel.classList.contains('open');
+      closeAllPanels();
+      if (!isOpen) {
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        icon.classList.add('active');
+      }
+      document.dispatchEvent(new CustomEvent('canva-tool', { detail: { tool: key } }));
+    });
+
+    icon.addEventListener('focus', () => {
+      clearTimeout(closeTimer);
+      closeAllPanels();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      icon.classList.add('active');
+    });
+  });
+
+  panels.forEach(panel => {
+    panel.addEventListener('mouseenter', () => {
+      clearTimeout(closeTimer);
+      clearTimeout(openTimer);
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+    });
+    panel.addEventListener('mouseleave', () => {
+      closeTimer = setTimeout(() => {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        const id = panel.id.replace(/^panel-/, '');
+        const icon = document.querySelector(`.canva-icon[data-panel="${id}"], .canva-icon[data-tool="${id}"]`);
+        if (icon) icon.classList.remove('active');
+      }, CLOSE_DELAY);
+    });
+    panel.addEventListener('focusin', () => {
+      clearTimeout(closeTimer);
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+    });
+    panel.addEventListener('focusout', () => {
+      setTimeout(() => {
+        if (!panel.contains(document.activeElement)) {
+          panel.classList.remove('open');
+          panel.setAttribute('aria-hidden', 'true');
+        }
+      }, 10);
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
+      closeAllPanels();
     }
+  });
 
-    console.log('Editor initialized');
+  // MutationObserver to update toolbar when content changes
+  if (typeof MutationObserver !== 'undefined') {
+    const toolbarObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.addedNodes && m.addedNodes.length) {
+          document.dispatchEvent(new Event('selectionchange'));
+        }
+      }
+    });
+    try {
+      toolbarObserver.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {
+      /* ignore */
+    }
   }
 
-  /* Run on DOM ready */
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEditor);
-  } else {
-    initEditor();
-  }
+  console.log('Editor initialized');
+}
 
-  /* end marker */
-  console.log("FIN DU FICHIER OK");
+/* Run on DOM ready */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initEditor);
+} else {
+  initEditor();
+}
+
+/* end marker */
+console.log("FIN DU FICHIER OK");
 
 })();
