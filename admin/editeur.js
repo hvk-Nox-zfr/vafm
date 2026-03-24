@@ -33,16 +33,18 @@
 
   console.log('editeur.js loaded');
 
-// editeur.js
-// Éditeur d’article – version simplifiée et propre
+/* ============================================================
+   ÉDITEUR D’ARTICLE – VERSION PROPRE ET FONCTIONNELLE
+   ============================================================ */
 
 /* ----------------- Variables globales ----------------- */
 let wrapper = null;
 let canvas = null;
 let editorLayer = null;
 let currentBlock = null;
+let blockIdCounter = 0;
 
-/* ----------------- Utilitaires DOM ----------------- */
+/* ----------------- Helpers ----------------- */
 function $(sel, root = document) {
   return root.querySelector(sel);
 }
@@ -50,12 +52,11 @@ function $all(sel, root = document) {
   return Array.from(root.querySelectorAll(sel));
 }
 
-/* ----------------- Blocs d’édition ----------------- */
-let blockIdCounter = 0;
+/* ============================================================
+   BLOCS D’ÉDITION
+   ============================================================ */
 
 function createTextBlock({ type = 'paragraph', x = 100, y = 100, width = 400, html = '' } = {}) {
-  if (!editorLayer) return;
-
   const block = document.createElement('div');
   block.className = 'block-public';
   block.dataset.type = type;
@@ -67,7 +68,7 @@ function createTextBlock({ type = 'paragraph', x = 100, y = 100, width = 400, ht
   block.style.top = `${y}px`;
   block.style.width = `${width}px`;
 
-  block.innerHTML = html || (type === 'title' ? 'Titre de l’article' : 'Nouveau texte');
+  block.innerHTML = html || (type === 'title' ? 'Titre' : 'Texte…');
 
   editorLayer.appendChild(block);
   makeDraggable(block);
@@ -78,8 +79,6 @@ function createTextBlock({ type = 'paragraph', x = 100, y = 100, width = 400, ht
 }
 
 function addImageBlock(src, { x = 100, y = 100, width = 300 } = {}) {
-  if (!editorLayer) return;
-
   const block = document.createElement('div');
   block.className = 'block-public block-image';
   block.dataset.type = 'image';
@@ -92,9 +91,7 @@ function addImageBlock(src, { x = 100, y = 100, width = 300 } = {}) {
 
   const img = document.createElement('img');
   img.src = src;
-  img.alt = '';
   img.style.width = '100%';
-  img.style.display = 'block';
 
   block.appendChild(img);
   editorLayer.appendChild(block);
@@ -106,39 +103,14 @@ function addImageBlock(src, { x = 100, y = 100, width = 300 } = {}) {
   return block;
 }
 
-/* ----------------- Sélection de bloc ----------------- */
+/* ============================================================
+   SÉLECTION & DRAG
+   ============================================================ */
+
 function selectBlock(block) {
   currentBlock = block;
   $all('.block-public').forEach(b => b.classList.remove('selected'));
   if (block) block.classList.add('selected');
-}
-
-/* ----------------- Drag & drop simple ----------------- */
-function makeDraggable(el) {
-  let startX = 0, startY = 0, origX = 0, origY = 0;
-  function onMouseDown(e) {
-    if (e.button !== 0) return;
-    selectBlock(el);
-    startX = e.clientX;
-    startY = e.clientY;
-    const rect = el.getBoundingClientRect();
-    origX = rect.left + window.scrollX;
-    origY = rect.top + window.scrollY;
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-    e.preventDefault();
-  }
-  function onMouseMove(e) {
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    el.style.left = `${origX + dx - wrapper.getBoundingClientRect().left}px`;
-    el.style.top = `${origY + dy - wrapper.getBoundingClientRect().top}px`;
-  }
-  function onMouseUp() {
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
-  }
-  el.addEventListener('mousedown', onMouseDown);
 }
 
 function makeSelectable(el) {
@@ -148,173 +120,131 @@ function makeSelectable(el) {
   });
 }
 
-/* ----------------- Toolbar : application du style ----------------- */
-function applyInlineStyle(command, value = null) {
+function makeDraggable(el) {
+  let startX = 0, startY = 0, origX = 0, origY = 0;
+
+  el.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    selectBlock(el);
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = el.getBoundingClientRect();
+    origX = rect.left + window.scrollX;
+    origY = rect.top + window.scrollY;
+
+    function move(ev) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      el.style.left = `${origX + dx - wrapper.getBoundingClientRect().left}px`;
+      el.style.top = `${origY + dy - wrapper.getBoundingClientRect().top}px`;
+    }
+
+    function up() {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+    }
+
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+}
+
+/* ============================================================
+   TOOLBAR – FORMATAGE
+   ============================================================ */
+
+function applyInlineStyle(cmd, value = null) {
   if (!currentBlock) return;
   currentBlock.focus();
-  document.execCommand(command, false, value);
+  document.execCommand(cmd, false, value);
 }
 
-function applyBlockStyle(styleFn) {
+function applyBlockStyle(fn) {
   if (!currentBlock) return;
-  styleFn(currentBlock);
+  fn(currentBlock);
 }
 
-/* ----------------- Sauvegarde (à adapter à Supabase) ----------------- */
-async function sauvegarder() {
-  console.log('[sauvegarder] démarrage');
-
-  const blocks = $all('.block-public', editorLayer).map(b => ({
-    id: b.dataset.blockId,
-    type: b.dataset.type || 'paragraph',
-    html: b.innerHTML,
-    x: parseInt(b.style.left || '0', 10),
-    y: parseInt(b.style.top || '0', 10),
-    width: parseInt(b.style.width || '400', 10)
-  }));
-
-  console.log('[sauvegarder] blocs à sauvegarder :', blocks);
-
-  // TODO: remplacer par ton appel Supabase réel
-  // await supabase.from('articles').update({ content: blocks }).eq('id', articleId);
-
-  console.log('[sauvegarder] terminé (mock)');
-}
-
-/* ----------------- Chargement initial (mock) ----------------- */
-async function chargerActu() {
-  console.log('[chargerActu] mock – aucun chargement distant');
-  // Ici tu peux recharger depuis Supabase si besoin
-}
-
-/* ----------------- Toolbar : binding des contrôles ----------------- */
 function attachFormatToolbarHandlers() {
-  const toolbar = document.getElementById('format-toolbar');
-  if (!toolbar) {
-    console.warn('format-toolbar introuvable');
-    return;
-  }
+  const toolbar = $('#format-toolbar');
+  if (!toolbar) return console.warn('Toolbar introuvable');
 
-  // Police
-  const fontSelect = $('#ft-font', toolbar);
-  if (fontSelect) {
-    fontSelect.addEventListener('change', (e) => {
-      applyBlockStyle(block => {
-        block.style.fontFamily = e.target.value;
-      });
-    });
-  }
+  console.log('Toolbar détectée:', toolbar);
 
-  // Taille
-  const sizeSelect = $('#ft-size', toolbar);
-  if (sizeSelect) {
-    sizeSelect.addEventListener('change', (e) => {
-      applyBlockStyle(block => {
-        block.style.fontSize = e.target.value;
-      });
-    });
-  }
+  /* Police */
+  $('#ft-font', toolbar)?.addEventListener('change', (e) => {
+    applyBlockStyle(b => b.style.fontFamily = e.target.value);
+  });
 
-  // Gras / Italique / Souligné
-  const boldBtn = $('#ft-bold', toolbar);
-  const italicBtn = $('#ft-italic', toolbar);
-  const underlineBtn = $('#ft-underline', toolbar);
+  /* Taille */
+  $('#ft-size', toolbar)?.addEventListener('change', (e) => {
+    applyBlockStyle(b => b.style.fontSize = e.target.value);
+  });
 
-  if (boldBtn) boldBtn.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('bold'); });
-  if (italicBtn) italicBtn.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('italic'); });
-  if (underlineBtn) underlineBtn.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('underline'); });
+  /* Gras / Italique / Souligné */
+  $('#ft-bold', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('bold'); });
+  $('#ft-italic', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('italic'); });
+  $('#ft-underline', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('underline'); });
 
-  // Couleur
-  const colorInput = $('#ft-color', toolbar);
-  if (colorInput) {
-    colorInput.addEventListener('input', (e) => {
-      applyInlineStyle('foreColor', e.target.value);
-    });
-  }
+  /* Couleur */
+  $('#ft-color', toolbar)?.addEventListener('input', (e) => {
+    applyInlineStyle('foreColor', e.target.value);
+  });
 
-  // Alignements
-  const alignLeft = $('#ft-align-left', toolbar);
-  const alignCenter = $('#ft-align-center', toolbar);
-  const alignRight = $('#ft-align-right', toolbar);
+  /* Alignements */
+  $('#ft-align-left', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'left'); });
+  $('#ft-align-center', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'center'); });
+  $('#ft-align-right', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'right'); });
 
-  if (alignLeft) alignLeft.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'left'); });
-  if (alignCenter) alignCenter.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'center'); });
-  if (alignRight) alignRight.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'right'); });
+  /* Interligne */
+  $('#ft-lineheight', toolbar)?.addEventListener('change', (e) => {
+    applyBlockStyle(b => b.style.lineHeight = e.target.value);
+  });
 
-  // Interligne
-  const lineHeightSelect = $('#ft-lineheight', toolbar);
-  if (lineHeightSelect) {
-    lineHeightSelect.addEventListener('change', (e) => {
-      applyBlockStyle(b => b.style.lineHeight = e.target.value);
-    });
-  }
+  /* Z-index */
+  $('#ft-send-front', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(b => b.style.zIndex = (parseInt(b.style.zIndex || '1') + 1));
+  });
 
-  // Z-index (avant / arrière)
-  const sendFront = $('#ft-send-front', toolbar);
-  const sendBack = $('#ft-send-back', toolbar);
-
-  if (sendFront) {
-    sendFront.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyBlockStyle(b => {
-        b.style.zIndex = String((parseInt(b.style.zIndex || '1', 10) || 1) + 1);
-      });
-    });
-  }
-
-  if (sendBack) {
-    sendBack.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyBlockStyle(b => {
-        b.style.zIndex = String((parseInt(b.style.zIndex || '1', 10) || 1) - 1);
-      });
-    });
-  }
+  $('#ft-send-back', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(b => b.style.zIndex = (parseInt(b.style.zIndex || '1') - 1));
+  });
 
   console.log('[toolbar] handlers attachés');
 }
 
-/* ----------------- Boutons latéraux (canva) ----------------- */
+/* ============================================================
+   PANNEAUX CANVA
+   ============================================================ */
+
 function attachSidebarHandlers() {
-  const addTitleBtn = document.getElementById('add-title');
-  const addSubtitleBtn = document.getElementById('add-subtitle');
-  const addParagraphBtn = document.getElementById('add-paragraph');
-  const addImageBtn = document.getElementById('add-image');
+  $('#add-title')?.addEventListener('click', () => {
+    createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
+  });
 
-  if (addTitleBtn) {
-    addTitleBtn.addEventListener('click', () => {
-      createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
-    });
-  }
+  $('#add-subtitle')?.addEventListener('click', () => {
+    createTextBlock({ type: 'subtitle', x: 140, y: 180, width: 420, html: 'Sous-titre' });
+  });
 
-  if (addSubtitleBtn) {
-    addSubtitleBtn.addEventListener('click', () => {
-      createTextBlock({ type: 'subtitle', x: 140, y: 180, width: 420, html: 'Sous-titre' });
-    });
-  }
+  $('#add-paragraph')?.addEventListener('click', () => {
+    createTextBlock({ type: 'paragraph', x: 140, y: 240, width: 480, html: 'Nouveau paragraphe…' });
+  });
 
-  if (addParagraphBtn) {
-    addParagraphBtn.addEventListener('click', () => {
-      createTextBlock({ type: 'paragraph', x: 140, y: 240, width: 480, html: 'Nouveau paragraphe…' });
-    });
-  }
-
-  if (addImageBtn) {
-    addImageBtn.addEventListener('click', () => {
-      const url = window.prompt('URL de l’image :');
-      if (url) addImageBlock(url, { x: 160, y: 260, width: 320 });
-    });
-  }
+  $('#add-image')?.addEventListener('click', () => {
+    const url = window.prompt('URL de l’image :');
+    if (url) addImageBlock(url);
+  });
 }
 
-/* ----------------- Panels canva (hover / click) ----------------- */
 function attachCanvaPanels() {
   const icons = $all('.canva-icon');
   const panels = $all('.canva-panel');
-  let openTimer = null, closeTimer = null;
-  const OPEN_DELAY = 80, CLOSE_DELAY = 160;
 
-  function closeAllPanels() {
+  function closeAll() {
     panels.forEach(p => {
       p.classList.remove('open');
       p.setAttribute('aria-hidden', 'true');
@@ -323,116 +253,86 @@ function attachCanvaPanels() {
   }
 
   icons.forEach(icon => {
-    const key = icon.dataset.panel || icon.dataset.tool;
-    const panel = document.getElementById('panel-' + key);
+    const key = icon.dataset.panel;
+    const panel = $('#panel-' + key);
     if (!panel) return;
 
     icon.addEventListener('mouseenter', () => {
-      clearTimeout(closeTimer);
-      openTimer = setTimeout(() => {
-        closeAllPanels();
-        panel.classList.add('open');
-        panel.setAttribute('aria-hidden', 'false');
-        icon.classList.add('active');
-      }, OPEN_DELAY);
+      closeAll();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      icon.classList.add('active');
     });
 
-    icon.addEventListener('mouseleave', () => {
-      clearTimeout(openTimer);
-      closeTimer = setTimeout(() => {
-        if (!panel.matches(':hover')) {
-          panel.classList.remove('open');
-          panel.setAttribute('aria-hidden', 'true');
-          icon.classList.remove('active');
-        }
-      }, CLOSE_DELAY);
-    });
-
-    icon.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const isOpen = panel.classList.contains('open');
-      closeAllPanels();
-      if (!isOpen) {
-        panel.classList.add('open');
-        panel.setAttribute('aria-hidden', 'false');
-        icon.classList.add('active');
-      }
-      document.dispatchEvent(new CustomEvent('canva-tool', { detail: { tool: key } }));
-    });
-
-    icon.addEventListener('focus', () => {
-      clearTimeout(closeTimer);
-      closeAllPanels();
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAll();
       panel.classList.add('open');
       panel.setAttribute('aria-hidden', 'false');
       icon.classList.add('active');
     });
   });
 
-  panels.forEach(panel => {
-    panel.addEventListener('mouseenter', () => {
-      clearTimeout(closeTimer);
-      clearTimeout(openTimer);
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden', 'false');
-    });
-    panel.addEventListener('mouseleave', () => {
-      closeTimer = setTimeout(() => {
-        panel.classList.remove('open');
-        panel.setAttribute('aria-hidden', 'true');
-        const id = panel.id.replace(/^panel-/, '');
-        const icon = document.querySelector(`.canva-icon[data-panel="${id}"], .canva-icon[data-tool="${id}"]`);
-        if (icon) icon.classList.remove('active');
-      }, CLOSE_DELAY);
-    });
-  });
-
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
-      closeAllPanels();
+      closeAll();
     }
   });
 }
 
-/* ----------------- Init éditeur ----------------- */
-function initEditor() {
-  wrapper = document.querySelector('.canvas-wrapper') || document.body;
-  canvas = document.getElementById('actu-content') || wrapper;
-  editorLayer = document.getElementById('editor-layer') || wrapper;
+/* ============================================================
+   SAUVEGARDE (mock)
+   ============================================================ */
 
-  // exposer pour debug
-  window.addImageBlock = addImageBlock;
-  window.createTextBlock = createTextBlock;
-  window.sauvegarder = sauvegarder;
-  window.chargerActu = chargerActu;
+async function sauvegarder() {
+  console.log('[sauvegarder] démarrage');
+
+  const blocks = $all('.block-public', editorLayer).map(b => ({
+    id: b.dataset.blockId,
+    type: b.dataset.type,
+    html: b.innerHTML,
+    x: parseInt(b.style.left),
+    y: parseInt(b.style.top),
+    width: parseInt(b.style.width)
+  }));
+
+  console.log('[sauvegarder] blocs :', blocks);
+  alert('Enregistré (mock)');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+
+function initEditor() {
+  wrapper = $('.canvas-wrapper');
+  canvas = $('#actu-content');
+  editorLayer = $('#editor-layer');
 
   attachFormatToolbarHandlers();
   attachSidebarHandlers();
   attachCanvaPanels();
 
-  // bloc par défaut si aucun
-  if (editorLayer && !editorLayer.querySelector('.block-public')) {
+  if (!$('.block-public', editorLayer)) {
     createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
   }
 
-  // désélection quand on clique à l’extérieur
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.block-public')) selectBlock(null);
   });
 
-  // bouton Enregistrer en haut à droite
-  const saveTop = document.getElementById('save-btn-top');
-  if (saveTop) {
-    saveTop.addEventListener('click', (e) => {
-      e.preventDefault();
-      sauvegarder();
-    });
-  }
+  $('#save-btn-top')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    sauvegarder();
+  });
 
   console.log('Editor initialized');
 }
 
-/* ----------------- DOM Ready ----------------- */
+/* ============================================================
+   DOM READY
+   ============================================================ */
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initEditor);
 } else {
@@ -440,3 +340,4 @@ if (document.readyState === 'loading') {
 }
 
 console.log('FIN DU FICHIER OK');
+
