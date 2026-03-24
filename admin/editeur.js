@@ -316,7 +316,6 @@ async function sauvegarder() {
 
     console.log('[sauvegarder] payload', { actuId, contenu });
 
-    // update et demander la représentation pour récupérer la ligne mise à jour
     const { data, error } = await client.from('actus').update({ contenu }).eq('id', actuId).select();
 
     console.log('[sauvegarder] supabase response', { data, error });
@@ -327,7 +326,6 @@ async function sauvegarder() {
       return { ok: false, reason: 'supabase-error', error };
     }
 
-    // si la réponse contient la ligne mise à jour, mettre à jour l'aperçu en local
     if (Array.isArray(data) && data.length) {
       const updated = data[0];
       if (updated.contenu && updated.contenu.previewHtml) {
@@ -347,6 +345,7 @@ async function sauvegarder() {
     return { ok: false, reason: 'exception', error: err };
   }
 }
+
 
 
 /* ============================================================
