@@ -341,3 +341,4 @@ if (document.readyState === 'loading') {
 
 console.log('FIN DU FICHIER OK');
 
+})();
