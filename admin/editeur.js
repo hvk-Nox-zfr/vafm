@@ -349,6 +349,8 @@ document.addEventListener("DOMContentLoaded", () => {
       input.click();
     });
   }
+}); // ferme la fonction fléchée et l'appel addEventListener
+
 
 // ---------- Format toolbar handlers (à placer dans DOMContentLoaded) ----------
 (function attachFormatToolbarHandlers() {
