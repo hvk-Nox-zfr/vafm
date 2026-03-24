@@ -307,16 +307,22 @@
   }
 
   /* ---------------- Save / persist ---------------- */
-  async function sauvegarder() {
+async function sauvegarder() {
+  try {
+    console.log('[sauvegarder] démarrage');
     const client = await __supabaseReady;
     if (!client) {
-      alert("Supabase non initialisé. Impossible d'enregistrer.");
-      return;
+      console.error('[sauvegarder] supabase non initialisé');
+      alert("Impossible d'enregistrer : service non initialisé.");
+      return { ok: false, reason: 'no-client' };
     }
+
     if (!editorLayer || !canvas) {
+      console.error('[sauvegarder] editorLayer ou canvas manquant', { editorLayer, canvas });
       alert("Impossible d'enregistrer : éditeur non initialisé.");
-      return;
+      return { ok: false, reason: 'no-editor' };
     }
+
     const texts = [...editorLayer.querySelectorAll('.block-public.text-block')].map(div => {
       const content = div.querySelector('.text-block-content');
       return {
@@ -328,6 +334,7 @@
         height: div.style.height || ''
       };
     });
+
     const images = [...editorLayer.querySelectorAll('.block-public')].filter(d => d.querySelector('img')).map(div => {
       const img = div.querySelector('img');
       return {
@@ -338,29 +345,39 @@
         height: div.style.height || ''
       };
     });
+
     const previewHtml = canvas ? canvas.innerHTML : '';
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const actuId = Number(params.get("id"));
-      if (!actuId || isNaN(actuId)) {
-        alert("ID d'article invalide.");
-        return;
-      }
-      const { error } = await client
-        .from("actus")
-        .update({ contenu: { previewHtml, texts, images } })
-        .eq("id", actuId);
-      if (error) {
-        console.error("Erreur sauvegarde Supabase:", error);
-        alert("Erreur lors de l'enregistrement.");
-        return;
-      }
-      alert("Enregistré !");
-    } catch (err) {
-      console.error("Erreur sauvegarde:", err);
-      alert("Erreur lors de l'enregistrement.");
+
+    const params = new URLSearchParams(window.location.search);
+    const actuId = Number(params.get("id"));
+    if (!actuId || isNaN(actuId)) {
+      console.warn('[sauvegarder] actuId invalide', params.get("id"));
+      alert("ID d'article invalide. Vérifie l'URL (paramètre id).");
+      return { ok: false, reason: 'invalid-id' };
     }
+
+    console.log('[sauvegarder] payload', { actuId, texts, images });
+
+    const { error } = await client
+      .from("actus")
+      .update({ contenu: { previewHtml, texts, images } })
+      .eq("id", actuId);
+
+    if (error) {
+      console.error('[sauvegarder] erreur supabase', error);
+      alert("Erreur lors de l'enregistrement (voir console).");
+      return { ok: false, reason: 'supabase-error', error };
+    }
+
+    console.log('[sauvegarder] OK');
+    alert("Enregistré !");
+    return { ok: true };
+  } catch (err) {
+    console.error('[sauvegarder] exception', err);
+    alert("Erreur inattendue lors de l'enregistrement (voir console).");
+    return { ok: false, reason: 'exception', error: err };
   }
+}
 
   /* ---------------- Charger article ---------------- */
   function parseCssPx(val) {
