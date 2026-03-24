@@ -577,6 +577,114 @@ async function sauvegarder() {
   } else {
     initEditor();
   }
+  // --- Ensure save button exists and is wired ---
+(function ensureSaveButton(){
+  let btn = document.getElementById('save-btn');
+  if (!btn) {
+    const toolbar = document.querySelector('.toolbar, .editor-toolbar, header') || document.body;
+    btn = document.createElement('button');
+    btn.id = 'save-btn';
+    btn.type = 'button';
+    btn.textContent = 'Enregistrer';
+    btn.className = 'canva-save-btn';
+    Object.assign(btn.style, { margin: '6px', padding: '6px 10px', background: '#0b74de', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' });
+    toolbar.prepend(btn);
+    console.log('createSaveButtonIfMissing: bouton créé');
+  }
+  if (!btn._sauvegarderAttached) {
+    btn.addEventListener('click', (e) => { e.preventDefault(); if (typeof sauvegarder === 'function') sauvegarder(); else console.error('sauvegarder() introuvable'); });
+    btn._sauvegarderAttached = true;
+    console.log('save-btn handler attaché');
+  }
+})();
+
+// --- Delegated toolbar click handler (works even if buttons are added later) ---
+(function attachToolbarDelegation(){
+  const toolbar = document.querySelector('.toolbar, .editor-toolbar, #toolbar, header');
+  if (!toolbar) {
+    console.warn('attachToolbarDelegation: toolbar non trouvée, tentative sur document');
+  }
+  const root = toolbar || document;
+  root.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('[data-action], button[data-action], .ft-button, .format-btn');
+    if (!btn) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const action = btn.dataset.action || btn.getAttribute('data-action') || btn.id || btn.className;
+    // map common actions to functions
+    switch (action) {
+      case 'save':
+      case 'save-btn':
+      case 'ft-save':
+        if (typeof sauvegarder === 'function') sauvegarder();
+        else console.error('sauvegarder() introuvable');
+        break;
+      case 'bold':
+      case 'ft-bold':
+        document.execCommand('bold'); break;
+      case 'italic':
+      case 'ft-italic':
+        document.execCommand('italic'); break;
+      case 'underline':
+      case 'ft-underline':
+        document.execCommand('underline'); break;
+      case 'align-left':
+      case 'ft-align-left':
+        document.execCommand('justifyLeft'); break;
+      case 'align-center':
+      case 'ft-align-center':
+        document.execCommand('justifyCenter'); break;
+      case 'align-right':
+      case 'ft-align-right':
+        document.execCommand('justifyRight'); break;
+      default:
+        // custom handlers by data-action value (e.g., data-action="insert-image")
+        const custom = btn.dataset.action;
+        if (custom && typeof window[custom] === 'function') {
+          try { window[custom](btn); } catch (err) { console.error('Erreur handler custom', custom, err); }
+        } else {
+          console.log('toolbar action non mappée:', action);
+        }
+    }
+  }, { passive: false });
+  console.log('attachToolbarDelegation: délégateur attaché');
+})();
+
+// --- Convert canvas text to editable blocks (run once after chargerActu) ---
+function convertCanvasTextToBlocks() {
+  if (!window.canvas || !window.editorLayer) {
+    console.warn('convertCanvasTextToBlocks: canvas ou editorLayer introuvable');
+    return;
+  }
+  const candidates = Array.from(canvas.querySelectorAll('h1,h2,h3,p,div')).filter(el => {
+    if (el.classList.contains('block-public')) return false;
+    if (!el.offsetParent) return false;
+    const txt = el.textContent.trim();
+    return txt.length > 0 && txt.length < 2000;
+  });
+  candidates.forEach(el => {
+    const rect = el.getBoundingClientRect();
+    const x = Math.max(10, Math.round(rect.left + window.scrollX));
+    const y = Math.max(10, Math.round(rect.top + window.scrollY));
+    const width = Math.max(120, Math.round(rect.width));
+    const html = el.innerHTML;
+    createTextBlock({ type: 'paragraph', x, y, width, html });
+    el.remove();
+  });
+  if (candidates.length) console.log('convertCanvasTextToBlocks: converted', candidates.length);
+}
+
+// --- Reattach behaviors to existing blocks (safety) ---
+(function reattachBlockBehaviors(){
+  document.querySelectorAll('.block-public').forEach(b => {
+    try {
+      if (typeof makeDraggable === 'function') makeDraggable(b);
+      if (typeof makeResizable === 'function') makeResizable(b);
+      if (typeof makeSelectable === 'function') makeSelectable(b);
+    } catch (err) { console.error('réattache handlers pour', b, err); }
+  });
+  console.log('réattachement des handlers sur .block-public effectué');
+})();
 
   /* end marker */
   console.log("FIN DU FICHIER OK");
