@@ -285,27 +285,23 @@ function attachCanvaPanels() {
    ============================================================ */
 
 async function sauvegarder() {
+  console.log('[sauvegarder] démarrage');
   try {
-    console.log('[sauvegarder] démarrage');
-
-    // 1) attendre le client Supabase exposé par supabase-init.js
-    const client = await (window.__supabaseReady || Promise.resolve(null));
+    const client = await (window.__supabaseReady || Promise.resolve(window.supabase || null));
     if (!client) {
-      console.error('[sauvegarder] __supabaseReady non disponible');
+      console.error('[sauvegarder] supabase client absent');
       alert("Impossible d'enregistrer : service non initialisé.");
       return { ok: false, reason: 'no-client' };
     }
 
-    // 2) récupérer l'ID d'article depuis l'URL (paramètre id)
     const params = new URLSearchParams(window.location.search);
     const actuId = Number(params.get('id'));
-    if (!actuId || isNaN(actuId)) {
-      console.warn('[sauvegarder] id invalide dans l\'URL', params.get('id'));
-      alert("ID d'article invalide. Vérifie le paramètre id dans l'URL.");
-      return { ok: false, reason: 'invalid-id' };
+    if (!actuId) {
+      console.error('[sauvegarder] id article manquant');
+      alert("ID d'article manquant dans l'URL.");
+      return { ok: false, reason: 'no-id' };
     }
 
-    // 3) construire le payload : blocs éditables + preview HTML
     const blocks = Array.from(document.querySelectorAll('#editor-layer .block-public')).map(b => ({
       id: b.dataset.blockId || null,
       type: b.dataset.type || 'paragraph',
@@ -316,29 +312,38 @@ async function sauvegarder() {
     }));
 
     const previewHtml = (document.getElementById('actu-content') || document.body).innerHTML;
-
     const contenu = { previewHtml, blocks, updated_at: new Date().toISOString() };
 
     console.log('[sauvegarder] payload', { actuId, contenu });
 
-    // 4) appel Supabase : adapter le nom de table/colonne si besoin
-    const { error } = await client
-      .from('actus')
-      .update({ contenu })
-      .eq('id', actuId);
+    // update et demander la représentation pour récupérer la ligne mise à jour
+    const { data, error } = await client.from('actus').update({ contenu }).eq('id', actuId).select();
+
+    console.log('[sauvegarder] supabase response', { data, error });
 
     if (error) {
       console.error('[sauvegarder] erreur supabase', error);
-      alert('Erreur lors de l\'enregistrement (voir console).');
+      alert("Erreur lors de l'enregistrement (voir console).");
       return { ok: false, reason: 'supabase-error', error };
     }
 
-    console.log('[sauvegarder] OK');
+    // si la réponse contient la ligne mise à jour, mettre à jour l'aperçu en local
+    if (Array.isArray(data) && data.length) {
+      const updated = data[0];
+      if (updated.contenu && updated.contenu.previewHtml) {
+        const previewEl = document.getElementById('actu-content');
+        if (previewEl) {
+          previewEl.innerHTML = updated.contenu.previewHtml;
+          console.log('[sauvegarder] previewHtml mis à jour dans le DOM');
+        }
+      }
+    }
+
     alert('Enregistré !');
-    return { ok: true };
+    return { ok: true, data };
   } catch (err) {
     console.error('[sauvegarder] exception', err);
-    alert('Erreur inattendue lors de l\'enregistrement (voir console).');
+    alert("Erreur inattendue lors de l'enregistrement (voir console).");
     return { ok: false, reason: 'exception', error: err };
   }
 }
