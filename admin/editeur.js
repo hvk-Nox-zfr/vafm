@@ -285,20 +285,64 @@ function attachCanvaPanels() {
    ============================================================ */
 
 async function sauvegarder() {
-  console.log('[sauvegarder] démarrage');
+  try {
+    console.log('[sauvegarder] démarrage');
 
-  const blocks = $all('.block-public', editorLayer).map(b => ({
-    id: b.dataset.blockId,
-    type: b.dataset.type,
-    html: b.innerHTML,
-    x: parseInt(b.style.left),
-    y: parseInt(b.style.top),
-    width: parseInt(b.style.width)
-  }));
+    // 1) attendre le client Supabase exposé par supabase-init.js
+    const client = await (window.__supabaseReady || Promise.resolve(null));
+    if (!client) {
+      console.error('[sauvegarder] __supabaseReady non disponible');
+      alert("Impossible d'enregistrer : service non initialisé.");
+      return { ok: false, reason: 'no-client' };
+    }
 
-  console.log('[sauvegarder] blocs :', blocks);
-  alert('Enregistré (mock)');
+    // 2) récupérer l'ID d'article depuis l'URL (paramètre id)
+    const params = new URLSearchParams(window.location.search);
+    const actuId = Number(params.get('id'));
+    if (!actuId || isNaN(actuId)) {
+      console.warn('[sauvegarder] id invalide dans l\'URL', params.get('id'));
+      alert("ID d'article invalide. Vérifie le paramètre id dans l'URL.");
+      return { ok: false, reason: 'invalid-id' };
+    }
+
+    // 3) construire le payload : blocs éditables + preview HTML
+    const blocks = Array.from(document.querySelectorAll('#editor-layer .block-public')).map(b => ({
+      id: b.dataset.blockId || null,
+      type: b.dataset.type || 'paragraph',
+      html: b.innerHTML,
+      x: parseInt(b.style.left || '0', 10) || 0,
+      y: parseInt(b.style.top || '0', 10) || 0,
+      width: b.style.width || ''
+    }));
+
+    const previewHtml = (document.getElementById('actu-content') || document.body).innerHTML;
+
+    const contenu = { previewHtml, blocks, updated_at: new Date().toISOString() };
+
+    console.log('[sauvegarder] payload', { actuId, contenu });
+
+    // 4) appel Supabase : adapter le nom de table/colonne si besoin
+    const { error } = await client
+      .from('actus')
+      .update({ contenu })
+      .eq('id', actuId);
+
+    if (error) {
+      console.error('[sauvegarder] erreur supabase', error);
+      alert('Erreur lors de l\'enregistrement (voir console).');
+      return { ok: false, reason: 'supabase-error', error };
+    }
+
+    console.log('[sauvegarder] OK');
+    alert('Enregistré !');
+    return { ok: true };
+  } catch (err) {
+    console.error('[sauvegarder] exception', err);
+    alert('Erreur inattendue lors de l\'enregistrement (voir console).');
+    return { ok: false, reason: 'exception', error: err };
+  }
 }
+
 
 /* ============================================================
    INIT
