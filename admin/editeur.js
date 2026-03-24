@@ -519,6 +519,127 @@ async function sauvegarder() {
     // attach toolbar handlers (after DOM elements exist)
     attachFormatToolbarHandlers();
 
+    // --- Robust toolbar wiring: place this inside initEditor() right after attachFormatToolbarHandlers(); ---
+(function robustToolbarInit(){
+  // find toolbar container (fallbacks)
+  const toolbar = document.querySelector('.toolbar, .editor-toolbar, #toolbar, header, .canva-panel') || document.body;
+
+  // 1) ensure save button exists and is wired
+  let saveBtn = document.getElementById('save-btn');
+  if (!saveBtn) {
+    saveBtn = document.createElement('button');
+    saveBtn.id = 'save-btn';
+    saveBtn.type = 'button';
+    saveBtn.textContent = 'Enregistrer';
+    saveBtn.className = 'canva-save-btn';
+    Object.assign(saveBtn.style, {
+      margin: '6px',
+      padding: '6px 10px',
+      background: '#0b74de',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      zIndex: 10000
+    });
+    toolbar.prepend(saveBtn);
+    console.log('robustToolbarInit: save button created');
+  }
+  if (!saveBtn._attached) {
+    saveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('save-btn clicked');
+      if (typeof sauvegarder === 'function') sauvegarder();
+      else console.error('sauvegarder() introuvable');
+    });
+    saveBtn._attached = true;
+  }
+
+  // 2) delegated click handler for toolbar actions (works even if buttons are added later)
+  const root = toolbar || document;
+  if (!root._toolbarDelegationAttached) {
+    root.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button, [data-action], .canva-icon, .ft-button, .format-btn, input[type="color"]');
+      if (!btn) return;
+      // debug
+      console.log('toolbar click:', btn, 'data-action=', btn.dataset && btn.dataset.action, 'id=', btn.id);
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      // ensure pointer-events enabled on clicked element and parents (in case CSS blocked it)
+      let p = btn;
+      for (let i = 0; i < 6 && p; i++, p = p.parentElement) {
+        if (getComputedStyle(p).pointerEvents === 'none') p.style.pointerEvents = 'auto';
+      }
+
+      const action = (btn.dataset && btn.dataset.action) || btn.id || btn.getAttribute('data-action') || btn.className || btn.textContent.trim().toLowerCase();
+
+      switch (action) {
+        case 'save':
+        case 'save-btn':
+        case 'ft-save':
+        case 'canva-save-btn':
+          if (typeof sauvegarder === 'function') sauvegarder(); else console.error('sauvegarder() introuvable');
+          break;
+        case 'bold':
+        case 'ft-bold':
+          document.execCommand('bold'); break;
+        case 'italic':
+        case 'ft-italic':
+          document.execCommand('italic'); break;
+        case 'underline':
+        case 'ft-underline':
+          document.execCommand('underline'); break;
+        case 'align-left':
+        case 'ft-align-left':
+          document.execCommand('justifyLeft'); break;
+        case 'align-center':
+        case 'ft-align-center':
+          document.execCommand('justifyCenter'); break;
+        case 'align-right':
+        case 'ft-align-right':
+          document.execCommand('justifyRight'); break;
+        default:
+          // try custom handler named window[action]
+          if (action && typeof window[action] === 'function') {
+            try { window[action](btn); } catch (err) { console.error('Erreur handler custom', action, err); }
+          } else {
+            console.log('toolbar action non mappée:', action);
+          }
+      }
+    }, { passive: false });
+    root._toolbarDelegationAttached = true;
+    console.log('robustToolbarInit: delegation attached to', root);
+  }
+
+  // 3) debug helper: detect overlay covering toolbar and temporarily disable it
+  (function detectOverlay(){
+    const t = toolbar;
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    const el = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+    if (el && el !== t && !t.contains(el)) {
+      console.warn('robustToolbarInit: overlay detected covering toolbar:', el, 'classes:', el.className);
+      // temporarily allow clicks through the overlay for debugging
+      el.style.pointerEvents = 'none';
+      el.dataset._pointerEventsDisabledByRobustInit = 'true';
+      console.log('robustToolbarInit: pointer-events disabled on overlay for debug. Reload to restore.');
+    } else {
+      console.log('robustToolbarInit: no overlay detected at toolbar center');
+    }
+  })();
+
+  // 4) reattach behaviors to existing blocks (safety)
+  document.querySelectorAll('.block-public').forEach(b => {
+    try {
+      if (typeof makeDraggable === 'function') makeDraggable(b);
+      if (typeof makeResizable === 'function') makeResizable(b);
+      if (typeof makeSelectable === 'function') makeSelectable(b);
+    } catch (err) { console.error('robustToolbarInit: réattache handlers pour', b, err); }
+  });
+  console.log('robustToolbarInit: reattached handlers on .block-public');
+})();
+
     // create a default block if none exist
     if (editorLayer && !editorLayer.querySelector('.block-public')) {
       createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
@@ -577,114 +698,6 @@ async function sauvegarder() {
   } else {
     initEditor();
   }
-  // --- Ensure save button exists and is wired ---
-(function ensureSaveButton(){
-  let btn = document.getElementById('save-btn');
-  if (!btn) {
-    const toolbar = document.querySelector('.toolbar, .editor-toolbar, header') || document.body;
-    btn = document.createElement('button');
-    btn.id = 'save-btn';
-    btn.type = 'button';
-    btn.textContent = 'Enregistrer';
-    btn.className = 'canva-save-btn';
-    Object.assign(btn.style, { margin: '6px', padding: '6px 10px', background: '#0b74de', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' });
-    toolbar.prepend(btn);
-    console.log('createSaveButtonIfMissing: bouton créé');
-  }
-  if (!btn._sauvegarderAttached) {
-    btn.addEventListener('click', (e) => { e.preventDefault(); if (typeof sauvegarder === 'function') sauvegarder(); else console.error('sauvegarder() introuvable'); });
-    btn._sauvegarderAttached = true;
-    console.log('save-btn handler attaché');
-  }
-})();
-
-// --- Delegated toolbar click handler (works even if buttons are added later) ---
-(function attachToolbarDelegation(){
-  const toolbar = document.querySelector('.toolbar, .editor-toolbar, #toolbar, header');
-  if (!toolbar) {
-    console.warn('attachToolbarDelegation: toolbar non trouvée, tentative sur document');
-  }
-  const root = toolbar || document;
-  root.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('[data-action], button[data-action], .ft-button, .format-btn');
-    if (!btn) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    const action = btn.dataset.action || btn.getAttribute('data-action') || btn.id || btn.className;
-    // map common actions to functions
-    switch (action) {
-      case 'save':
-      case 'save-btn':
-      case 'ft-save':
-        if (typeof sauvegarder === 'function') sauvegarder();
-        else console.error('sauvegarder() introuvable');
-        break;
-      case 'bold':
-      case 'ft-bold':
-        document.execCommand('bold'); break;
-      case 'italic':
-      case 'ft-italic':
-        document.execCommand('italic'); break;
-      case 'underline':
-      case 'ft-underline':
-        document.execCommand('underline'); break;
-      case 'align-left':
-      case 'ft-align-left':
-        document.execCommand('justifyLeft'); break;
-      case 'align-center':
-      case 'ft-align-center':
-        document.execCommand('justifyCenter'); break;
-      case 'align-right':
-      case 'ft-align-right':
-        document.execCommand('justifyRight'); break;
-      default:
-        // custom handlers by data-action value (e.g., data-action="insert-image")
-        const custom = btn.dataset.action;
-        if (custom && typeof window[custom] === 'function') {
-          try { window[custom](btn); } catch (err) { console.error('Erreur handler custom', custom, err); }
-        } else {
-          console.log('toolbar action non mappée:', action);
-        }
-    }
-  }, { passive: false });
-  console.log('attachToolbarDelegation: délégateur attaché');
-})();
-
-// --- Convert canvas text to editable blocks (run once after chargerActu) ---
-function convertCanvasTextToBlocks() {
-  if (!window.canvas || !window.editorLayer) {
-    console.warn('convertCanvasTextToBlocks: canvas ou editorLayer introuvable');
-    return;
-  }
-  const candidates = Array.from(canvas.querySelectorAll('h1,h2,h3,p,div')).filter(el => {
-    if (el.classList.contains('block-public')) return false;
-    if (!el.offsetParent) return false;
-    const txt = el.textContent.trim();
-    return txt.length > 0 && txt.length < 2000;
-  });
-  candidates.forEach(el => {
-    const rect = el.getBoundingClientRect();
-    const x = Math.max(10, Math.round(rect.left + window.scrollX));
-    const y = Math.max(10, Math.round(rect.top + window.scrollY));
-    const width = Math.max(120, Math.round(rect.width));
-    const html = el.innerHTML;
-    createTextBlock({ type: 'paragraph', x, y, width, html });
-    el.remove();
-  });
-  if (candidates.length) console.log('convertCanvasTextToBlocks: converted', candidates.length);
-}
-
-// --- Reattach behaviors to existing blocks (safety) ---
-(function reattachBlockBehaviors(){
-  document.querySelectorAll('.block-public').forEach(b => {
-    try {
-      if (typeof makeDraggable === 'function') makeDraggable(b);
-      if (typeof makeResizable === 'function') makeResizable(b);
-      if (typeof makeSelectable === 'function') makeSelectable(b);
-    } catch (err) { console.error('réattache handlers pour', b, err); }
-  });
-  console.log('réattachement des handlers sur .block-public effectué');
-})();
 
   /* end marker */
   console.log("FIN DU FICHIER OK");
