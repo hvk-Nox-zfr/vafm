@@ -371,6 +371,23 @@ function initEditor() {
   });
 
   console.log('Editor initialized');
+
+  // attacher le bouton d'enregistrement visible (top ou toolbar)
+(function attachSaveButtons(){
+  const top = document.getElementById('save-btn-top');
+  if (top && !top._saveAttached) {
+    top.addEventListener('click', (e) => { e.preventDefault(); sauvegarder(); });
+    top._saveAttached = true;
+    console.log('save-btn-top handler attaché');
+  }
+  const toolbarSave = document.getElementById('save-btn');
+  if (toolbarSave && !toolbarSave._saveAttached) {
+    toolbarSave.addEventListener('click', (e) => { e.preventDefault(); sauvegarder(); });
+    toolbarSave._saveAttached = true;
+    console.log('save-btn (toolbar) handler attaché');
+  }
+})();
+
 }
 
 /* ============================================================
