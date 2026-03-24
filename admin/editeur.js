@@ -370,42 +370,33 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!ftFont) return;
 
 // editeur-clean.js
-// Éditeur léger : toolbar + drag fiable pour blocs texte
 (function () {
   'use strict';
 
-  // ---------- Utilitaires ----------
   function $(sel, root = document) { return root.querySelector(sel); }
   function $all(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-  // ---------- Variables globales de l'éditeur ----------
   let wrapper = null;
   let canvas = null;
   let editorLayer = null;
   let selectedBlock = null;
 
-  // ---------- Helpers pour styles ----------
   function applyInlineStyleToBlock(block, cssObj) {
     const content = block.querySelector('.text-block-content') || block;
     Object.keys(cssObj).forEach(k => content.style[k] = cssObj[k]);
   }
 
   function applyStyleToSelectionOrBlock(cssObj) {
-    // If a block is selected and it's a text-block, apply to whole block
     if (selectedBlock && selectedBlock.classList.contains('text-block')) {
       applyInlineStyleToBlock(selectedBlock, cssObj);
       return;
     }
-
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
-
     const range = sel.getRangeAt(0);
-    // Try to wrap selection in a span with styles
     const span = document.createElement('span');
     Object.assign(span.style, cssObj);
-
     try {
       range.surroundContents(span);
       sel.removeAllRanges();
@@ -413,13 +404,11 @@ document.addEventListener("DOMContentLoaded", () => {
       newRange.selectNodeContents(span);
       sel.addRange(newRange);
     } catch (e) {
-      // Fallbacks for common styles using execCommand where possible
       if (cssObj.fontWeight === 'bold') document.execCommand('bold');
       if (cssObj.fontStyle === 'italic') document.execCommand('italic');
       if (cssObj.textDecoration === 'underline') document.execCommand('underline');
       if (cssObj.color) document.execCommand('foreColor', false, cssObj.color);
       if (cssObj.fontSize) {
-        // execCommand fontSize uses 1-7; fallback: wrap in span
         const wrapper = document.createElement('span');
         wrapper.style.fontSize = cssObj.fontSize;
         try { range.surroundContents(wrapper); } catch (e2) {}
@@ -427,11 +416,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- Toolbar handlers ----------
   function attachFormatToolbarHandlers() {
     const ftFont = $('#ft-font');
-    if (!ftFont) return; // toolbar absent
-
+    if (!ftFont) return;
     const ftSize = $('#ft-size');
     const ftBold = $('#ft-bold');
     const ftItalic = $('#ft-italic');
@@ -444,18 +431,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const ftSendFront = $('#ft-send-front');
     const ftSendBack = $('#ft-send-back');
 
-    // Update toolbar state from selected block
     function updateToolbarState() {
       if (selectedBlock && selectedBlock.classList.contains('text-block')) {
         const content = selectedBlock.querySelector('.text-block-content');
         if (!content) return;
-
         ftFont.value = window.getComputedStyle(content).fontFamily || ftFont.value;
         ftSize.value = window.getComputedStyle(content).fontSize || ftSize.value;
-
         const lh = window.getComputedStyle(content).lineHeight;
         ftLineheight.value = lh && lh !== 'normal' ? lh : ftLineheight.value;
-
         const color = window.getComputedStyle(content).color;
         if (color) {
           const m = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
@@ -468,7 +451,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Event wiring
     ftFont.addEventListener('change', () => applyStyleToSelectionOrBlock({ fontFamily: ftFont.value }));
     if (ftSize) ftSize.addEventListener('change', () => applyStyleToSelectionOrBlock({ fontSize: ftSize.value }));
     if (ftBold) ftBold.addEventListener('click', () => applyStyleToSelectionOrBlock({ fontWeight: 'bold' }));
@@ -480,7 +462,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (ftAlignRight) ftAlignRight.addEventListener('click', () => applyStyleToSelectionOrBlock({ textAlign: 'right' }));
     if (ftLineheight) ftLineheight.addEventListener('change', () => applyStyleToSelectionOrBlock({ lineHeight: ftLineheight.value }));
 
-    // Bring to front / back
     if (ftSendFront) ftSendFront.addEventListener('click', () => {
       if (!selectedBlock) return;
       selectedBlock.style.zIndex = (parseInt(selectedBlock.style.zIndex || 1) + 1000).toString();
@@ -490,11 +471,9 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedBlock.style.zIndex = (parseInt(selectedBlock.style.zIndex || 1) - 1000).toString();
     });
 
-    // Update toolbar when selection changes
     document.addEventListener('selectionchange', updateToolbarState);
   }
 
-  // ---------- Text block creation helper ----------
   function createTextBlock(opts = {}) {
     const { type = 'paragraph', x = 100, y = 100, width = 300, text = '' } = opts;
     const block = document.createElement('div');
@@ -514,7 +493,6 @@ document.addEventListener("DOMContentLoaded", () => {
     content.style.cursor = 'text';
     block.appendChild(content);
 
-    // Add a small header handle for dragging (so selection inside content doesn't start drag)
     const handle = document.createElement('div');
     handle.className = 'text-block-handle';
     handle.style.position = 'absolute';
@@ -527,40 +505,29 @@ document.addEventListener("DOMContentLoaded", () => {
     handle.style.cursor = 'grab';
     block.appendChild(handle);
 
-    // Attach events
     attachBlockEvents(block, handle, content);
-
-    // Append to editor layer or wrapper
     (editorLayer || wrapper || document.body).appendChild(block);
     return block;
   }
 
-  // ---------- Drag logic (robuste) ----------
   function attachBlockEvents(block, handle, content) {
-    // Selection on click
     block.addEventListener('mousedown', (ev) => {
-      // Only left button
       if (ev.button !== 0) return;
       selectBlock(block);
     });
     block.addEventListener('focus', () => selectBlock(block));
 
-    // Drag variables
     let dragging = false;
     let startX = 0, startY = 0;
     let origLeft = 0, origTop = 0;
     let offsetX = 0, offsetY = 0;
-    const DRAG_THRESHOLD = 6; // px before starting drag
+    const DRAG_THRESHOLD = 6;
 
     function onPointerDown(ev) {
-      // Accept mouse or touch
       const isTouch = ev.type === 'touchstart';
       const p = isTouch ? ev.touches[0] : ev;
-      // If pointer is inside editable content and not on handle, allow text selection instead of drag
       const targetIsContent = p.target && (p.target === content || content.contains(p.target));
-      // We only start drag when pointer is on handle OR when user explicitly drags the block (not selecting text)
       if (!handle.contains(p.target) && targetIsContent) {
-        // do not start drag here; selection should proceed
         return;
       }
       ev.preventDefault && ev.preventDefault();
@@ -574,35 +541,28 @@ document.addEventListener("DOMContentLoaded", () => {
       offsetX = startX - origLeft;
       offsetY = startY - origTop;
 
-      // pointer move/up listeners on window to avoid losing them
       function onPointerMove(e) {
         const q = e.type.startsWith('touch') ? (e.touches[0] || e.changedTouches[0]) : e;
         const dx = q.clientX - startX;
         const dy = q.clientY - startY;
         if (!dragging) {
           if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
-            // start drag
             dragging = true;
             block.classList.add('dragging');
-            // ensure absolute positioning relative to document
             block.style.position = 'absolute';
-            // compute left/top relative to offset parent (we use document body coordinates)
             block.style.left = origLeft + 'px';
             block.style.top = origTop + 'px';
             block.style.margin = '0';
             block.style.transform = 'none';
-            // raise z-index while dragging
             block.dataset._zBefore = block.style.zIndex || '10';
             block.style.zIndex = '9999';
           } else {
             return;
           }
         }
-        // move block following pointer minus offset
         const newLeft = q.clientX - offsetX + window.scrollX;
         const newTop = q.clientY - offsetY + window.scrollY;
 
-        // Optional: constrain inside wrapper if present
         if (wrapper) {
           const wrapRect = wrapper.getBoundingClientRect();
           const bRect = block.getBoundingClientRect();
@@ -619,7 +579,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       function onPointerUp(e) {
-        // remove listeners
         window.removeEventListener('mousemove', onPointerMove);
         window.removeEventListener('mouseup', onPointerUp);
         window.removeEventListener('touchmove', onPointerMove);
@@ -627,13 +586,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dragging) {
           dragging = false;
           block.classList.remove('dragging');
-          // restore z-index
           block.style.zIndex = block.dataset._zBefore || '10';
           delete block.dataset._zBefore;
-          // dispatch event that block moved
           document.dispatchEvent(new CustomEvent('block-moved', { detail: { block } }));
-        } else {
-          // it was a click (no drag)
         }
       }
 
@@ -643,16 +598,13 @@ document.addEventListener("DOMContentLoaded", () => {
       window.addEventListener('touchend', onPointerUp);
     }
 
-    // Attach pointer down to handle and to block header area
     handle.addEventListener('mousedown', onPointerDown);
     handle.addEventListener('touchstart', onPointerDown, { passive: false });
 
-    // Double click to edit content
     block.addEventListener('dblclick', () => {
       const c = block.querySelector('.text-block-content');
       if (c) {
         c.focus();
-        // place caret at end
         const range = document.createRange();
         range.selectNodeContents(c);
         range.collapse(false);
@@ -663,9 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Selection helper ----------
   function selectBlock(block) {
-    // Deselect others
     $all('.block-public.selected').forEach(b => b.classList.remove('selected'));
     if (!block) {
       selectedBlock = null;
@@ -673,37 +623,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     block.classList.add('selected');
     selectedBlock = block;
-    // update toolbar state if present
-    const ev = new Event('selectionchange');
-    document.dispatchEvent(ev);
+    document.dispatchEvent(new Event('selectionchange'));
   }
 
-  // ---------- Initialization ----------
   function init() {
     wrapper = document.querySelector('.canvas-wrapper') || document.body;
     canvas = document.getElementById('actu-content') || wrapper;
     editorLayer = document.getElementById('editor-layer') || wrapper;
 
-    // Attach toolbar
     attachFormatToolbarHandlers();
 
-    // Expose helpers for debug
     window.createTextBlock = createTextBlock;
     window.selectBlock = selectBlock;
 
-    // Example: create a default block if none exist
     if ($all('.text-block').length === 0) {
       createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
     }
 
-    // Deselect on outside click
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.text-block')) {
         selectBlock(null);
       }
     });
 
-    // Mutation observer to update toolbar when content changes
     if (typeof MutationObserver !== 'undefined') {
       const toolbarObserver = new MutationObserver((mutations) => {
         for (const m of mutations) {
@@ -716,11 +658,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Run on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
 
+  // end marker
+  console.log("FIN DU FICHIER OK");
 })();
