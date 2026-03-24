@@ -33,570 +33,284 @@
 
   console.log('editeur.js loaded');
 
-  /* ---------------- Globals ---------------- */
-  let wrapper = null;
-  let canvas = null;
-  let editorLayer = null;
-  let selectedBlock = null;
+// editeur.js
+// Éditeur d’article – version simplifiée et propre
 
-  /* ---------------- Utilities ---------------- */
-  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-  function $(sel, root = document) { return root.querySelector(sel); }
-  function $all(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
+/* ----------------- Variables globales ----------------- */
+let wrapper = null;
+let canvas = null;
+let editorLayer = null;
+let currentBlock = null;
 
-  /* ---------------- Drag / Resize / Select ---------------- */
-  function makeDraggable(el) {
-    // Use pointer events with threshold to avoid teleportation and selection conflicts
-    let dragging = false;
-    let startX = 0, startY = 0;
-    let origLeft = 0, origTop = 0;
-    let offsetX = 0, offsetY = 0;
-    const DRAG_THRESHOLD = 6;
+/* ----------------- Utilitaires DOM ----------------- */
+function $(sel, root = document) {
+  return root.querySelector(sel);
+}
+function $all(sel, root = document) {
+  return Array.from(root.querySelectorAll(sel));
+}
 
-    function onPointerDown(e) {
-      // left mouse or touch only
-      if (e.type === 'mousedown' && e.button !== 0) return;
-      const p = e.type.startsWith('touch') ? (e.touches[0] || e.changedTouches[0]) : e;
-      // if target is editable content, don't start drag (allow selection)
-      const content = el.querySelector('.text-block-content');
-      if (content && (p.target === content || content.contains(p.target)) && !p.target.classList.contains('drag-handle')) {
-        return;
-      }
-      e.preventDefault && e.preventDefault();
+/* ----------------- Blocs d’édition ----------------- */
+let blockIdCounter = 0;
 
-      startX = p.clientX;
-      startY = p.clientY;
-      const rect = el.getBoundingClientRect();
-      origLeft = rect.left + window.scrollX;
-      origTop = rect.top + window.scrollY;
-      offsetX = startX - origLeft;
-      offsetY = startY - origTop;
+function createTextBlock({ type = 'paragraph', x = 100, y = 100, width = 400, html = '' } = {}) {
+  if (!editorLayer) return;
 
-      function onMove(ev) {
-        const q = ev.type.startsWith('touch') ? (ev.touches[0] || ev.changedTouches[0]) : ev;
-        const dx = q.clientX - startX;
-        const dy = q.clientY - startY;
-        if (!dragging) {
-          if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
-            dragging = true;
-            el.classList.add('dragging');
-            el.dataset._zBefore = el.style.zIndex || '10';
-            el.style.zIndex = '9999';
-            // ensure absolute positioning
-            el.style.position = 'absolute';
-            el.style.left = origLeft + 'px';
-            el.style.top = origTop + 'px';
-            el.style.margin = '0';
-            el.style.transform = 'none';
-          } else {
-            return;
-          }
-        }
-        const newLeft = q.clientX - offsetX + window.scrollX;
-        const newTop = q.clientY - offsetY + window.scrollY;
+  const block = document.createElement('div');
+  block.className = 'block-public';
+  block.dataset.type = type;
+  block.dataset.blockId = `block-${++blockIdCounter}`;
+  block.contentEditable = 'true';
 
-        if (wrapper) {
-          const wrapRect = wrapper.getBoundingClientRect();
-          const bRect = el.getBoundingClientRect();
-          const minLeft = wrapRect.left + window.scrollX;
-          const minTop = wrapRect.top + window.scrollY;
-          const maxLeft = wrapRect.left + window.scrollX + wrapRect.width - bRect.width;
-          const maxTop = wrapRect.top + window.scrollY + wrapRect.height - bRect.height;
-          el.style.left = clamp(newLeft, minLeft, maxLeft) + 'px';
-          el.style.top = clamp(newTop, minTop, maxTop) + 'px';
-        } else {
-          el.style.left = newLeft + 'px';
-          el.style.top = newTop + 'px';
-        }
-      }
+  block.style.position = 'absolute';
+  block.style.left = `${x}px`;
+  block.style.top = `${y}px`;
+  block.style.width = `${width}px`;
 
-      function onUp() {
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
-        window.removeEventListener('touchmove', onMove);
-        window.removeEventListener('touchend', onUp);
-        if (dragging) {
-          dragging = false;
-          el.classList.remove('dragging');
-          el.style.zIndex = el.dataset._zBefore || '10';
-          delete el.dataset._zBefore;
-          document.dispatchEvent(new CustomEvent('block-moved', { detail: { block: el } }));
-        }
-      }
+  block.innerHTML = html || (type === 'title' ? 'Titre de l’article' : 'Nouveau texte');
 
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-      window.addEventListener('touchmove', onMove, { passive: false });
-      window.addEventListener('touchend', onUp);
-    }
+  editorLayer.appendChild(block);
+  makeDraggable(block);
+  makeSelectable(block);
+  selectBlock(block);
 
-    el.addEventListener('mousedown', onPointerDown);
-    el.addEventListener('touchstart', onPointerDown, { passive: false });
+  return block;
+}
+
+function addImageBlock(src, { x = 100, y = 100, width = 300 } = {}) {
+  if (!editorLayer) return;
+
+  const block = document.createElement('div');
+  block.className = 'block-public block-image';
+  block.dataset.type = 'image';
+  block.dataset.blockId = `block-${++blockIdCounter}`;
+
+  block.style.position = 'absolute';
+  block.style.left = `${x}px`;
+  block.style.top = `${y}px`;
+  block.style.width = `${width}px`;
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = '';
+  img.style.width = '100%';
+  img.style.display = 'block';
+
+  block.appendChild(img);
+  editorLayer.appendChild(block);
+
+  makeDraggable(block);
+  makeSelectable(block);
+  selectBlock(block);
+
+  return block;
+}
+
+/* ----------------- Sélection de bloc ----------------- */
+function selectBlock(block) {
+  currentBlock = block;
+  $all('.block-public').forEach(b => b.classList.remove('selected'));
+  if (block) block.classList.add('selected');
+}
+
+/* ----------------- Drag & drop simple ----------------- */
+function makeDraggable(el) {
+  let startX = 0, startY = 0, origX = 0, origY = 0;
+  function onMouseDown(e) {
+    if (e.button !== 0) return;
+    selectBlock(el);
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    origX = rect.left + window.scrollX;
+    origY = rect.top + window.scrollY;
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    e.preventDefault();
   }
-
-  function makeResizable(el) {
-    const handle = document.createElement('div');
-    handle.className = 'resize-handle bottom-right';
-    // minimal inline styles so handle is usable even without CSS
-    handle.style.position = 'absolute';
-    handle.style.right = '6px';
-    handle.style.bottom = '6px';
-    handle.style.width = '12px';
-    handle.style.height = '12px';
-    handle.style.cursor = 'nwse-resize';
-    handle.style.background = 'rgba(0,0,0,0.2)';
-    el.appendChild(handle);
-
-    handle.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      if (e.button !== 0) return;
-      const startX = e.clientX, startY = e.clientY;
-      const startW = el.offsetWidth, startH = el.offsetHeight;
-      function onMove(ev) {
-        el.style.width = Math.max(20, startW + (ev.clientX - startX)) + 'px';
-        el.style.height = Math.max(20, startH + (ev.clientY - startY)) + 'px';
-      }
-      function onUp() {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-
-    handle.addEventListener('touchstart', (e) => {
-      e.stopPropagation();
-      const t = e.touches[0];
-      if (!t) return;
-      const startX = t.clientX, startY = t.clientY;
-      const startW = el.offsetWidth, startH = el.offsetHeight;
-      function onMoveTouch(ev) {
-        const tt = ev.touches[0] || ev.changedTouches[0];
-        if (!tt) return;
-        el.style.width = Math.max(20, startW + (tt.clientX - startX)) + 'px';
-        el.style.height = Math.max(20, startH + (tt.clientY - startY)) + 'px';
-      }
-      function onUpTouch() {
-        window.removeEventListener('touchmove', onMoveTouch);
-        window.removeEventListener('touchend', onUpTouch);
-      }
-      window.addEventListener('touchmove', onMoveTouch, { passive: false });
-      window.addEventListener('touchend', onUpTouch);
-    }, { passive: false });
+  function onMouseMove(e) {
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    el.style.left = `${origX + dx - wrapper.getBoundingClientRect().left}px`;
+    el.style.top = `${origY + dy - wrapper.getBoundingClientRect().top}px`;
   }
-
-  function makeSelectable(el) {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      selectBlock(el);
-    });
+  function onMouseUp() {
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
   }
+  el.addEventListener('mousedown', onMouseDown);
+}
 
-  function selectBlock(el) {
-    $all('.block-public').forEach(b => b.classList.remove('selected'));
-    if (el) el.classList.add('selected');
-    selectedBlock = el;
-    document.dispatchEvent(new Event('selectionchange'));
-  }
+function makeSelectable(el) {
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectBlock(el);
+  });
+}
 
-  /* ---------------- Blocks creation ---------------- */
-  function addImageBlock(data = {}) {
-    if (!editorLayer && !wrapper) {
-      console.warn('addImageBlock: editorLayer et wrapper non initialisés');
-      return null;
-    }
-    const div = document.createElement('div');
-    div.className = 'block-public';
-    div.style.position = 'absolute';
-    div.style.left = typeof data.x === 'number' ? `${data.x}px` : (data.x || '100px');
-    div.style.top = typeof data.y === 'number' ? `${data.y}px` : (data.y || '100px');
-    div.style.width = typeof data.width === 'number' ? `${data.width}px` : (data.width || '300px');
-    div.style.height = typeof data.height === 'number' ? `${data.height}px` : (data.height || '200px');
+/* ----------------- Toolbar : application du style ----------------- */
+function applyInlineStyle(command, value = null) {
+  if (!currentBlock) return;
+  currentBlock.focus();
+  document.execCommand(command, false, value);
+}
 
-    const img = document.createElement('img');
-    img.src = data.url || '';
-    img.alt = data.alt || '';
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'contain';
-    img.draggable = false;
-    div.appendChild(img);
+function applyBlockStyle(styleFn) {
+  if (!currentBlock) return;
+  styleFn(currentBlock);
+}
 
-    makeDraggable(div);
-    makeResizable(div);
-    makeSelectable(div);
-
-    (editorLayer || wrapper).appendChild(div);
-    return div;
-  }
-
-  function createTextBlock({ type = 'paragraph', x = 120, y = 120, width = 360, html = '' } = {}) {
-    if (!editorLayer) editorLayer = document.getElementById('editor-layer') || wrapper;
-    if (!editorLayer) {
-      console.warn('createTextBlock: editorLayer introuvable');
-      return null;
-    }
-    const block = document.createElement('div');
-    block.className = 'block-public text-block';
-    block.style.position = 'absolute';
-    block.style.left = (typeof x === 'number' ? x + 'px' : x);
-    block.style.top = (typeof y === 'number' ? y + 'px' : y);
-    block.style.width = (typeof width === 'number' ? width + 'px' : width);
-    block.style.minWidth = '80px';
-    block.style.padding = '8px 10px';
-    block.style.cursor = 'move';
-    block.setAttribute('tabindex', '0');
-    block.dataset.type = type;
-
-    const content = document.createElement(type === 'title' ? 'h2' : (type === 'subtitle' ? 'h3' : 'p'));
-    content.className = 'text-block-content';
-    content.contentEditable = 'true';
-    content.spellcheck = false;
-    content.innerHTML = html || (type === 'title' ? 'Titre' : (type === 'subtitle' ? 'Sous-titre' : 'Paragraphe'));
-    content.style.margin = '0';
-    content.style.outline = 'none';
-    content.style.cursor = 'text';
-
-    // small drag handle area to avoid interfering with text selection
-    const dragHandle = document.createElement('div');
-    dragHandle.className = 'drag-handle';
-    dragHandle.style.position = 'absolute';
-    dragHandle.style.right = '6px';
-    dragHandle.style.top = '6px';
-    dragHandle.style.width = '12px';
-    dragHandle.style.height = '12px';
-    dragHandle.style.background = 'rgba(0,0,0,0.15)';
-    dragHandle.style.cursor = 'grab';
-    dragHandle.title = 'Déplacer';
-
-    const resizeHandle = document.createElement('div');
-    resizeHandle.className = 'resize-handle bottom-right';
-    resizeHandle.style.position = 'absolute';
-    resizeHandle.style.right = '6px';
-    resizeHandle.style.bottom = '6px';
-    resizeHandle.style.width = '12px';
-    resizeHandle.style.height = '12px';
-    resizeHandle.style.cursor = 'nwse-resize';
-    resizeHandle.style.background = 'rgba(0,0,0,0.15)';
-
-    block.appendChild(content);
-    block.appendChild(dragHandle);
-    block.appendChild(resizeHandle);
-
-    // attach behaviors
-    makeDraggable(block);
-    makeResizable(block);
-    makeSelectable(block);
-
-    // prevent mousedown inside content from starting drag
-    content.addEventListener('mousedown', (e) => e.stopPropagation());
-
-    block.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      content.focus();
-      const range = document.createRange();
-      range.selectNodeContents(content);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    });
-
-    (editorLayer || wrapper).appendChild(block);
-    return { block, content };
-  }
-
-  /* ---------------- Save / persist ---------------- */
+/* ----------------- Sauvegarde (à adapter à Supabase) ----------------- */
 async function sauvegarder() {
-  try {
-    console.log('[sauvegarder] démarrage');
-    const client = await __supabaseReady;
-    if (!client) {
-      console.error('[sauvegarder] supabase non initialisé');
-      alert("Impossible d'enregistrer : service non initialisé.");
-      return { ok: false, reason: 'no-client' };
-    }
+  console.log('[sauvegarder] démarrage');
 
-    if (!editorLayer || !canvas) {
-      console.error('[sauvegarder] editorLayer ou canvas manquant', { editorLayer, canvas });
-      alert("Impossible d'enregistrer : éditeur non initialisé.");
-      return { ok: false, reason: 'no-editor' };
-    }
+  const blocks = $all('.block-public', editorLayer).map(b => ({
+    id: b.dataset.blockId,
+    type: b.dataset.type || 'paragraph',
+    html: b.innerHTML,
+    x: parseInt(b.style.left || '0', 10),
+    y: parseInt(b.style.top || '0', 10),
+    width: parseInt(b.style.width || '400', 10)
+  }));
 
-    const texts = [...editorLayer.querySelectorAll('.block-public.text-block')].map(div => {
-      const content = div.querySelector('.text-block-content');
-      return {
-        type: div.dataset.type || 'paragraph',
-        html: content ? content.innerHTML : '',
-        x: div.style.left || '0px',
-        y: div.style.top || '0px',
-        width: div.style.width || '',
-        height: div.style.height || ''
-      };
+  console.log('[sauvegarder] blocs à sauvegarder :', blocks);
+
+  // TODO: remplacer par ton appel Supabase réel
+  // await supabase.from('articles').update({ content: blocks }).eq('id', articleId);
+
+  console.log('[sauvegarder] terminé (mock)');
+}
+
+/* ----------------- Chargement initial (mock) ----------------- */
+async function chargerActu() {
+  console.log('[chargerActu] mock – aucun chargement distant');
+  // Ici tu peux recharger depuis Supabase si besoin
+}
+
+/* ----------------- Toolbar : binding des contrôles ----------------- */
+function attachFormatToolbarHandlers() {
+  const toolbar = document.getElementById('format-toolbar');
+  if (!toolbar) {
+    console.warn('format-toolbar introuvable');
+    return;
+  }
+
+  // Police
+  const fontSelect = $('#ft-font', toolbar);
+  if (fontSelect) {
+    fontSelect.addEventListener('change', (e) => {
+      applyBlockStyle(block => {
+        block.style.fontFamily = e.target.value;
+      });
     });
+  }
 
-    const images = [...editorLayer.querySelectorAll('.block-public')].filter(d => d.querySelector('img')).map(div => {
-      const img = div.querySelector('img');
-      return {
-        url: img?.src || '',
-        x: div.style.left || '0px',
-        y: div.style.top || '0px',
-        width: div.style.width || '',
-        height: div.style.height || ''
-      };
+  // Taille
+  const sizeSelect = $('#ft-size', toolbar);
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', (e) => {
+      applyBlockStyle(block => {
+        block.style.fontSize = e.target.value;
+      });
     });
+  }
 
-    const previewHtml = canvas ? canvas.innerHTML : '';
+  // Gras / Italique / Souligné
+  const boldBtn = $('#ft-bold', toolbar);
+  const italicBtn = $('#ft-italic', toolbar);
+  const underlineBtn = $('#ft-underline', toolbar);
 
-    const params = new URLSearchParams(window.location.search);
-    const actuId = Number(params.get("id"));
-    if (!actuId || isNaN(actuId)) {
-      console.warn('[sauvegarder] actuId invalide', params.get("id"));
-      alert("ID d'article invalide. Vérifie l'URL (paramètre id).");
-      return { ok: false, reason: 'invalid-id' };
-    }
+  if (boldBtn) boldBtn.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('bold'); });
+  if (italicBtn) italicBtn.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('italic'); });
+  if (underlineBtn) underlineBtn.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('underline'); });
 
-    console.log('[sauvegarder] payload', { actuId, texts, images });
+  // Couleur
+  const colorInput = $('#ft-color', toolbar);
+  if (colorInput) {
+    colorInput.addEventListener('input', (e) => {
+      applyInlineStyle('foreColor', e.target.value);
+    });
+  }
 
-    const { error } = await client
-      .from("actus")
-      .update({ contenu: { previewHtml, texts, images } })
-      .eq("id", actuId);
+  // Alignements
+  const alignLeft = $('#ft-align-left', toolbar);
+  const alignCenter = $('#ft-align-center', toolbar);
+  const alignRight = $('#ft-align-right', toolbar);
 
-    if (error) {
-      console.error('[sauvegarder] erreur supabase', error);
-      alert("Erreur lors de l'enregistrement (voir console).");
-      return { ok: false, reason: 'supabase-error', error };
-    }
+  if (alignLeft) alignLeft.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'left'); });
+  if (alignCenter) alignCenter.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'center'); });
+  if (alignRight) alignRight.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'right'); });
 
-    console.log('[sauvegarder] OK');
-    alert("Enregistré !");
-    return { ok: true };
-  } catch (err) {
-    console.error('[sauvegarder] exception', err);
-    alert("Erreur inattendue lors de l'enregistrement (voir console).");
-    return { ok: false, reason: 'exception', error: err };
+  // Interligne
+  const lineHeightSelect = $('#ft-lineheight', toolbar);
+  if (lineHeightSelect) {
+    lineHeightSelect.addEventListener('change', (e) => {
+      applyBlockStyle(b => b.style.lineHeight = e.target.value);
+    });
+  }
+
+  // Z-index (avant / arrière)
+  const sendFront = $('#ft-send-front', toolbar);
+  const sendBack = $('#ft-send-back', toolbar);
+
+  if (sendFront) {
+    sendFront.addEventListener('click', (e) => {
+      e.preventDefault();
+      applyBlockStyle(b => {
+        b.style.zIndex = String((parseInt(b.style.zIndex || '1', 10) || 1) + 1);
+      });
+    });
+  }
+
+  if (sendBack) {
+    sendBack.addEventListener('click', (e) => {
+      e.preventDefault();
+      applyBlockStyle(b => {
+        b.style.zIndex = String((parseInt(b.style.zIndex || '1', 10) || 1) - 1);
+      });
+    });
+  }
+
+  console.log('[toolbar] handlers attachés');
+}
+
+/* ----------------- Boutons latéraux (canva) ----------------- */
+function attachSidebarHandlers() {
+  const addTitleBtn = document.getElementById('add-title');
+  const addSubtitleBtn = document.getElementById('add-subtitle');
+  const addParagraphBtn = document.getElementById('add-paragraph');
+  const addImageBtn = document.getElementById('add-image');
+
+  if (addTitleBtn) {
+    addTitleBtn.addEventListener('click', () => {
+      createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
+    });
+  }
+
+  if (addSubtitleBtn) {
+    addSubtitleBtn.addEventListener('click', () => {
+      createTextBlock({ type: 'subtitle', x: 140, y: 180, width: 420, html: 'Sous-titre' });
+    });
+  }
+
+  if (addParagraphBtn) {
+    addParagraphBtn.addEventListener('click', () => {
+      createTextBlock({ type: 'paragraph', x: 140, y: 240, width: 480, html: 'Nouveau paragraphe…' });
+    });
+  }
+
+  if (addImageBtn) {
+    addImageBtn.addEventListener('click', () => {
+      const url = window.prompt('URL de l’image :');
+      if (url) addImageBlock(url, { x: 160, y: 260, width: 320 });
+    });
   }
 }
 
-  /* ---------------- Charger article ---------------- */
-  function parseCssPx(val) {
-    if (val === undefined || val === null) return undefined;
-    if (typeof val === 'number') return val;
-    const m = String(val).match(/^(-?\d+(\.\d+)?)px$/);
-    return m ? Number(m[1]) : val;
-  }
-
-  async function chargerActu() {
-    const client = await __supabaseReady;
-    const params = new URLSearchParams(window.location.search);
-    const actuId = Number(params.get("id"));
-    if (!actuId || isNaN(actuId)) {
-      if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
-      return;
-    }
-    try {
-      const { data: actu, error } = await (client ? client.from("actus").select("*").eq("id", actuId).maybeSingle() : Promise.resolve({ data: null, error: null }));
-      if (error) {
-        console.error('Supabase error:', error);
-        if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
-        return;
-      }
-      if (!actu) {
-        if (canvas) canvas.innerHTML = "<h2>Article introuvable</h2>";
-        return;
-      }
-      const previewHtml = actu.contenu?.previewHtml || actu.contenu?.texte || "";
-      if (canvas) canvas.innerHTML = previewHtml;
-      if (editorLayer) {
-        editorLayer.innerHTML = '';
-        const texts = Array.isArray(actu.contenu?.texts) ? actu.contenu.texts : [];
-        texts.forEach(t => createTextBlock({ type: t.type, x: parseCssPx(t.x), y: parseCssPx(t.y), width: parseCssPx(t.width), html: t.html }));
-        const images = Array.isArray(actu.contenu?.images) ? actu.contenu.images : [];
-        images.forEach(img => addImageBlock(img));
-      }
-    } catch (err) {
-      console.error('Erreur chargerActu:', err);
-      if (canvas) canvas.innerHTML = "<h2>Erreur lors du chargement</h2>";
-    }
-  }
-
-  /* ---------------- Format toolbar handlers ---------------- */
-  function attachFormatToolbarHandlers() {
-    const ftFont = document.getElementById('ft-font');
-    if (!ftFont) return; // toolbar absent
-    const ftSize = document.getElementById('ft-size');
-    const ftBold = document.getElementById('ft-bold');
-    const ftItalic = document.getElementById('ft-italic');
-    const ftUnderline = document.getElementById('ft-underline');
-    const ftColor = document.getElementById('ft-color');
-    const ftAlignLeft = document.getElementById('ft-align-left');
-    const ftAlignCenter = document.getElementById('ft-align-center');
-    const ftAlignRight = document.getElementById('ft-align-right');
-    const ftLineheight = document.getElementById('ft-lineheight');
-    const ftSendFront = document.getElementById('ft-send-front');
-    const ftSendBack = document.getElementById('ft-send-back');
-
-    function applyStyleToSelectionOrBlock(cssObj) {
-      if (selectedBlock && selectedBlock.classList.contains('text-block')) {
-        const content = selectedBlock.querySelector('.text-block-content');
-        if (content) Object.assign(content.style, cssObj);
-        return;
-      }
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      const range = sel.getRangeAt(0);
-      const span = document.createElement('span');
-      Object.assign(span.style, cssObj);
-      try {
-        range.surroundContents(span);
-        sel.removeAllRanges();
-        const newRange = document.createRange();
-        newRange.selectNodeContents(span);
-        sel.addRange(newRange);
-      } catch (e) {
-        if (cssObj.fontWeight === 'bold') document.execCommand('bold');
-        if (cssObj.fontStyle === 'italic') document.execCommand('italic');
-        if (cssObj.textDecoration === 'underline') document.execCommand('underline');
-        if (cssObj.color) document.execCommand('foreColor', false, cssObj.color);
-      }
-    }
-
-    function updateToolbarState() {
-      if (selectedBlock && selectedBlock.classList.contains('text-block')) {
-        const content = selectedBlock.querySelector('.text-block-content');
-        if (!content) return;
-        ftFont.value = window.getComputedStyle(content).fontFamily || ftFont.value;
-        if (ftSize) ftSize.value = window.getComputedStyle(content).fontSize || ftSize.value;
-        if (ftLineheight) {
-          const lh = window.getComputedStyle(content).lineHeight;
-          ftLineheight.value = lh && lh !== 'normal' ? lh : ftLineheight.value;
-        }
-        if (ftColor) {
-          const color = window.getComputedStyle(content).color;
-          const m = color && color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-          if (m) ftColor.value = "#" + [1,2,3].map(i => parseInt(m[i]).toString(16).padStart(2,'0')).join('');
-        }
-      }
-    }
-
-    ftFont.addEventListener('change', () => applyStyleToSelectionOrBlock({ fontFamily: ftFont.value }));
-    if (ftSize) ftSize.addEventListener('change', () => applyStyleToSelectionOrBlock({ fontSize: ftSize.value }));
-    if (ftBold) ftBold.addEventListener('click', () => applyStyleToSelectionOrBlock({ fontWeight: 'bold' }));
-    if (ftItalic) ftItalic.addEventListener('click', () => applyStyleToSelectionOrBlock({ fontStyle: 'italic' }));
-    if (ftUnderline) ftUnderline.addEventListener('click', () => applyStyleToSelectionOrBlock({ textDecoration: 'underline' }));
-    if (ftColor) ftColor.addEventListener('change', () => applyStyleToSelectionOrBlock({ color: ftColor.value }));
-    if (ftAlignLeft) ftAlignLeft.addEventListener('click', () => applyStyleToSelectionOrBlock({ textAlign: 'left' }));
-    if (ftAlignCenter) ftAlignCenter.addEventListener('click', () => applyStyleToSelectionOrBlock({ textAlign: 'center' }));
-    if (ftAlignRight) ftAlignRight.addEventListener('click', () => applyStyleToSelectionOrBlock({ textAlign: 'right' }));
-    if (ftLineheight) ftLineheight.addEventListener('change', () => applyStyleToSelectionOrBlock({ lineHeight: ftLineheight.value }));
-
-    if (ftSendFront) ftSendFront.addEventListener('click', () => {
-      if (!selectedBlock) return;
-      selectedBlock.style.zIndex = (parseInt(selectedBlock.style.zIndex || 1) + 1000).toString();
-    });
-    if (ftSendBack) ftSendBack.addEventListener('click', () => {
-      if (!selectedBlock) return;
-      selectedBlock.style.zIndex = (parseInt(selectedBlock.style.zIndex || 1) - 1000).toString();
-    });
-
-    document.addEventListener('selectionchange', updateToolbarState);
-  }
-
-/* ---------------- Initialization ---------------- */
-function initEditor() {
-  wrapper = document.querySelector('.canvas-wrapper') || document.body;
-  canvas = document.getElementById('actu-content') || wrapper;
-  editorLayer = document.getElementById('editor-layer') || wrapper;
-
-  // expose for debug and compatibility
-  window.addImageBlock = addImageBlock;
-  window.createTextBlock = createTextBlock;
-  window.sauvegarder = sauvegarder;
-  window.__supabaseReady = __supabaseReady;
-  window.chargerActu = chargerActu;
-
-  // attach toolbar handlers (after DOM elements exist)
-  attachFormatToolbarHandlers();
-
-  // --- TROUVER LE BON format-toolbar (celui qui contient les boutons) ---
-  function getRealFormatToolbar() {
-    const all = Array.from(document.querySelectorAll('#format-toolbar'));
-    if (all.length === 1) return all[0];
-    // choisir celui qui contient des boutons
-    return all.find(t => t.querySelector('button, [data-action], input, .ft-btn')) || all[0];
-  }
-
-  // --- ATTACHER LES HANDLERS DIRECTEMENT SUR LA BONNE TOOLBAR ---
-  (function attachRealToolbarHandlers(){
-    const toolbar = getRealFormatToolbar();
-    if (!toolbar) {
-      console.error('Aucun format-toolbar trouvé');
-      return;
-    }
-
-    console.log('REAL TOOLBAR FOUND:', toolbar);
-
-    // activer pointer-events
-    toolbar.style.pointerEvents = 'auto';
-    Array.from(toolbar.querySelectorAll('*')).forEach(el => {
-      if (getComputedStyle(el).pointerEvents === 'none') el.style.pointerEvents = 'auto';
-    });
-
-    function bind(sel, fn, ev = 'click') {
-      const el = toolbar.querySelector(sel);
-      if (!el) {
-        console.warn('Bouton introuvable:', sel);
-        return;
-      }
-      el.addEventListener(ev, e => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('CLICK:', sel);
-        fn(e);
-      });
-    }
-
-    bind('#ft-bold', () => document.execCommand('bold'));
-    bind('#ft-italic', () => document.execCommand('italic'));
-    bind('#ft-underline', () => document.execCommand('underline'));
-    bind('#ft-align-left', () => document.execCommand('justifyLeft'));
-    bind('#ft-align-center', () => document.execCommand('justifyCenter'));
-    bind('#ft-align-right', () => document.execCommand('justifyRight'));
-    bind('#ft-color', e => document.execCommand('foreColor', false, e.target.value), 'input');
-
-    // bouton enregistrer
-    let saveBtn = toolbar.querySelector('#save-btn');
-    if (!saveBtn) {
-      saveBtn = document.createElement('button');
-      saveBtn.id = 'save-btn';
-      saveBtn.textContent = 'Enregistrer';
-      toolbar.prepend(saveBtn);
-    }
-    saveBtn.addEventListener('click', e => {
-      e.preventDefault();
-      console.log('CLICK: save');
-      if (typeof sauvegarder === 'function') {
-        sauvegarder();
-      } else {
-        console.error('sauvegarder() introuvable');
-      }
-    });
-  })();
-
-  // create a default block if none exist
-  if (editorLayer && !editorLayer.querySelector('.block-public')) {
-    createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
-  }
-
-  // deselect on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.block-public')) selectBlock(null);
-  });
-
-  // panels (if present)
-  const icons = Array.from(document.querySelectorAll('.canva-icon'));
-  const panels = Array.from(document.querySelectorAll('.canva-panel'));
+/* ----------------- Panels canva (hover / click) ----------------- */
+function attachCanvaPanels() {
+  const icons = $all('.canva-icon');
+  const panels = $all('.canva-panel');
   let openTimer = null, closeTimer = null;
   const OPEN_DELAY = 80, CLOSE_DELAY = 160;
 
@@ -671,19 +385,6 @@ function initEditor() {
         if (icon) icon.classList.remove('active');
       }, CLOSE_DELAY);
     });
-    panel.addEventListener('focusin', () => {
-      clearTimeout(closeTimer);
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden', 'false');
-    });
-    panel.addEventListener('focusout', () => {
-      setTimeout(() => {
-        if (!panel.contains(document.activeElement)) {
-          panel.classList.remove('open');
-          panel.setAttribute('aria-hidden', 'true');
-        }
-      }, 10);
-    });
   });
 
   document.addEventListener('click', (e) => {
@@ -691,34 +392,51 @@ function initEditor() {
       closeAllPanels();
     }
   });
+}
 
-  // MutationObserver to update toolbar when content changes
-  if (typeof MutationObserver !== 'undefined') {
-    const toolbarObserver = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        if (m.addedNodes && m.addedNodes.length) {
-          document.dispatchEvent(new Event('selectionchange'));
-        }
-      }
+/* ----------------- Init éditeur ----------------- */
+function initEditor() {
+  wrapper = document.querySelector('.canvas-wrapper') || document.body;
+  canvas = document.getElementById('actu-content') || wrapper;
+  editorLayer = document.getElementById('editor-layer') || wrapper;
+
+  // exposer pour debug
+  window.addImageBlock = addImageBlock;
+  window.createTextBlock = createTextBlock;
+  window.sauvegarder = sauvegarder;
+  window.chargerActu = chargerActu;
+
+  attachFormatToolbarHandlers();
+  attachSidebarHandlers();
+  attachCanvaPanels();
+
+  // bloc par défaut si aucun
+  if (editorLayer && !editorLayer.querySelector('.block-public')) {
+    createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
+  }
+
+  // désélection quand on clique à l’extérieur
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.block-public')) selectBlock(null);
+  });
+
+  // bouton Enregistrer en haut à droite
+  const saveTop = document.getElementById('save-btn-top');
+  if (saveTop) {
+    saveTop.addEventListener('click', (e) => {
+      e.preventDefault();
+      sauvegarder();
     });
-    try {
-      toolbarObserver.observe(document.body, { childList: true, subtree: true });
-    } catch (e) {
-      /* ignore */
-    }
   }
 
   console.log('Editor initialized');
 }
 
-/* Run on DOM ready */
+/* ----------------- DOM Ready ----------------- */
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initEditor);
 } else {
   initEditor();
 }
 
-/* end marker */
-console.log("FIN DU FICHIER OK");
-
-})();
+console.log('FIN DU FICHIER OK');
