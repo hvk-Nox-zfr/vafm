@@ -1,13 +1,9 @@
-// emissions.js
-// Usage:
-// 1) Importer et appeler : import { loadEmissions } from '/js/emissions.js'; await loadEmissions();
-// 2) Ou charger directement : <script type="module" src="/js/emissions.js" data-autoload></script>
-
+// admin/emissions.js
+// Export named loadEmissions and optional auto-run with data-autoload
 export async function loadEmissions(options = {}) {
   'use strict';
   const { containerId = 'emissions-list', limit = 1000 } = options;
 
-  // Récupère le client Supabase de façon robuste
   const supabase = await (window.__supabaseReady || (async () => {
     if (window.supabase) return window.supabase;
     try {
@@ -29,7 +25,6 @@ export async function loadEmissions(options = {}) {
     return null;
   }
 
-  // Crée ou récupère le conteneur d'affichage
   let container = document.getElementById(containerId);
   if (!container) {
     container = document.createElement('div');
@@ -42,32 +37,6 @@ export async function loadEmissions(options = {}) {
     document.body.prepend(container);
   }
 
-  // UI header avec bouton rafraîchir
-  function renderHeader(count) {
-    const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'center';
-    header.style.marginBottom = '10px';
-
-    const title = document.createElement('h3');
-    title.style.margin = '0';
-    title.textContent = `Émissions (${count})`;
-
-    const actions = document.createElement('div');
-
-    const refreshBtn = document.createElement('button');
-    refreshBtn.textContent = 'Rafraîchir';
-    refreshBtn.style.marginLeft = '8px';
-    refreshBtn.addEventListener('click', () => loadAndRender());
-
-    actions.appendChild(refreshBtn);
-    header.appendChild(title);
-    header.appendChild(actions);
-    return header;
-  }
-
-  // Chargement et rendu
   async function loadAndRender() {
     container.innerHTML = '<div style="padding:8px;color:#666">Chargement...</div>';
     try {
@@ -88,9 +57,21 @@ export async function loadEmissions(options = {}) {
         return;
       }
 
-      // Build UI
       container.innerHTML = '';
-      container.appendChild(renderHeader(data.length));
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      header.style.marginBottom = '10px';
+      const title = document.createElement('h3');
+      title.style.margin = '0';
+      title.textContent = `Émissions (${data.length})`;
+      const refreshBtn = document.createElement('button');
+      refreshBtn.textContent = 'Rafraîchir';
+      refreshBtn.addEventListener('click', loadAndRender);
+      header.appendChild(title);
+      header.appendChild(refreshBtn);
+      container.appendChild(header);
 
       const list = document.createElement('div');
       list.style.display = 'grid';
@@ -104,10 +85,10 @@ export async function loadEmissions(options = {}) {
         card.style.borderRadius = '6px';
         card.style.background = '#fafafa';
         card.style.minHeight = '72px';
-        const title = escapeHtml(row.nom || row.titre || row.emission || `ID ${row.id}`);
+        const titleText = escapeHtml(row.nom || row.titre || row.emission || `ID ${row.id}`);
         const subtitle = row.emission ? `<div style="font-size:13px;color:#666">${escapeHtml(row.emission)}</div>` : '';
         const created = row.created_at ? `<div style="font-size:12px;color:#888;margin-top:6px">${escapeHtml(row.created_at)}</div>` : '';
-        card.innerHTML = `<strong>${title}</strong>${subtitle}${created}`;
+        card.innerHTML = `<strong>${titleText}</strong>${subtitle}${created}`;
         list.appendChild(card);
       });
 
@@ -118,26 +99,19 @@ export async function loadEmissions(options = {}) {
     }
   }
 
-  // utilitaire simple pour échapper le HTML
   function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
   }
 
-  // Expose une méthode pour recharger depuis l'extérieur si besoin
-  const api = { loadAndRender, loadEmissions: loadAndRender };
-
-  // Lancer le premier chargement
   await loadAndRender();
-
-  return api;
+  return { loadAndRender };
 }
 
-// Si le fichier est chargé directement via <script ... data-autoload>, on exécute automatiquement
+// Auto-run when loaded as script with data-autoload
 if (typeof document !== 'undefined') {
-  const currentScript = document.currentScript;
-  if (currentScript && currentScript.getAttribute && currentScript.getAttribute('data-autoload') !== null) {
-    // auto-run (ne pas importer dans ce cas)
-    loadEmissions().catch(err => console.error('loadEmissions auto-run failed', err));
+  const s = document.currentScript;
+  if (s && s.getAttribute && s.getAttribute('data-autoload') !== null) {
+    import('./admin/emissions.js').then(m => m.loadEmissions && m.loadEmissions()).catch(e => console.error('auto-run failed', e));
   }
 }
