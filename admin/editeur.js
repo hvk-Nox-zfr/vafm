@@ -1,35 +1,36 @@
 // editeur.js — version fusionnée et corrigée
+/* Robust Supabase init — place at top of file */
 (function () {
-  'use strict';
+  // If a client is already exposed by another script, reuse it
+  if (window.supabase && typeof window.supabase === 'object') {
+    window.__supabaseReady = Promise.resolve(window.supabase);
+    window.__supabaseClient = window.supabase;
+    return;
+  }
 
-  /* ---------------- Robust supabase init — place this at the very top ---------------- */
-  (function(){
-    if (window.__supabaseClient) {
-      window.__supabaseClient = window.__supabaseClient;
-    } else if (window.supabase) {
-      window.__supabaseClient = window.supabase;
-    } else {
-      window.__supabaseClient = null;
-    }
-  })();
+  // If a client instance was stored under a different name, reuse it
+  if (window.__supabaseClient && typeof window.__supabaseClient === 'object') {
+    window.supabase = window.__supabaseClient;
+    window.__supabaseReady = Promise.resolve(window.__supabaseClient);
+    return;
+  }
 
-  let supabase = window.__supabaseClient || null;
-
-  let __supabaseReady = (async () => {
-    if (supabase) return supabase;
+  // Otherwise dynamically import and create the client once
+  window.__supabaseReady = (async () => {
     try {
-      const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
-      const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
-      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
-      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-      window.__supabaseClient = supabase;
-      window.supabase = supabase;
-      return supabase;
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+      const SUPABASE_URL = 'https://blronpowdhaumjudtgvn.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI';
+      const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+      window.supabase = client;
+      window.__supabaseClient = client;
+      return client;
     } catch (err) {
       console.warn('supabase dynamic import failed:', err);
       return null;
     }
   })();
+})();
 
   console.log('editeur.js loaded');
 
