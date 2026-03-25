@@ -37,30 +37,71 @@
    ÉDITEUR D’ARTICLE – VERSION PROPRE ET FONCTIONNELLE
    ============================================================ */
 
+/* ----------------- Variables globales ----------------- */
+let wrapper = null;
+let canvas = null;
+let editorLayer = null;
+let currentBlock = null;
+let blockIdCounter = 0;
+
+/* ----------------- Helpers ----------------- */
+function $(sel, root = document) {
+  return root.querySelector(sel);
+}
+function $all(sel, root = document) {
+  return Array.from(root.querySelectorAll(sel));
+}
+
 /* ============================================================
-   AJOUT DE TEXTE DIRECT DANS #editor-page
+   BLOCS D’ÉDITION
    ============================================================ */
 
-function addTitle() {
-  const editor = document.querySelector("#editor-page");
-  editor.insertAdjacentHTML("beforeend", "<h2>Nouveau titre</h2>");
+function createTextBlock({ type = 'paragraph', x = 100, y = 100, width = 400, html = '' } = {}) {
+  const block = document.createElement('div');
+  block.className = 'block-public';
+  block.dataset.type = type;
+  block.dataset.blockId = `block-${++blockIdCounter}`;
+  block.contentEditable = 'true';
+
+  block.style.position = 'absolute';
+  block.style.left = `${x}px`;
+  block.style.top = `${y}px`;
+  block.style.width = `${width}px`;
+
+  block.innerHTML = html || (type === 'title' ? 'Titre' : 'Texte…');
+
+  editorLayer.appendChild(block);
+  makeDraggable(block);
+  makeSelectable(block);
+  selectBlock(block);
+
+  return block;
 }
 
-function addSubtitle() {
-  const editor = document.querySelector("#editor-page");
-  editor.insertAdjacentHTML("beforeend", "<h3>Nouveau sous-titre</h3>");
-}
+function addImageBlock(src, { x = 100, y = 100, width = 300 } = {}) {
+  const block = document.createElement('div');
+  block.className = 'block-public block-image';
+  block.dataset.type = 'image';
+  block.dataset.blockId = `block-${++blockIdCounter}`;
 
-function addParagraph() {
-  const editor = document.querySelector("#editor-page");
-  editor.insertAdjacentHTML("beforeend", "<p>Nouveau paragraphe…</p>");
-}
+  block.style.position = 'absolute';
+  block.style.left = `${x}px`;
+  block.style.top = `${y}px`;
+  block.style.width = `${width}px`;
 
-function addImage(src) {
-  const editor = document.querySelector("#editor-page");
-  editor.insertAdjacentHTML("beforeend", `<img src="${src}" style="max-width:100%; margin:20px 0;">`);
-}
+  const img = document.createElement('img');
+  img.src = src;
+  img.style.width = '100%';
 
+  block.appendChild(img);
+  editorLayer.appendChild(block);
+
+  makeDraggable(block);
+  makeSelectable(block);
+  selectBlock(block);
+
+  return block;
+}
 /* ============================================================
    SÉLECTION & DRAG
    ============================================================ */
