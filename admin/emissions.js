@@ -1,109 +1,128 @@
-console.log("🔥 emissions.js chargé");
+// emissions.js
+// Chargement autonome et robuste de la liste des émissions
+(async function () {
+  'use strict';
 
-// Initialisation Supabase
-const supabaseUrl = "https://blronpowdhaumjudtgvn.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-// -------------------------
-// CHARGER LES EMISSIONS
-// -------------------------
-export async function loadEmissions() {
-    const { data, error } = await supabase
-        .from("emissions")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-    if (error) {
-        console.error("Erreur chargement émissions :", error);
-        return;
+  // Récupère le client Supabase de façon robuste
+  const supabase = await (window.__supabaseReady || (async () => {
+    if (window.supabase) return window.supabase;
+    try {
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+      const SUPABASE_URL = 'https://blronpowdhaumjudtgvn.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI';
+      const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+      window.supabase = window.supabase || client;
+      window.__supabaseReady = window.__supabaseReady || Promise.resolve(client);
+      return client;
+    } catch (err) {
+      console.error('Impossible d\'initialiser Supabase dynamiquement:', err);
+      return null;
     }
+  })());
 
-    displayEmissions(data);
-}
+  if (!supabase) {
+    console.error('Supabase non disponible. Abandon.');
+    return;
+  }
 
-// -------------------------
-// AFFICHER DANS LA LISTE ADMIN
-// -------------------------
-function displayEmissions(list) {
-    const container = document.getElementById("emissions-admin");
-    if (!container) return;
+  // Crée ou récupère le conteneur d'affichage
+  const containerId = 'emissions-list';
+  let container = document.getElementById(containerId);
+  if (!container) {
+    container = document.createElement('div');
+    container.id = containerId;
+    container.style.padding = '12px';
+    container.style.background = '#fff';
+    container.style.border = '1px solid #e6e6e6';
+    container.style.margin = '12px';
+    container.style.borderRadius = '6px';
+    document.body.prepend(container);
+  }
 
-    container.innerHTML = "";
+  // UI header avec bouton rafraîchir
+  function renderHeader(count) {
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '10px';
 
-    list.forEach(em => {
-        const item = document.createElement("div");
-        item.className = "admin-item";
+    const title = document.createElement('h3');
+    title.style.margin = '0';
+    title.textContent = `Émissions (${count})`;
 
-        item.innerHTML = `
-            <div class="admin-item-content">
-                <h3>${em.titre}</h3>
-                <p>${em.horaires}</p>
-                <p>${em.description}</p>
-            </div>
-            <button class="delete-emission" data-id="${em.id}">🗑</button>
-        `;
+    const actions = document.createElement('div');
 
-        container.appendChild(item);
-    });
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = 'Rafraîchir';
+    refreshBtn.style.marginLeft = '8px';
+    refreshBtn.addEventListener('click', () => loadAndRender());
 
-    document.querySelectorAll(".delete-emission").forEach(btn => {
-        btn.addEventListener("click", () => deleteEmission(btn.dataset.id));
-    });
-}
+    actions.appendChild(refreshBtn);
+    header.appendChild(title);
+    header.appendChild(actions);
+    return header;
+  }
 
-// -------------------------
-// AJOUTER UNE EMISSION
-// -------------------------
-async function addEmission() {
-    const titre = document.getElementById("emission-nom").value;
-    const horaires = document.getElementById("emission-horaires").value;
-    const description = document.getElementById("emission-description").value;
+  // Chargement et rendu
+  async function loadAndRender() {
+    container.innerHTML = '<div style="padding:8px;color:#666">Chargement...</div>';
+    try {
+      const { data, error } = await supabase
+        .from('emissions')
+        .select('*')
+        .order('id', { ascending: true })
+        .limit(1000);
 
-    const { error } = await supabase
-        .from("emissions")
-        .insert([{ titre, horaires, description }]);
-
-    if (error) {
-        console.error("Erreur ajout émission :", error);
+      if (error) {
+        console.error('Erreur Supabase lors de la récupération des émissions:', error);
+        container.innerHTML = `<div style="color:#b00;padding:8px">Erreur lors du chargement (voir console)</div>`;
         return;
-    }
+      }
 
-    document.getElementById("popup-emission").classList.remove("show");
-    loadEmissions();
-}
-
-// -------------------------
-// SUPPRIMER UNE EMISSION
-// -------------------------
-async function deleteEmission(id) {
-    const { error } = await supabase
-        .from("emissions")
-        .delete()
-        .eq("id", id);
-
-    if (error) {
-        console.error("Erreur suppression émission :", error);
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div style="padding:8px">Aucune émission trouvée.</div>';
         return;
+      }
+
+      // Build UI
+      container.innerHTML = '';
+      container.appendChild(renderHeader(data.length));
+
+      const list = document.createElement('div');
+      list.style.display = 'grid';
+      list.style.gridTemplateColumns = 'repeat(auto-fit,minmax(240px,1fr))';
+      list.style.gap = '10px';
+
+      data.forEach(row => {
+        const card = document.createElement('div');
+        card.style.border = '1px solid #eee';
+        card.style.padding = '10px';
+        card.style.borderRadius = '6px';
+        card.style.background = '#fafafa';
+        card.style.minHeight = '72px';
+        const title = escapeHtml(row.nom || row.titre || row.emission || `ID ${row.id}`);
+        const subtitle = row.emission ? `<div style="font-size:13px;color:#666">${escapeHtml(row.emission)}</div>` : '';
+        const created = row.created_at ? `<div style="font-size:12px;color:#888;margin-top:6px">${escapeHtml(row.created_at)}</div>` : '';
+        card.innerHTML = `<strong>${title}</strong>${subtitle}${created}`;
+        list.appendChild(card);
+      });
+
+      container.appendChild(list);
+    } catch (err) {
+      console.error('Exception lors du rendu des émissions:', err);
+      container.innerHTML = `<div style="color:#b00;padding:8px">Erreur inattendue (voir console)</div>`;
     }
+  }
 
-    loadEmissions();
-}
+  // utilitaire simple pour échapper le HTML
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
 
-// -------------------------
-// INITIALISATION DU FORMULAIRE
-// -------------------------
-export function setupEmissionForm() {
+  // Lancer le premier chargement
+  loadAndRender();
 
-    document.getElementById("add-emission")?.addEventListener("click", () => {
-        document.getElementById("popup-emission").classList.add("show");
-    });
+})();
 
-    document.getElementById("popup-emission-cancel")?.addEventListener("click", () => {
-        document.getElementById("popup-emission").classList.remove("show");
-    });
-
-    document.getElementById("popup-emission-save")?.addEventListener("click", () => {
-        addEmission();
-    });
-}
