@@ -104,7 +104,7 @@ function makeDraggable(el) {
   let origX = 0, origY = 0;
 
   el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return; // clic gauche uniquement
+    if (e.button !== 0) return;
 
     startX = e.clientX;
     startY = e.clientY;
