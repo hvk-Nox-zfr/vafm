@@ -1,5 +1,6 @@
 // admin/emissions.js
-// Export named loadEmissions and optional auto-run with data-autoload
+// Exports: loadEmissions, setupEmissionForm
+// Auto-run only when loaded via <script type="module" data-autoload>
 
 export async function loadEmissions(options = {}) {
   const { containerId = 'emissions-list', limit = 1000 } = options;
@@ -15,7 +16,7 @@ export async function loadEmissions(options = {}) {
       window.__supabaseReady = window.__supabaseReady || Promise.resolve(client);
       return client;
     } catch (err) {
-      console.error('Impossible d\'initialiser Supabase dynamiquement:', err);
+      console.error("Impossible d'initialiser Supabase dynamiquement:", err);
       return null;
     }
   })());
@@ -48,7 +49,7 @@ export async function loadEmissions(options = {}) {
 
       if (error) {
         console.error('Erreur Supabase lors de la récupération des émissions:', error);
-        container.innerHTML = `<div style="color:#b00;padding:8px">Erreur lors du chargement (voir console)</div>`;
+        container.innerHTML = '<div style="color:#b00;padding:8px">Erreur lors du chargement (voir console)</div>';
         return;
       }
 
@@ -95,7 +96,7 @@ export async function loadEmissions(options = {}) {
       container.appendChild(list);
     } catch (err) {
       console.error('Exception lors du rendu des émissions:', err);
-      container.innerHTML = `<div style="color:#b00;padding:8px">Erreur inattendue (voir console)</div>`;
+      container.innerHTML = '<div style="color:#b00;padding:8px">Erreur inattendue (voir console)</div>';
     }
   }
 
@@ -108,11 +109,56 @@ export async function loadEmissions(options = {}) {
   return { loadAndRender };
 }
 
+/* Minimal helper to create a simple form UI and hook submit to Supabase.
+   Exported so other admin scripts can import it: import { setupEmissionForm } from './emissions.js'
+*/
+export function setupEmissionForm(containerSelector = '#emission-form') {
+  const container = document.querySelector(containerSelector);
+  if (!container) return null;
+
+  // If a form already exists, return it
+  const existing = container.querySelector('form');
+  if (existing) return existing;
+
+  const form = document.createElement('form');
+  form.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label>Nom: <input name="nom" required></label>
+      <label>Emission: <input name="emission"></label>
+      <button type="submit">Enregistrer</button>
+    </div>
+  `;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+    try {
+      if (window.supabase) {
+        const { error } = await window.supabase.from('emissions').insert([payload]);
+        if (error) {
+          console.error('Insert error', error);
+          return;
+        }
+        // optionally refresh list if present
+        try { import('./emissions.js').then(m => m.loadEmissions && m.loadEmissions()); } catch(e){/* ignore */ }
+        console.log('Emission saved');
+      } else {
+        console.log('Payload (no supabase):', payload);
+      }
+    } catch (err) {
+      console.error('Submit failed', err);
+    }
+  });
+  container.appendChild(form);
+  return form;
+}
+
 // Auto-run when loaded as script with data-autoload
 if (typeof document !== 'undefined') {
   const s = document.currentScript;
   if (s && s.getAttribute && s.getAttribute('data-autoload') !== null) {
     // call the exported function directly (no self-import)
+    // safe: loadEmissions is defined above
     loadEmissions().catch(e => console.error('auto-run failed', e));
   }
 }
