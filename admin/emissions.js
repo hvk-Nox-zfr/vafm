@@ -1,7 +1,7 @@
 // admin/emissions.js
 // Export named loadEmissions and optional auto-run with data-autoload
+
 export async function loadEmissions(options = {}) {
-  'use strict';
   const { containerId = 'emissions-list', limit = 1000 } = options;
 
   const supabase = await (window.__supabaseReady || (async () => {
@@ -112,6 +112,7 @@ export async function loadEmissions(options = {}) {
 if (typeof document !== 'undefined') {
   const s = document.currentScript;
   if (s && s.getAttribute && s.getAttribute('data-autoload') !== null) {
-    import('./admin/emissions.js').then(m => m.loadEmissions && m.loadEmissions()).catch(e => console.error('auto-run failed', e));
+    // call the exported function directly (no self-import)
+    loadEmissions().catch(e => console.error('auto-run failed', e));
   }
 }
