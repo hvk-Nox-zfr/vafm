@@ -17,79 +17,55 @@
           base-uri 'self';
         ">
 
-  <!-- Feuilles de style externes -->
   <link rel="stylesheet" href="editeur.css">
 </head>
 
 <body class="admin">
 
-  <!--
-    Topbar originale (gardée en commentaire pour référence).
-    Tu peux supprimer ce bloc si tu veux uniquement la barre blanche.
-  -->
-  <!--
-  <header class="topbar" role="banner">
-    <div class="topbar-left">
-      <button id="back-btn" class="btn ghost" aria-label="Retour">← Retour</button>
+  <!-- Barre de mise en page blanche -->
+  <header id="format-toolbar" class="format-toolbar" role="toolbar" aria-label="Barre de mise en page">
+    <div class="ft-left">
+      <select id="ft-font" class="ft-control" aria-label="Police">
+        <option value="Inter, system-ui, sans-serif">Inter</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="Times New Roman, serif">Times</option>
+        <option value="Arial, Helvetica, sans-serif">Arial</option>
+      </select>
+
+      <select id="ft-size" class="ft-control" aria-label="Taille">
+        <option value="14px">14</option>
+        <option value="16px" selected>16</option>
+        <option value="18px">18</option>
+        <option value="20px">20</option>
+      </select>
+
+      <button id="ft-bold" class="ft-btn" aria-pressed="false" title="Gras">B</button>
+      <button id="ft-italic" class="ft-btn" aria-pressed="false" title="Italique">I</button>
+      <button id="ft-underline" class="ft-btn" aria-pressed="false" title="Souligné">U</button>
+
+      <input id="ft-color" class="ft-color" type="color" title="Couleur du texte" aria-label="Couleur">
     </div>
 
-    <div class="topbar-center" role="heading" aria-level="1">
-      <h1 id="editor-title">Édition de l’article</h1>
-    </div>
+    <div class="ft-right">
+      <button id="ft-align-left" class="ft-btn" title="Aligner à gauche">⟵</button>
+      <button id="ft-align-center" class="ft-btn" title="Centrer">≡</button>
+      <button id="ft-align-right" class="ft-btn" title="Aligner à droite">⟶</button>
 
-    <div class="topbar-right">
-      <button id="undo-btn" class="btn ghost" aria-label="Annuler">↶ Annuler</button>
-      <button id="redo-btn" class="btn ghost" aria-label="Refaire">↷ Refaire</button>
-      <button id="save-btn" class="btn primary" aria-label="Enregistrer">Enregistrer</button>
+      <select id="ft-lineheight" class="ft-control" aria-label="Interligne">
+        <option value="1">1</option>
+        <option value="1.2">1.2</option>
+        <option value="1.4" selected>1.4</option>
+        <option value="1.6">1.6</option>
+      </select>
+
+      <button id="ft-send-front" class="ft-btn" title="Mettre au premier plan">↑</button>
+      <button id="ft-send-back" class="ft-btn" title="Mettre en arrière">↓</button>
     </div>
   </header>
-  -->
-
-  <!-- Barre de mise en page blanche (format toolbar) -->
-<header id="format-toolbar" class="format-toolbar" role="toolbar" aria-label="Barre de mise en page">
-  <div class="ft-left">
-    <select id="ft-font" class="ft-control" aria-label="Police">
-      <option value="Inter, system-ui, sans-serif">Inter</option>
-      <option value="Georgia, serif">Georgia</option>
-      <option value="Times New Roman, serif">Times</option>
-      <option value="Arial, Helvetica, sans-serif">Arial</option>
-    </select>
-
-    <select id="ft-size" class="ft-control" aria-label="Taille">
-      <option value="14px">14</option>
-      <option value="16px" selected>16</option>
-      <option value="18px">18</option>
-      <option value="20px">20</option>
-    </select>
-
-    <button id="ft-bold" class="ft-btn" aria-pressed="false" title="Gras">B</button>
-    <button id="ft-italic" class="ft-btn" aria-pressed="false" title="Italique">I</button>
-    <button id="ft-underline" class="ft-btn" aria-pressed="false" title="Souligné">U</button>
-
-    <input id="ft-color" class="ft-color" type="color" title="Couleur du texte" aria-label="Couleur">
-  </div>
-
-  <div class="ft-right">
-    <button id="ft-align-left" class="ft-btn" title="Aligner à gauche">⟵</button>
-    <button id="ft-align-center" class="ft-btn" title="Centrer">≡</button>
-    <button id="ft-align-right" class="ft-btn" title="Aligner à droite">⟶</button>
-
-    <select id="ft-lineheight" class="ft-control" aria-label="Interligne">
-      <option value="1">1</option>
-      <option value="1.2">1.2</option>
-      <option value="1.4" selected>1.4</option>
-      <option value="1.6">1.6</option>
-    </select>
-
-    <button id="ft-send-front" class="ft-btn" title="Mettre au premier plan">↑</button>
-    <button id="ft-send-back" class="ft-btn" title="Mettre en arrière">↓</button>
-  </div>
-</header>
-
 
   <div class="layout" role="application">
 
-    <!-- BARRE CANVA (icônes) -->
+    <!-- BARRE CANVA -->
     <aside class="canva-sidebar" aria-label="Barre d'outils">
       <button class="canva-icon" data-panel="assets" title="Éléments" aria-label="Éléments">🧩</button>
       <button class="canva-icon" data-panel="images" title="Images" aria-label="Images">🖼</button>
@@ -97,7 +73,7 @@
       <button class="canva-icon" data-panel="templates" title="Templates" aria-label="Templates">📄</button>
     </aside>
 
-    <!-- PANNEAUX DÉROULANTS (contenu géré par CSS/JS externes) -->
+    <!-- PANNEAUX -->
     <aside class="canva-panel" id="panel-assets" aria-hidden="true">
       <h2>Éléments</h2>
       <input id="element-search" class="search-input" placeholder="Rechercher un élément…" aria-label="Rechercher un élément">
@@ -121,31 +97,24 @@
       <p>À venir…</p>
     </aside>
 
-    <!-- ZONE CENTRALE : aperçu public + calque d'édition -->
+    <!-- ZONE CENTRALE : page publique éditable -->
     <main class="main" role="main">
       <div class="canvas-wrapper" id="main-canvas-wrapper">
-
-        <!-- PAGE PUBLIQUE (aperçu) -->
-        <section id="public-page" class="canvas" aria-label="Aperçu public">
-          <div id="actu-content" class="public-content" aria-live="polite">
-            <h2>Titre de l’article</h2>
-            <p>Paragraphe d’introduction. Utilise la barre à gauche pour ajouter du texte ou des images.</p>
-          </div>
+        <section id="editor-page" class="canvas public-content" contenteditable="true" aria-label="Édition de l’article">
+          <h2>Titre de l’article</h2>
+          <p>Paragraphe d’introduction. Utilise la barre à gauche pour ajouter du texte ou des images.</p>
         </section>
-
-        <!-- CALQUE D'ÉDITION (au-dessus de l'aperçu) -->
-        <div id="editor-layer" class="editor-layer" aria-hidden="false"></div>
       </div>
     </main>
 
   </div>
 
-  <!-- Bouton Enregistrer fixe en haut à droite -->
-<button id="save-btn-top" class="btn primary save-top" aria-label="Enregistrer l'article">Enregistrer</button>
+  <!-- Bouton Enregistrer fixe -->
+  <button id="save-btn-top" class="btn primary save-top" aria-label="Enregistrer l'article">Enregistrer</button>
 
-  <!-- Scripts externes (aucun JS inline) -->
   <script type="module" src="supabase-init.js"></script>
   <script type="module" src="editeur.js"></script>
 
 </body>
 </html>
+
