@@ -1,89 +1,35 @@
-// emissions.js
-(async function () {
+// editeur.js — version fusionnée et corrigée
+(function () {
   'use strict';
 
-  // Récupère le client Supabase de façon robuste
-  const supabase = await (window.__supabaseReady || (async () => {
-    if (window.supabase) return window.supabase;
+  /* ---------------- Robust supabase init — place this at the very top ---------------- */
+  (function(){
+    if (window.__supabaseClient) {
+      window.__supabaseClient = window.__supabaseClient;
+    } else if (window.supabase) {
+      window.__supabaseClient = window.supabase;
+    } else {
+      window.__supabaseClient = null;
+    }
+  })();
+
+  let supabase = window.__supabaseClient || null;
+
+  let __supabaseReady = (async () => {
+    if (supabase) return supabase;
     try {
-      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-      const SUPABASE_URL = 'https://blronpowdhaumjudtgvn.supabase.co';
-      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI';
-      const client = createClient(SUPABASE_URL, SUPABASE_KEY);
-      // expose localement pour debug si nécessaire
-      window.supabase = window.supabase || client;
-      window.__supabaseReady = window.__supabaseReady || Promise.resolve(client);
-      return client;
+      const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+      const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
+      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+      window.__supabaseClient = supabase;
+      window.supabase = supabase;
+      return supabase;
     } catch (err) {
-      console.error('Impossible d\'initialiser Supabase:', err);
+      console.warn('supabase dynamic import failed:', err);
       return null;
     }
-  })());
-
-  if (!supabase) {
-    console.error('Supabase non disponible. Abandon.');
-    return;
-  }
-
-  // Sélecteur cible pour injecter la liste
-  const containerId = 'emissions-list';
-  let container = document.getElementById(containerId);
-  if (!container) {
-    container = document.createElement('div');
-    container.id = containerId;
-    // style minimal pour visibilité
-    container.style.padding = '12px';
-    container.style.background = '#fff';
-    container.style.border = '1px solid #e6e6e6';
-    document.body.prepend(container);
-  }
-
-  // Récupère et affiche les émissions
-  try {
-    const { data, error } = await supabase.from('emissions').select('*').order('id', { ascending: true }).limit(500);
-    if (error) {
-      console.error('Erreur Supabase lors de la récupération des émissions:', error);
-      container.innerHTML = `<div style="color:#b00">Erreur lors du chargement des émissions (voir console)</div>`;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      container.innerHTML = '<div>Aucune émission trouvée.</div>';
-      return;
-    }
-
-    // Render simple
-    const list = document.createElement('div');
-    list.style.display = 'grid';
-    list.style.gridTemplateColumns = 'repeat(auto-fit,minmax(240px,1fr))';
-    list.style.gap = '10px';
-
-    data.forEach(row => {
-      const card = document.createElement('div');
-      card.style.border = '1px solid #eee';
-      card.style.padding = '10px';
-      card.style.borderRadius = '6px';
-      card.style.background = '#fafafa';
-      const title = row.nom || row.titre || row.emission || `ID ${row.id}`;
-      const subtitle = row.emission ? `<div style="font-size:13px;color:#666">${row.emission}</div>` : '';
-      card.innerHTML = `<strong>${escapeHtml(title)}</strong>${subtitle}<div style="font-size:12px;color:#888;margin-top:6px">${row.created_at || ''}</div>`;
-      list.appendChild(card);
-    });
-
-    container.innerHTML = `<h3 style="margin:0 0 8px 0">Émissions (${data.length})</h3>`;
-    container.appendChild(list);
-  } catch (err) {
-    console.error('Exception lors du rendu des émissions:', err);
-    container.innerHTML = `<div style="color:#b00">Erreur inattendue (voir console)</div>`;
-  }
-
-  // utilitaire simple pour échapper le HTML
-  function escapeHtml(str) {
-    if (!str && str !== 0) return '';
-    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-  }
-})();
-
+  })();
 
   console.log('editeur.js loaded');
 
