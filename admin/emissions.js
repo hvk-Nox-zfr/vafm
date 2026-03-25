@@ -1,7 +1,11 @@
 // emissions.js
-// Chargement autonome et robuste de la liste des émissions
-(async function () {
+// Usage:
+// 1) Importer et appeler : import { loadEmissions } from '/js/emissions.js'; await loadEmissions();
+// 2) Ou charger directement : <script type="module" src="/js/emissions.js" data-autoload></script>
+
+export async function loadEmissions(options = {}) {
   'use strict';
+  const { containerId = 'emissions-list', limit = 1000 } = options;
 
   // Récupère le client Supabase de façon robuste
   const supabase = await (window.__supabaseReady || (async () => {
@@ -22,11 +26,10 @@
 
   if (!supabase) {
     console.error('Supabase non disponible. Abandon.');
-    return;
+    return null;
   }
 
   // Crée ou récupère le conteneur d'affichage
-  const containerId = 'emissions-list';
   let container = document.getElementById(containerId);
   if (!container) {
     container = document.createElement('div');
@@ -72,7 +75,7 @@
         .from('emissions')
         .select('*')
         .order('id', { ascending: true })
-        .limit(1000);
+        .limit(limit);
 
       if (error) {
         console.error('Erreur Supabase lors de la récupération des émissions:', error);
@@ -121,8 +124,20 @@
     return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
   }
 
+  // Expose une méthode pour recharger depuis l'extérieur si besoin
+  const api = { loadAndRender, loadEmissions: loadAndRender };
+
   // Lancer le premier chargement
-  loadAndRender();
+  await loadAndRender();
 
-})();
+  return api;
+}
 
+// Si le fichier est chargé directement via <script ... data-autoload>, on exécute automatiquement
+if (typeof document !== 'undefined') {
+  const currentScript = document.currentScript;
+  if (currentScript && currentScript.getAttribute && currentScript.getAttribute('data-autoload') !== null) {
+    // auto-run (ne pas importer dans ce cas)
+    loadEmissions().catch(err => console.error('loadEmissions auto-run failed', err));
+  }
+}
