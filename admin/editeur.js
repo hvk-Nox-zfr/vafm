@@ -80,67 +80,26 @@ function addImage(src) {
 }
 
 /* ============================================================
-   SÉLECTION & DRAG
-   ============================================================ */
-
-function selectBlock(block) {
-  currentBlock = block;
-  $all('.block-public').forEach(b => b.classList.remove('selected'));
-  if (block) block.classList.add('selected');
-}
-
-function makeSelectable(el) {
-  el.addEventListener('click', (e) => {
-    e.stopPropagation();
-    selectBlock(el);
-  });
-}
-
-function makeDraggable(el) {
-  let startX = 0, startY = 0, origX = 0, origY = 0;
-
-  el.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return;
-    selectBlock(el);
-
-    startX = e.clientX;
-    startY = e.clientY;
-
-    const rect = el.getBoundingClientRect();
-    origX = rect.left + window.scrollX;
-    origY = rect.top + window.scrollY;
-
-    function move(ev) {
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-
-      el.style.left = `${origX + dx - wrapper.getBoundingClientRect().left}px`;
-      el.style.top = `${origY + dy - wrapper.getBoundingClientRect().top}px`;
-    }
-
-    function up() {
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseup', up);
-    }
-
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
-  });
-}
-
-/* ============================================================
-   TOOLBAR – FORMATAGE
+   TOOLBAR – FORMATAGE (WYSIWYG)
    ============================================================ */
 
 function applyInlineStyle(cmd, value = null) {
-  if (!currentBlock) return;
-  currentBlock.focus();
   document.execCommand(cmd, false, value);
 }
 
-function applyBlockStyle(fn) {
-  if (!currentBlock) return;
-  fn(currentBlock);
+function applyBlockStyle(styleCallback) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  let node = range.commonAncestorContainer;
+
+  // Si c’est un texte, on remonte au parent
+  if (node.nodeType === 3) {
+    node = node.parentNode;
+  }
+
+  styleCallback(node);
 }
 
 function attachFormatToolbarHandlers() {
@@ -151,18 +110,29 @@ function attachFormatToolbarHandlers() {
 
   /* Police */
   $('#ft-font', toolbar)?.addEventListener('change', (e) => {
-    applyBlockStyle(b => b.style.fontFamily = e.target.value);
+    applyBlockStyle(node => node.style.fontFamily = e.target.value);
   });
 
   /* Taille */
   $('#ft-size', toolbar)?.addEventListener('change', (e) => {
-    applyBlockStyle(b => b.style.fontSize = e.target.value);
+    applyBlockStyle(node => node.style.fontSize = e.target.value);
   });
 
   /* Gras / Italique / Souligné */
-  $('#ft-bold', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('bold'); });
-  $('#ft-italic', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('italic'); });
-  $('#ft-underline', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyInlineStyle('underline'); });
+  $('#ft-bold', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyInlineStyle('bold');
+  });
+
+  $('#ft-italic', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyInlineStyle('italic');
+  });
+
+  $('#ft-underline', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyInlineStyle('underline');
+  });
 
   /* Couleur */
   $('#ft-color', toolbar)?.addEventListener('input', (e) => {
@@ -170,24 +140,24 @@ function attachFormatToolbarHandlers() {
   });
 
   /* Alignements */
-  $('#ft-align-left', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'left'); });
-  $('#ft-align-center', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'center'); });
-  $('#ft-align-right', toolbar)?.addEventListener('click', (e) => { e.preventDefault(); applyBlockStyle(b => b.style.textAlign = 'right'); });
+  $('#ft-align-left', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(node => node.style.textAlign = 'left');
+  });
+
+  $('#ft-align-center', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(node => node.style.textAlign = 'center');
+  });
+
+  $('#ft-align-right', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(node => node.style.textAlign = 'right');
+  });
 
   /* Interligne */
   $('#ft-lineheight', toolbar)?.addEventListener('change', (e) => {
-    applyBlockStyle(b => b.style.lineHeight = e.target.value);
-  });
-
-  /* Z-index */
-  $('#ft-send-front', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyBlockStyle(b => b.style.zIndex = (parseInt(b.style.zIndex || '1') + 1));
-  });
-
-  $('#ft-send-back', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyBlockStyle(b => b.style.zIndex = (parseInt(b.style.zIndex || '1') - 1));
+    applyBlockStyle(node => node.style.lineHeight = e.target.value);
   });
 
   console.log('[toolbar] handlers attachés');
@@ -289,6 +259,51 @@ async function sauvegarder() {
   alert("Enregistré !");
 }
 
+
+/* ============================================================
+   BARRE CANVA
+   ============================================================ */
+  
+function attachCanvaPanels() {
+  const icons = $all('.canva-icon');
+  const panels = $all('.canva-panel');
+
+  function closeAll() {
+    panels.forEach(p => {
+      p.classList.remove('open');
+      p.setAttribute('aria-hidden', 'true');
+    });
+    icons.forEach(i => i.classList.remove('active'));
+  }
+
+  icons.forEach(icon => {
+    const key = icon.dataset.panel;
+    const panel = $('#panel-' + key);
+    if (!panel) return;
+
+    icon.addEventListener('mouseenter', () => {
+      closeAll();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      icon.classList.add('active');
+    });
+
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAll();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      icon.classList.add('active');
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
+      closeAll();
+    }
+  });
+}
+
 /* ============================================================
    INIT
    ============================================================ */
@@ -317,17 +332,6 @@ function initEditor() {
   }
 
   console.log("[initEditor] OK");
-
-  document.getElementById("add-title")?.addEventListener("click", addTitle);
-document.getElementById("add-subtitle")?.addEventListener("click", addSubtitle);
-document.getElementById("add-paragraph")?.addEventListener("click", addParagraph);
-
-document.getElementById("add-image")?.addEventListener("click", async () => {
-  // Ici tu mets ton upload Supabase
-  const src = prompt("URL de l'image :");
-  if (src) addImage(src);
-});
-
 }
 
 /* ============================================================
