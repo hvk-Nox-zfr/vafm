@@ -283,115 +283,72 @@ function attachCanvaPanels() {
 /* ============================================================
    SAUVEGARDE (mock)
    ============================================================ */
-
 async function sauvegarder() {
-  console.log('[sauvegarder] démarrage');
-  try {
-    const client = await (window.__supabaseReady || Promise.resolve(window.supabase || null));
-    if (!client) {
-      console.error('[sauvegarder] supabase client absent');
-      alert("Impossible d'enregistrer : service non initialisé.");
-      return { ok: false, reason: 'no-client' };
-    }
+  console.log("[sauvegarder] démarrage");
 
-    const params = new URLSearchParams(window.location.search);
-    const actuId = Number(params.get('id'));
-    if (!actuId) {
-      console.error('[sauvegarder] id article manquant');
-      alert("ID d'article manquant dans l'URL.");
-      return { ok: false, reason: 'no-id' };
-    }
-
-    const blocks = Array.from(document.querySelectorAll('#editor-layer .block-public')).map(b => ({
-      id: b.dataset.blockId || null,
-      type: b.dataset.type || 'paragraph',
-      html: b.innerHTML,
-      x: parseInt(b.style.left || '0', 10) || 0,
-      y: parseInt(b.style.top || '0', 10) || 0,
-      width: b.style.width || ''
-    }));
-
-    const previewHtml = (document.getElementById('actu-content') || document.body).innerHTML;
-    const contenu = { previewHtml, blocks, updated_at: new Date().toISOString() };
-
-    console.log('[sauvegarder] payload', { actuId, contenu });
-
-    const { data, error } = await client.from('actus').update({ contenu }).eq('id', actuId).select();
-
-    console.log('[sauvegarder] supabase response', { data, error });
-
-    if (error) {
-      console.error('[sauvegarder] erreur supabase', error);
-      alert("Erreur lors de l'enregistrement (voir console).");
-      return { ok: false, reason: 'supabase-error', error };
-    }
-
-    if (Array.isArray(data) && data.length) {
-      const updated = data[0];
-      if (updated.contenu && updated.contenu.previewHtml) {
-        const previewEl = document.getElementById('actu-content');
-        if (previewEl) {
-          previewEl.innerHTML = updated.contenu.previewHtml;
-          console.log('[sauvegarder] previewHtml mis à jour dans le DOM');
-        }
-      }
-    }
-
-    alert('Enregistré !');
-    return { ok: true, data };
-  } catch (err) {
-    console.error('[sauvegarder] exception', err);
-    alert("Erreur inattendue lors de l'enregistrement (voir console).");
-    return { ok: false, reason: 'exception', error: err };
+  const client = await window.__supabaseReady;
+  if (!client) {
+    alert("Supabase non initialisé");
+    return;
   }
+
+  const params = new URLSearchParams(window.location.search);
+  const actuId = Number(params.get("id"));
+  if (!actuId) {
+    alert("ID d'article manquant");
+    return;
+  }
+
+  const html = document.querySelector("#editor-page").innerHTML;
+
+  const contenu = {
+    html,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await client
+    .from("actus")
+    .update({ contenu })
+    .eq("id", actuId)
+    .select();
+
+  if (error) {
+    console.error(error);
+    alert("Erreur Supabase");
+    return;
+  }
+
+  alert("Enregistré !");
 }
-
-
 
 /* ============================================================
    INIT
    ============================================================ */
 
 function initEditor() {
-  wrapper = $('.canvas-wrapper');
-  canvas = $('#actu-content');
-  editorLayer = $('#editor-layer');
+  console.log("[initEditor] démarrage");
+
+  const editor = document.querySelector("#editor-page");
+  if (!editor) {
+    console.error("[initEditor] #editor-page introuvable");
+    return;
+  }
 
   attachFormatToolbarHandlers();
   attachSidebarHandlers();
   attachCanvaPanels();
 
-  if (!$('.block-public', editorLayer)) {
-    createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
+  // Bouton enregistrer
+  const saveBtn = document.getElementById("save-btn-top");
+  if (saveBtn && !saveBtn._saveAttached) {
+    saveBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      sauvegarder();
+    });
+    saveBtn._saveAttached = true;
   }
 
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.block-public')) selectBlock(null);
-  });
-
-  $('#save-btn-top')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    sauvegarder();
-  });
-
-  console.log('Editor initialized');
-
-  // attacher le bouton d'enregistrement visible (top ou toolbar)
-(function attachSaveButtons(){
-  const top = document.getElementById('save-btn-top');
-  if (top && !top._saveAttached) {
-    top.addEventListener('click', (e) => { e.preventDefault(); sauvegarder(); });
-    top._saveAttached = true;
-    console.log('save-btn-top handler attaché');
-  }
-  const toolbarSave = document.getElementById('save-btn');
-  if (toolbarSave && !toolbarSave._saveAttached) {
-    toolbarSave.addEventListener('click', (e) => { e.preventDefault(); sauvegarder(); });
-    toolbarSave._saveAttached = true;
-    console.log('save-btn (toolbar) handler attaché');
-  }
-})();
-
+  console.log("[initEditor] OK");
 }
 
 /* ============================================================
