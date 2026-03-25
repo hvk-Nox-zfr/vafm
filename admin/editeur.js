@@ -106,6 +106,8 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
+    e.preventDefault(); // ← ESSENTIEL pour éviter la duplication
+
     startX = e.clientX;
     startY = e.clientY;
 
