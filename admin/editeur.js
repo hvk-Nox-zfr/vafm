@@ -78,7 +78,6 @@ function addImage(src) {
     `<img src="${src}" style="max-width:100%; margin:20px 0;">`
   );
 }
-}
 
 function createFloatingText() {
   const block = document.createElement("div");
