@@ -347,3 +347,15 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 
 /* Si tu as déjà un bouton "save" ailleurs, cacher la version secondaire si besoin */
 .save-top.hide-secondary { display: none !important; }
+
+/* Zones de texte déplaçables */
+.floating-text {
+  position: absolute;
+  background: white;
+  border: 1px dashed #ccc;
+  padding: 10px;
+  min-width: 150px;
+  cursor: move;
+  z-index: 50;
+  user-select: none; /* empêche la sélection pendant le drag */
+}
