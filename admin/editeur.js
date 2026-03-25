@@ -198,25 +198,17 @@ function attachFormatToolbarHandlers() {
    ============================================================ */
 
 function attachSidebarHandlers() {
-  $('#add-title')?.addEventListener('click', () => {
-    createTextBlock({ type: 'title', x: 120, y: 120, width: 420 });
-  });
+  // Boutons d’ajout de contenu WYSIWYG
+  $('#add-title')?.addEventListener('click', addTitle);
+  $('#add-subtitle')?.addEventListener('click', addSubtitle);
+  $('#add-paragraph')?.addEventListener('click', addParagraph);
 
-  $('#add-subtitle')?.addEventListener('click', () => {
-    createTextBlock({ type: 'subtitle', x: 140, y: 180, width: 420, html: 'Sous-titre' });
-  });
-
-  $('#add-paragraph')?.addEventListener('click', () => {
-    createTextBlock({ type: 'paragraph', x: 140, y: 240, width: 480, html: 'Nouveau paragraphe…' });
-  });
-
-  $('#add-image')?.addEventListener('click', () => {
+  $('#add-image')?.addEventListener('click', async () => {
     const url = window.prompt('URL de l’image :');
-    if (url) addImageBlock(url);
+    if (url) addImage(url);
   });
-}
 
-function attachCanvaPanels() {
+  // Gestion des panneaux Canva
   const icons = $all('.canva-icon');
   const panels = $all('.canva-panel');
 
