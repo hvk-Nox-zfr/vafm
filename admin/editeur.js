@@ -79,6 +79,28 @@ function addImage(src) {
   );
 }
 
+  function createFloatingText() {
+  const block = document.createElement("div");
+  block.className = "floating-text";
+  block.contentEditable = "true";
+  block.innerHTML = "Double-clique pour écrire…";
+
+  block.style.position = "absolute";
+  block.style.top = "120px";
+  block.style.left = "120px";
+  block.style.minWidth = "150px";
+  block.style.padding = "10px";
+  block.style.background = "white";
+  block.style.border = "1px dashed #ccc";
+  block.style.cursor = "move";
+
+  document.querySelector("#editor-page").appendChild(block);
+
+  makeDraggable(block);
+}
+
+}
+
 /* ============================================================
    TOOLBAR – FORMATAGE (WYSIWYG)
    ============================================================ */
@@ -168,10 +190,9 @@ function attachFormatToolbarHandlers() {
    ============================================================ */
 
 function attachSidebarHandlers() {
-  // Boutons d’ajout de contenu WYSIWYG
-  $('#add-title')?.addEventListener('click', addTitle);
-  $('#add-subtitle')?.addEventListener('click', addSubtitle);
-  $('#add-paragraph')?.addEventListener('click', addParagraph);
+  $('#add-floating-text')?.addEventListener('click', () => {
+    createFloatingText();
+  });
 
   $('#add-image')?.addEventListener('click', async () => {
     const url = window.prompt('URL de l’image :');
@@ -216,6 +237,11 @@ function attachSidebarHandlers() {
       closeAll();
     }
   });
+
+  $('#add-floating-text')?.addEventListener('click', () => {
+  createFloatingText();
+});
+
 }
 
 /* ============================================================
