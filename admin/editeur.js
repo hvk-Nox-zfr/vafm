@@ -99,6 +99,38 @@ function createFloatingText() {
   makeDraggable(block);
 }
 
+function makeDraggable(el) {
+  let startX = 0, startY = 0;
+  let origX = 0, origY = 0;
+
+  el.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return; // clic gauche uniquement
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = el.getBoundingClientRect();
+    origX = rect.left + window.scrollX;
+    origY = rect.top + window.scrollY;
+
+    function move(ev) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      el.style.left = origX + dx + "px";
+      el.style.top = origY + dy + "px";
+    }
+
+    function up() {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+    }
+
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  });
+}
+
 /* ============================================================
    TOOLBAR – FORMATAGE (WYSIWYG)
    ============================================================ */
