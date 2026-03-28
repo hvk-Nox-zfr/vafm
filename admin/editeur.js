@@ -71,11 +71,15 @@
   /* ============================================================
      ZONE DE TEXTE DÉPLAÇABLE
      ============================================================ */
-
+  
 function createFloatingText() {
   const block = document.createElement("div");
   block.className = "floating-text";
-  block.innerHTML = "Double-clique pour écrire…";
+
+  block.innerHTML = `
+    <div class="drag-handle">⋮⋮</div>
+    <div class="text-content" contenteditable="true">Double-clique pour écrire…</div>
+  `;
 
   block.style.position = "absolute";
   block.style.top = "120px";
@@ -84,31 +88,10 @@ function createFloatingText() {
   block.style.padding = "10px";
   block.style.background = "white";
   block.style.border = "1px dashed #ccc";
-  block.style.cursor = "move";
-
-  // Mode par défaut : NON éditable → déplaçable
-  block.setAttribute("contenteditable", "false");
-
-  // Double-clic = entrer en mode édition
-  block.addEventListener("dblclick", () => {
-    block.setAttribute("contenteditable", "true");
-    block.style.cursor = "text";
-    block.style.userSelect = "text";
-    block.focus();
-  });
-
-  // Clic ailleurs = sortir du mode édition
-  document.addEventListener("mousedown", (e) => {
-    if (!block.contains(e.target)) {
-      block.setAttribute("contenteditable", "false");
-      block.style.cursor = "move";
-      block.style.userSelect = "none";
-    }
-  });
 
   document.querySelector("#editor-page").appendChild(block);
 
-  makeDraggable(block);
+  makeDraggable(block.querySelector(".drag-handle"), block);
 }
   
 function makeDraggable(el) {
