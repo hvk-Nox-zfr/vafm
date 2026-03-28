@@ -298,6 +298,7 @@ function makeDraggable(el) {
   /* ============================================================
      SAUVEGARDE
      ============================================================ */
+  
 async function sauvegarder() {
   console.log("[sauvegarder] démarrage");
 
@@ -320,7 +321,7 @@ async function sauvegarder() {
   const { data, error } = await client
     .from("actus")
     .update({
-      html: html,               // ← on enregistre directement le HTML
+      texte: html, // ← ENREGISTRE ICI !
       updated_at: new Date().toISOString()
     })
     .eq("id", actuId)
@@ -334,6 +335,7 @@ async function sauvegarder() {
 
   alert("Enregistré !");
 }
+
 
   /* ============================================================
      INIT
