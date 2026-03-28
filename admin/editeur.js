@@ -85,7 +85,6 @@ function createFloatingText() {
   block.style.background = "white";
   block.style.border = "1px dashed #ccc";
   block.style.cursor = "move";
-  block.style.userSelect = "none";
 
   // Mode par défaut : NON éditable → déplaçable
   block.setAttribute("contenteditable", "false");
@@ -94,14 +93,16 @@ function createFloatingText() {
   block.addEventListener("dblclick", () => {
     block.setAttribute("contenteditable", "true");
     block.style.cursor = "text";
+    block.style.userSelect = "text";
     block.focus();
   });
 
-  // Quand on clique ailleurs → sortir du mode édition
+  // Clic ailleurs = sortir du mode édition
   document.addEventListener("mousedown", (e) => {
     if (!block.contains(e.target)) {
       block.setAttribute("contenteditable", "false");
       block.style.cursor = "move";
+      block.style.userSelect = "none";
     }
   });
 
