@@ -298,43 +298,42 @@ function makeDraggable(el) {
   /* ============================================================
      SAUVEGARDE
      ============================================================ */
-  async function sauvegarder() {
-    console.log("[sauvegarder] démarrage");
+async function sauvegarder() {
+  console.log("[sauvegarder] démarrage");
 
-    const client = await window.__supabaseReady;
-    if (!client) {
-      alert("Supabase non initialisé");
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const actuId = Number(params.get("id"));
-    if (!actuId) {
-      alert("ID d'article manquant");
-      return;
-    }
-
-    const html = document.querySelector("#editor-page").innerHTML;
-
-    const contenu = {
-      html,
-      updated_at: new Date().toISOString()
-    };
-
-    const { data, error } = await client
-      .from("actus")
-      .update({ contenu })
-      .eq("id", actuId)
-      .select();
-
-    if (error) {
-      console.error(error);
-      alert("Erreur Supabase");
-      return;
-    }
-
-    alert("Enregistré !");
+  const client = await window.__supabaseReady;
+  if (!client) {
+    alert("Supabase non initialisé");
+    return;
   }
+
+  const params = new URLSearchParams(window.location.search);
+  const actuId = Number(params.get("id"));
+  if (!actuId) {
+    alert("ID d'article manquant");
+    return;
+  }
+
+  // On récupère TOUT le HTML de la page
+  const html = document.querySelector("#editor-page").innerHTML;
+
+  const { data, error } = await client
+    .from("actus")
+    .update({
+      html: html,               // ← on enregistre directement le HTML
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", actuId)
+    .select();
+
+  if (error) {
+    console.error(error);
+    alert("Erreur Supabase");
+    return;
+  }
+
+  alert("Enregistré !");
+}
 
   /* ============================================================
      INIT
