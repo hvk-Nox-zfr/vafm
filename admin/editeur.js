@@ -85,12 +85,37 @@ function createFloatingText() {
   block.style.top = "120px";
   block.style.left = "120px";
   block.style.minWidth = "150px";
-  block.style.padding = "10px";
   block.style.background = "white";
   block.style.border = "1px dashed #ccc";
 
+  const text = block.querySelector(".text-content");
+
+  /* Empêche la disparition du bloc quand il est vide */
+  text.addEventListener("input", () => {
+    if (text.innerHTML.trim() === "") {
+      text.innerHTML = "<br>";
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.setStart(text, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  });
+
+  /* Double-clic = édition */
+  text.addEventListener("dblclick", () => {
+    text.focus();
+  });
+
+  /* Empêche le drag quand on écrit */
+  text.addEventListener("mousedown", (e) => {
+    e.stopPropagation(); // ← essentiel : le drag ne se déclenche pas
+  });
+
   document.querySelector("#editor-page").appendChild(block);
 
+  /* Drag uniquement via la poignée */
   makeDraggable(block.querySelector(".drag-handle"), block);
 }
   
