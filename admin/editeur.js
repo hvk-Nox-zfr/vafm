@@ -310,25 +310,25 @@ async function sauvegarder() {
 
   const params = new URLSearchParams(window.location.search);
   const actuId = Number(params.get("id"));
-
   console.log("actuId =", actuId);
-  
+
   if (!actuId) {
     alert("ID d'article manquant");
     return;
   }
 
-  // On récupère TOUT le HTML de la page
   const html = document.querySelector("#editor-page").innerHTML;
 
   const { data, error } = await client
     .from("actus")
     .update({
-      texte: html, // ← ENREGISTRE ICI !
-      updated_at: new Date().toISOString()
+      texte: html // ← CORRECTION ICI
     })
     .eq("id", actuId)
     .select();
+
+  console.log("DATA :", data);
+  console.log("ERROR :", error);
 
   if (error) {
     console.error(error);
@@ -338,7 +338,6 @@ async function sauvegarder() {
 
   alert("Enregistré !");
 }
-
 
   /* ============================================================
      INIT
