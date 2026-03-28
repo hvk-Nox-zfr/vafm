@@ -75,48 +75,55 @@
 function createFloatingText() {
   const block = document.createElement("div");
   block.className = "floating-text";
-
-  block.innerHTML = `
-    <div class="drag-handle">⋮⋮</div>
-    <div class="text-content" contenteditable="true">Double-clique pour écrire…</div>
-  `;
+  block.innerHTML = "Double-clique pour écrire…";
 
   block.style.position = "absolute";
   block.style.top = "120px";
   block.style.left = "120px";
   block.style.minWidth = "150px";
+  block.style.padding = "10px";
   block.style.background = "white";
   block.style.border = "1px dashed #ccc";
+  block.style.cursor = "move";
+  block.style.userSelect = "none";
 
-  const text = block.querySelector(".text-content");
+  // Mode par défaut : NON éditable → déplaçable
+  block.setAttribute("contenteditable", "false");
 
-  /* Empêche la disparition du bloc quand il est vide */
-  text.addEventListener("input", () => {
-    if (text.innerHTML.trim() === "") {
-      text.innerHTML = "<br>";
+  // Double-clic = entrer en mode édition
+  block.addEventListener("dblclick", (e) => {
+    e.stopPropagation();
+    block.setAttribute("contenteditable", "true");
+    block.style.cursor = "text";
+    block.style.userSelect = "text";
+    block.focus();
+  });
+
+  // Quand on clique ailleurs → sortir du mode édition
+  document.addEventListener("mousedown", (e) => {
+    if (!block.contains(e.target)) {
+      block.setAttribute("contenteditable", "false");
+      block.style.cursor = "move";
+      block.style.userSelect = "none";
+    }
+  });
+
+  // Empêcher la disparition quand le texte est vide
+  block.addEventListener("input", () => {
+    if (block.innerHTML.trim() === "") {
+      block.innerHTML = "<br>";
       const range = document.createRange();
       const sel = window.getSelection();
-      range.setStart(text, 0);
+      range.setStart(block, 0);
       range.collapse(true);
       sel.removeAllRanges();
       sel.addRange(range);
     }
   });
 
-  /* Double-clic = édition */
-  text.addEventListener("dblclick", () => {
-    text.focus();
-  });
-
-  /* Empêche le drag quand on écrit */
-  text.addEventListener("mousedown", (e) => {
-    e.stopPropagation(); // ← essentiel : le drag ne se déclenche pas
-  });
-
   document.querySelector("#editor-page").appendChild(block);
 
-  /* Drag uniquement via la poignée */
-  makeDraggable(block.querySelector(".drag-handle"), block);
+  makeDraggable(block);
 }
   
 function makeDraggable(el) {
