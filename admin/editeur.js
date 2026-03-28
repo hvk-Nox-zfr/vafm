@@ -310,6 +310,9 @@ async function sauvegarder() {
 
   const params = new URLSearchParams(window.location.search);
   const actuId = Number(params.get("id"));
+
+  console.log("actuId =", actuId);
+  
   if (!actuId) {
     alert("ID d'article manquant");
     return;
