@@ -352,9 +352,17 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 .floating-text {
   position: absolute;
   background: white;
-  border: 1px dashed #ccc;
   min-width: 150px;
   z-index: 50;
+
+  /* invisible quand non sélectionné */
+  border: 1px dashed transparent;
+  transition: border-color 0.15s ease;
+}
+
+/* Quand le bloc est sélectionné */
+.floating-text.selected {
+  border-color: red; /* contour rouge quand sélectionné */
 }
 
 /* Poignée de déplacement */
@@ -375,4 +383,3 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
   min-height: 20px;
   user-select: text;
 }
-
