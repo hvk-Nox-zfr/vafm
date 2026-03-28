@@ -72,32 +72,44 @@
      ZONE DE TEXTE DÉPLAÇABLE
      ============================================================ */
 
-  function createFloatingText() {
-    const block = document.createElement("div");
-    block.className = "floating-text";
-    block.innerHTML = "Double-clique pour écrire…";
+function createFloatingText() {
+  const block = document.createElement("div");
+  block.className = "floating-text";
+  block.innerHTML = "Double-clique pour écrire…";
 
-    block.style.position = "absolute";
-    block.style.top = "120px";
-    block.style.left = "120px";
-    block.style.minWidth = "150px";
-    block.style.padding = "10px";
-    block.style.background = "white";
-    block.style.border = "1px dashed #ccc";
-    block.style.cursor = "move";
+  block.style.position = "absolute";
+  block.style.top = "120px";
+  block.style.left = "120px";
+  block.style.minWidth = "150px";
+  block.style.padding = "10px";
+  block.style.background = "white";
+  block.style.border = "1px dashed #ccc";
+  block.style.cursor = "move";
+  block.style.userSelect = "none";
 
-    // Édition seulement au double-clic
-    block.setAttribute("contenteditable", "false");
-    block.addEventListener("dblclick", () => {
-      block.setAttribute("contenteditable", "true");
-      block.focus();
-    });
+  // Mode par défaut : NON éditable → déplaçable
+  block.setAttribute("contenteditable", "false");
 
-    document.querySelector("#editor-page").appendChild(block);
+  // Double-clic = entrer en mode édition
+  block.addEventListener("dblclick", () => {
+    block.setAttribute("contenteditable", "true");
+    block.style.cursor = "text";
+    block.focus();
+  });
 
-    makeDraggable(block);
-  }
+  // Quand on clique ailleurs → sortir du mode édition
+  document.addEventListener("mousedown", (e) => {
+    if (!block.contains(e.target)) {
+      block.setAttribute("contenteditable", "false");
+      block.style.cursor = "move";
+    }
+  });
 
+  document.querySelector("#editor-page").appendChild(block);
+
+  makeDraggable(block);
+}
+  
 function makeDraggable(el) {
   let startX = 0, startY = 0;
   let origX = 0, origY = 0;
@@ -105,8 +117,10 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
-    e.preventDefault(); // évite sélection / duplication
-    el.setAttribute("contenteditable", "false");
+    // Si on est en mode édition → NE PAS déplacer
+    if (el.getAttribute("contenteditable") === "true") return;
+
+    e.preventDefault();
 
     startX = e.clientX;
     startY = e.clientY;
@@ -114,7 +128,6 @@ function makeDraggable(el) {
     const rect = el.getBoundingClientRect();
     const parentRect = el.parentNode.getBoundingClientRect();
 
-    // Position relative au parent → FINI la téléportation
     origX = rect.left - parentRect.left;
     origY = rect.top - parentRect.top;
 
