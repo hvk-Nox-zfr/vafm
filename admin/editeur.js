@@ -386,39 +386,43 @@ async function sauvegarder() {
   alert("Enregistré !");
 }
 
-  /* ============================================================
-     INIT
-     ============================================================ */
+// ❌ enlève cet appel global
+// chargerArticle();
 
-  function initEditor() {
-    console.log("[initEditor] démarrage");
+/* ============================================================
+   INIT
+   ============================================================ */
 
-    const editor = document.querySelector("#editor-page");
-    if (!editor) {
-      console.error("[initEditor] #editor-page introuvable");
-      return;
-    }
+function initEditor() {
+  console.log("[initEditor] démarrage");
 
-    attachFormatToolbarHandlers();
-    attachSidebarHandlers();
-
-    const saveBtn = document.getElementById("save-btn-top");
-    if (saveBtn && !saveBtn._saveAttached) {
-      saveBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        sauvegarder();
-      });
-      saveBtn._saveAttached = true;
-    }
-
-    console.log("[initEditor] OK");
+  const editor = document.querySelector("#editor-page");
+  // On ne fait tourner l'éditeur QUE si le conteneur est marqué comme éditeur
+  if (!editor || !editor.dataset.editor) {
+    console.log("[initEditor] pas en mode éditeur, on ne fait rien");
+    return;
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEditor);
-  } else {
-    initEditor();
+  // Charger l'article uniquement en mode éditeur
+  chargerArticle();
+
+  attachFormatToolbarHandlers();
+  attachSidebarHandlers();
+
+  const saveBtn = document.getElementById("save-btn-top");
+  if (saveBtn && !saveBtn._saveAttached) {
+    saveBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      sauvegarder();
+    });
+    saveBtn._saveAttached = true;
   }
 
-  console.log('FIN DU FICHIER OK');
-})();
+  console.log("[initEditor] OK");
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initEditor);
+} else {
+  initEditor();
+}
