@@ -31,8 +31,8 @@ async function chargerActu() {
   }
 
   // 📝 Texte
-  if (actu.contenu?.texte) {
-    canvas.innerHTML = actu.contenu.texte;
+  if (actu.texte) {
+    canvas.innerHTML = actu.texte;
   }
 
   // 🖼️ Images flottantes
