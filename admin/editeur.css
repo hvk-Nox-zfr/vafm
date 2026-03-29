@@ -364,11 +364,10 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
   border-color: red; /* contour rouge */
 }
 
-/* Poignée de déplacement */
 .floating-text .drag-handle {
   width: 100%;
   height: 12px;
-  background: rgba(0,0,0,0.05); /* très léger, comme Canva */
+  background: transparent; /* ← transparent */
   cursor: move;
   user-select: none;
 }
