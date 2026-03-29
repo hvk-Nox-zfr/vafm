@@ -381,3 +381,16 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
   user-select: text;
   background: transparent; /* ← assure que le texte est sur fond transparent */
 }
+
+/* Poignée de redimensionnement (style Canva) */
+.floating-text .resize-handle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: red;
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  cursor: nwse-resize;
+  z-index: 200;
+}
