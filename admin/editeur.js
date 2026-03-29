@@ -132,7 +132,7 @@ function createFloatingText() {
   makeDraggable(block);
   makeResizable(block);
 }
-
+  
 function makeDraggable(el) {
   let startX = 0, startY = 0;
   let origX = 0, origY = 0;
@@ -140,20 +140,13 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
-    // ❌ Si on clique sur la poignée de resize → NE PAS déplacer
-    if (e.target.classList.contains("resize-handle")) {
-      return;
-    }
-
-    // Sélection
+    // 👉 Toujours sélectionner le bloc
     document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
     el.classList.add("selected");
 
-    // Si on clique dans la zone de texte → pas de drag
-    const text = el.querySelector(".text-content");
-    if (text.getAttribute("contenteditable") === "true") {
-      return;
-    }
+    // 👉 Si on clique dans la zone de texte (édition), ne pas déplacer
+    const isEditing = el.querySelector(".text-content").getAttribute("contenteditable") === "true";
+    if (isEditing) return;
 
     e.preventDefault();
 
@@ -183,42 +176,11 @@ function makeDraggable(el) {
     document.addEventListener("mouseup", up);
   });
 
-  // Désélection
+  // 👉 Désélectionner si on clique ailleurs
   document.addEventListener("mousedown", (e) => {
     if (!el.contains(e.target)) {
       el.classList.remove("selected");
     }
-  });
-}
-
-function makeResizable(block) {
-  const handle = block.querySelector(".resize-handle");
-  const text = block.querySelector(".text-content");
-  if (!handle) return;
-
-  let startY = 0;
-  let startSize = 0;
-
-  handle.addEventListener("mousedown", (e) => {
-    e.stopPropagation();   // ❗ Empêche le drag
-    e.preventDefault();    // ❗ Empêche la sélection de texte
-
-    startY = e.clientY;
-    startSize = parseFloat(window.getComputedStyle(text).fontSize);
-
-    function move(ev) {
-      const dy = ev.clientY - startY;
-      const newSize = Math.max(10, startSize + dy * 0.5);
-      text.style.fontSize = newSize + "px";
-    }
-
-    function up() {
-      document.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseup", up);
-    }
-
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
   });
 }
 
@@ -240,309 +202,15 @@ async function chargerArticle() {
   }
 
   // Injecter le HTML sauvegardé
-  const editor = document.querySelector("#editor-page");
-  editor.innerHTML = data.texte;
+  document.querySelector("#editor-page").innerHTML = data.texte;
 
-  // 🔥 Réparer les blocs rechargés
+  // 🔥 Réactiver le drag sur les blocs rechargés
   document.querySelectorAll(".floating-text").forEach(el => {
-
-    // Si le bloc n'a pas .text-content → on le reconstruit
-    if (!el.querySelector(".text-content")) {
-
-      const originalHTML = el.innerHTML;
-
-      el.innerHTML = "";
-
-      const textContent = document.createElement("div");
-      textContent.className = "text-content";
-      textContent.innerHTML = originalHTML;
-      textContent.setAttribute("contenteditable", "false");
-
-      const handle = document.createElement("div");
-      handle.className = "resize-handle";
-
-      el.appendChild(textContent);
-      el.appendChild(handle);
-    }
-
-    // Réactiver drag + resize
     makeDraggable(el);
-    makeResizable(el);
   });
 }
 
 chargerArticle();
-// editeur.js — version fusionnée et corrigée
-(function () {
-  'use strict';
-
-  /* ---------------- Robust supabase init — place this at the very top ---------------- */
-  (function(){
-    if (window.__supabaseClient) {
-      window.__supabaseClient = window.__supabaseClient;
-    } else if (window.supabase) {
-      window.__supabaseClient = window.supabase;
-    } else {
-      window.__supabaseClient = null;
-    }
-  })();
-
-  let supabase = window.__supabaseClient || null;
-
-  let __supabaseReady = (async () => {
-    if (supabase) return supabase;
-    try {
-      const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
-      const SUPABASE_URL = "https://blronpowdhaumjudtgvn.supabase.co";
-      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI";
-      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-      window.__supabaseClient = supabase;
-      window.supabase = supabase;
-      return supabase;
-    } catch (err) {
-      console.warn('supabase dynamic import failed:', err);
-      return null;
-    }
-  })();
-
-  console.log('editeur.js loaded');
-
-  /* ----------------- Helpers ----------------- */
-  function $(sel, root = document) {
-    return root.querySelector(sel);
-  }
-  function $all(sel, root = document) {
-    return Array.from(root.querySelectorAll(sel));
-  }
-
-  /* ============================================================
-     AJOUT DE CONTENU (WYSIWYG)
-     ============================================================ */
-
-  function addTitle() {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML("beforeend", "<h2>Nouveau titre</h2>");
-  }
-
-  function addSubtitle() {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML("beforeend", "<h3>Nouveau sous-titre</h3>");
-  }
-
-  function addParagraph() {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML("beforeend", "<p>Nouveau paragraphe…</p>");
-  }
-
-  function addImage(src) {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML(
-      "beforeend",
-      `<img src="${src}" style="max-width:100%; margin:20px 0;">`
-    );
-  }
-
-  /* ============================================================
-     ZONE DE TEXTE DÉPLAÇABLE + REDIMENSIONNABLE
-     ============================================================ */
-
-  function createFloatingText() {
-    const block = document.createElement("div");
-    block.className = "floating-text";
-
-    // Zone de texte interne
-    const textContent = document.createElement("div");
-    textContent.className = "text-content";
-    textContent.innerHTML = "Double-clique pour écrire…";
-    textContent.setAttribute("contenteditable", "false");
-    block.appendChild(textContent);
-
-    // Poignée de redimensionnement
-    const handle = document.createElement("div");
-    handle.className = "resize-handle";
-    block.appendChild(handle);
-
-    // Styles initiaux
-    block.style.position = "absolute";
-    block.style.top = "120px";
-    block.style.left = "120px";
-    block.style.minWidth = "150px";
-    block.style.background = "white";
-    block.style.cursor = "move";
-    block.style.userSelect = "none";
-    block.style.fontSize = "18px";
-
-    // Double-clic = entrer en édition
-    block.addEventListener("dblclick", (e) => {
-      e.stopPropagation();
-      textContent.setAttribute("contenteditable", "true");
-      block.classList.add("selected");
-      block.style.cursor = "text";
-      textContent.focus();
-    });
-
-    // Quitter édition quand on clique ailleurs
-    document.addEventListener("mousedown", (e) => {
-      if (!block.contains(e.target)) {
-        textContent.setAttribute("contenteditable", "false");
-        block.classList.remove("selected");
-        block.style.cursor = "move";
-      }
-    });
-
-    // Empêcher disparition du texte
-    textContent.addEventListener("input", () => {
-      if (textContent.innerHTML.trim() === "") {
-        textContent.innerHTML = "<br>";
-      }
-    });
-
-    // Ajouter au DOM
-    document.querySelector("#editor-page").appendChild(block);
-
-    // Activer drag + resize
-    makeDraggable(block);
-    makeResizable(block);
-  }
-
-  function makeDraggable(el) {
-    let startX = 0, startY = 0;
-    let origX = 0, origY = 0;
-
-    el.addEventListener("mousedown", (e) => {
-      if (e.button !== 0) return;
-
-      // Si on clique sur la poignée de resize → NE PAS déplacer
-      if (e.target.classList.contains("resize-handle")) {
-        return;
-      }
-
-      // Sélection
-      document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
-      el.classList.add("selected");
-
-      const text = el.querySelector(".text-content");
-      // Si en édition → pas de drag
-      if (text && text.getAttribute("contenteditable") === "true") {
-        return;
-      }
-
-      e.preventDefault();
-
-      startX = e.clientX;
-      startY = e.clientY;
-
-      const rect = el.getBoundingClientRect();
-      const parentRect = el.parentNode.getBoundingClientRect();
-
-      origX = rect.left - parentRect.left;
-      origY = rect.top - parentRect.top;
-
-      function move(ev) {
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-
-        el.style.left = origX + dx + "px";
-        el.style.top = origY + dy + "px";
-      }
-
-      function up() {
-        document.removeEventListener("mousemove", move);
-        document.removeEventListener("mouseup", up);
-      }
-
-      document.addEventListener("mousemove", move);
-      document.addEventListener("mouseup", up);
-    });
-
-    // Désélection
-    document.addEventListener("mousedown", (e) => {
-      if (!el.contains(e.target)) {
-        el.classList.remove("selected");
-      }
-    });
-  }
-
-  function makeResizable(block) {
-    const handle = block.querySelector(".resize-handle");
-    const text = block.querySelector(".text-content");
-    if (!handle || !text) return;
-
-    let startY = 0;
-    let startSize = 0;
-
-    handle.addEventListener("mousedown", (e) => {
-      e.stopPropagation();   // Empêche le drag
-      e.preventDefault();    // Empêche la sélection de texte
-
-      startY = e.clientY;
-      startSize = parseFloat(window.getComputedStyle(text).fontSize);
-
-      function move(ev) {
-        const dy = ev.clientY - startY;
-        const newSize = Math.max(10, startSize + dy * 0.5);
-        text.style.fontSize = newSize + "px";
-      }
-
-      function up() {
-        document.removeEventListener("mousemove", move);
-        document.removeEventListener("mouseup", up);
-      }
-
-      document.addEventListener("mousemove", move);
-      document.addEventListener("mouseup", up);
-    });
-  }
-
-  /* ============================================================
-     CHARGEMENT ARTICLE + RÉPARATION DES BLOCS
-     ============================================================ */
-
-  async function chargerArticle() {
-    const client = await window.__supabaseReady;
-
-    const params = new URLSearchParams(window.location.search);
-    const actuId = Number(params.get("id"));
-
-    const { data, error } = await client
-      .from("actus")
-      .select("*")
-      .eq("id", actuId)
-      .single();
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    const editor = document.querySelector("#editor-page");
-    editor.innerHTML = data.texte;
-
-    // Réparer les blocs rechargés
-    document.querySelectorAll(".floating-text").forEach(el => {
-      // Si le bloc n'a pas .text-content → on le reconstruit
-      if (!el.querySelector(".text-content")) {
-        const originalHTML = el.innerHTML;
-        el.innerHTML = "";
-
-        const textContent = document.createElement("div");
-        textContent.className = "text-content";
-        textContent.innerHTML = originalHTML;
-        textContent.setAttribute("contenteditable", "false");
-
-        const handle = document.createElement("div");
-        handle.className = "resize-handle";
-
-        el.appendChild(textContent);
-        el.appendChild(handle);
-      }
-
-      makeDraggable(el);
-      makeResizable(el);
-    });
-  }
-
-  chargerArticle();
 
   /* ============================================================
      TOOLBAR – FORMATAGE (WYSIWYG)
@@ -677,46 +345,46 @@ chargerArticle();
   /* ============================================================
      SAUVEGARDE
      ============================================================ */
+  
+async function sauvegarder() {
+  console.log("[sauvegarder] démarrage");
 
-  async function sauvegarder() {
-    console.log("[sauvegarder] démarrage");
-
-    const client = await window.__supabaseReady;
-    if (!client) {
-      alert("Supabase non initialisé");
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const actuId = Number(params.get("id"));
-    console.log("actuId =", actuId);
-
-    if (!actuId) {
-      alert("ID d'article manquant");
-      return;
-    }
-
-    const html = document.querySelector("#editor-page").innerHTML;
-
-    const { data, error } = await client
-      .from("actus")
-      .update({
-        texte: html
-      })
-      .eq("id", actuId)
-      .select();
-
-    console.log("DATA :", data);
-    console.log("ERROR :", error);
-
-    if (error) {
-      console.error(error);
-      alert("Erreur Supabase");
-      return;
-    }
-
-    alert("Enregistré !");
+  const client = await window.__supabaseReady;
+  if (!client) {
+    alert("Supabase non initialisé");
+    return;
   }
+
+  const params = new URLSearchParams(window.location.search);
+  const actuId = Number(params.get("id"));
+  console.log("actuId =", actuId);
+
+  if (!actuId) {
+    alert("ID d'article manquant");
+    return;
+  }
+
+  const html = document.querySelector("#editor-page").innerHTML;
+
+  const { data, error } = await client
+    .from("actus")
+    .update({
+      texte: html // ← CORRECTION ICI
+    })
+    .eq("id", actuId)
+    .select();
+
+  console.log("DATA :", data);
+  console.log("ERROR :", error);
+
+  if (error) {
+    console.error(error);
+    alert("Erreur Supabase");
+    return;
+  }
+
+  alert("Enregistré !");
+}
 
   /* ============================================================
      INIT
