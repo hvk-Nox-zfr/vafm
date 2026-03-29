@@ -133,7 +133,7 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
-    // 👉 Sélectionner ce bloc (comme Canva)
+    // 👉 Sélectionner ce bloc
     document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
     el.classList.add("selected");
 
