@@ -140,13 +140,22 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
-    // 👉 Toujours sélectionner le bloc
+    // Toujours sélectionner le bloc
     document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
     el.classList.add("selected");
 
-    // 👉 Si on clique dans la zone de texte (édition), ne pas déplacer
-    const isEditing = el.querySelector(".text-content").getAttribute("contenteditable") === "true";
+    // Sécurisation : si le bloc n'a pas .text-content → on ne fait rien
+    const text = el.querySelector(".text-content");
+    if (!text) return;
+
+    // Si on clique dans la zone de texte (édition), ne pas déplacer
+    const isEditing = text.getAttribute("contenteditable") === "true";
     if (isEditing) return;
+
+    // Si on clique sur la poignée de resize → ne pas déplacer
+    if (e.target.classList.contains("resize-handle")) {
+      return;
+    }
 
     e.preventDefault();
 
@@ -176,7 +185,7 @@ function makeDraggable(el) {
     document.addEventListener("mouseup", up);
   });
 
-  // 👉 Désélectionner si on clique ailleurs
+  // Désélectionner si on clique ailleurs
   document.addEventListener("mousedown", (e) => {
     if (!el.contains(e.target)) {
       el.classList.remove("selected");
