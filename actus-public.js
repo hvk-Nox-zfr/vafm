@@ -80,8 +80,11 @@ function creerCarteActu(actu) {
   const text = document.createElement("div");
   text.className = "actu-extrait";
 
-  // 🔥 ICI : extrait propre du HTML
-  const extrait = actu.texte.slice(0, 300) + "...";
+  // 🔥 Supprimer le titre <h2>...</h2>
+  let propre = actu.texte.replace(/<h2[\s\S]*?<\/h2>/i, "");
+
+  // 🔥 Créer l’extrait sans le titre
+  const extrait = propre.slice(0, 300) + "...";
   text.innerHTML = extrait;
 
   const date = document.createElement("small");
