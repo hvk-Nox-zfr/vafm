@@ -132,9 +132,68 @@ function createFloatingText() {
   makeDraggable(block);
   makeResizable(block);
 }
-  
+
+function makeDraggable(el) {
+  let startX = 0, startY = 0;
+  let origX = 0, origY = 0;
+
+  el.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+
+    // ❌ Si on clique sur la poignée de resize → NE PAS déplacer
+    if (e.target.classList.contains("resize-handle")) {
+      return;
+    }
+
+    // Sélection
+    document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
+    el.classList.add("selected");
+
+    // Si on clique dans la zone de texte → pas de drag
+    const text = el.querySelector(".text-content");
+    if (text.getAttribute("contenteditable") === "true") {
+      return;
+    }
+
+    e.preventDefault();
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = el.getBoundingClientRect();
+    const parentRect = el.parentNode.getBoundingClientRect();
+
+    origX = rect.left - parentRect.left;
+    origY = rect.top - parentRect.top;
+
+    function move(ev) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      el.style.left = origX + dx + "px";
+      el.style.top = origY + dy + "px";
+    }
+
+    function up() {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+    }
+
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  });
+
+  // Désélection
+  document.addEventListener("mousedown", (e) => {
+    if (!el.contains(e.target)) {
+      el.classList.remove("selected");
+    }
+  });
+}
+
 function makeResizable(block) {
   const handle = block.querySelector(".resize-handle");
+  const text = block.querySelector(".text-content");
   if (!handle) return;
 
   let startY = 0;
@@ -145,12 +204,12 @@ function makeResizable(block) {
     e.preventDefault();    // ❗ Empêche la sélection de texte
 
     startY = e.clientY;
-    startSize = parseFloat(window.getComputedStyle(block).fontSize);
+    startSize = parseFloat(window.getComputedStyle(text).fontSize);
 
     function move(ev) {
       const dy = ev.clientY - startY;
       const newSize = Math.max(10, startSize + dy * 0.5);
-      block.style.fontSize = newSize + "px";
+      text.style.fontSize = newSize + "px";
     }
 
     function up() {
