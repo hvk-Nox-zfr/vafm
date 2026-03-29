@@ -133,7 +133,11 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
-    // Si on est en mode édition → NE PAS déplacer
+    // 👉 Sélectionner ce bloc (comme Canva)
+    document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
+    el.classList.add("selected");
+
+    // 👉 Si on est en mode édition → ne pas déplacer
     if (el.getAttribute("contenteditable") === "true") return;
 
     e.preventDefault();
@@ -163,7 +167,15 @@ function makeDraggable(el) {
     document.addEventListener("mousemove", move);
     document.addEventListener("mouseup", up);
   });
+
+  // 👉 Si on clique ailleurs → désélectionner
+  document.addEventListener("mousedown", (e) => {
+    if (!el.contains(e.target)) {
+      el.classList.remove("selected");
+    }
+  });
 }
+
 async function chargerArticle() {
   const client = await window.__supabaseReady;
 
