@@ -83,7 +83,7 @@ function makeResizable(block) {
 
     handle.addEventListener("mousedown", (e) => {
         e.preventDefault();
-        e.stopPropagation();
+        e.stopPropagation(); // ← essentiel pour ne pas bloquer l’écriture
 
         startX = e.clientX;
         startY = e.clientY;
@@ -117,6 +117,12 @@ function makeDraggable(el) {
     el.addEventListener("mousedown", (e) => {
         if (e.button !== 0) return;
 
+        // Si on clique dans le texte → PAS de drag
+        if (e.target.closest(".text-content")) return;
+
+        // Si on clique sur la poignée de resize → PAS de drag
+        if (e.target.classList.contains("resize-handle")) return;
+
         // Sélection du bloc
         document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
         el.classList.add("selected");
@@ -124,11 +130,8 @@ function makeDraggable(el) {
         const text = el.querySelector(".text-content");
         if (!text) return;
 
-        // Si on édite → pas de déplacement
+        // Si on est en mode édition → PAS de drag
         if (text.getAttribute("contenteditable") === "true") return;
-
-        // Si on clique sur la poignée de resize → pas de déplacement
-        if (e.target.classList.contains("resize-handle")) return;
 
         e.preventDefault();
 
@@ -188,7 +191,7 @@ function createFloatingText() {
     block.style.left = "120px";
     block.style.minWidth = "150px";
     block.style.fontSize = "18px";
-    block.style.background = "transparent"; // fond transparent
+    block.style.background = "transparent";
     block.style.cursor = "move";
     block.style.userSelect = "none";
 
@@ -201,7 +204,12 @@ function createFloatingText() {
         textContent.focus();
     });
 
-    // Quitter édition
+    // Empêcher le drag de voler le clic dans le texte
+    textContent.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+    });
+
+    // Quitter édition quand on clique ailleurs
     document.addEventListener("mousedown", (e) => {
         if (!block.contains(e.target)) {
             textContent.setAttribute("contenteditable", "false");
@@ -224,6 +232,7 @@ function createFloatingText() {
     makeDraggable(block);
     makeResizable(block);
 }
+
 
 async function chargerArticle() {
   const client = await window.__supabaseReady;
