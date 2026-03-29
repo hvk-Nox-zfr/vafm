@@ -222,29 +222,33 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 }
 
 /* ---------------- Format toolbar (Canva-like) ---------------- */
-/* Barre compacte, arrondie, positionnée à gauche */
+/* Barre compacte, arrondie, centrée comme Canva */
 .format-toolbar {
   position: fixed;
-  top: 16px;
-  left: 16px;
-  transform: none;
-  height: 44px;
-  min-width: 360px;
-  max-width: calc(100% - 40px);
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  padding: 8px 14px;
+  height: 46px;
+
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  gap: 8px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), #ffffff);
-  color: #0f1724;
-  border-radius: 12px;
-  border: 1px solid rgba(15,23,42,0.06);
-  z-index: 160; /* au-dessus de tout */
-  box-shadow: 0 10px 30px rgba(2,6,23,0.08);
-  font-size: 13px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  gap: 10px;
+
+  background: rgba(255, 255, 255, 0.72); /* verre dépoli */
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.08),
+    0 8px 32px rgba(0,0,0,0.12);
+
+  z-index: 160;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
 
 /* Compact controls */
