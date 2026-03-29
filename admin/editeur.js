@@ -492,7 +492,7 @@ const resultsBox = document.getElementById("elements-results");
 let ELEMENTS = [];
 
 // Charger elements.json
-fetch("elements.json")
+fetch("./elements.json")
   .then(res => res.json())
   .then(data => {
     ELEMENTS = data;
