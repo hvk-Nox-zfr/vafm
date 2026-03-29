@@ -65,7 +65,6 @@ function creerCarteActu(actu) {
   link.href = `./page.html?id=${actu.id}`;
   link.className = "actu-link";
 
-  // 🔥 Gestion propre du clic
   link.addEventListener("click", event => {
     event.preventDefault();
     window.location.href = link.href;
@@ -77,10 +76,13 @@ function creerCarteActu(actu) {
 
   const title = document.createElement("h3");
   title.textContent = actu.titre;
-  
+
   const text = document.createElement("div");
   text.className = "actu-extrait";
-  text.innerHTML = actu.texte;
+
+  // 🔥 ICI : extrait propre du HTML
+  const extrait = actu.texte.slice(0, 300) + "...";
+  text.innerHTML = extrait;
 
   const date = document.createElement("small");
   date.textContent = `Publié le ${actu.date_pub}`;
@@ -92,16 +94,6 @@ function creerCarteActu(actu) {
 
   card.appendChild(link);
   return card;
-}
-
-function activerCarousel(track, btnLeft, btnRight) {
-  btnLeft.addEventListener("click", () => {
-    track.scrollBy({ left: -350, behavior: "smooth" });
-  });
-
-  btnRight.addEventListener("click", () => {
-    track.scrollBy({ left: 350, behavior: "smooth" });
-  });
 }
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
