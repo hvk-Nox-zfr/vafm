@@ -307,10 +307,12 @@ chargerArticle();
       createFloatingText();
     });
 
-    $('#add-image')?.addEventListener('click', async () => {
-      const url = window.prompt('URL de l’image :');
-      if (url) addImage(url);
+    $('#add-image')?.addEventListener('click', () => {
+      const input = document.getElementById("hidden-image-input");
+      input.value = ""; // reset
+      input.click();
     });
+
 
     const icons = $all('.canva-icon');
     const panels = $all('.canva-panel');
@@ -397,6 +399,47 @@ async function sauvegarder() {
 
 // ❌ enlève cet appel global
 // chargerArticle();
+
+// Import d’image depuis l’explorateur
+document.getElementById("hidden-image-input")?.addEventListener("change", function () {
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    addImage(e.target.result); // base64
+  };
+  reader.readAsDataURL(file);
+});
+
+  const canvas = document.getElementById("editor-page");
+
+// Empêche le comportement par défaut
+["dragenter", "dragover", "dragleave", "drop"].forEach(evt => {
+  canvas.addEventListener(evt, e => e.preventDefault());
+});
+
+// Style visuel (optionnel)
+canvas.addEventListener("dragover", () => {
+  canvas.classList.add("drag-hover");
+});
+canvas.addEventListener("dragleave", () => {
+  canvas.classList.remove("drag-hover");
+});
+
+// Dépôt d’image
+canvas.addEventListener("drop", (e) => {
+  canvas.classList.remove("drag-hover");
+
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.type.startsWith("image/")) return;
+
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    addImage(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+});
 
 /* ============================================================
    INIT
