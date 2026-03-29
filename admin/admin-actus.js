@@ -5,6 +5,23 @@ import { supabase } from "./supabase-init.js";
 let actus = [];
 
 /* ============================================================
+   NETTOYAGE DU HTML (supprime les blocs de l’éditeur)
+============================================================ */
+function nettoyerHTML(html) {
+    const div = document.createElement("div");
+    div.innerHTML = html || "";
+
+    // Supprimer les blocs de l'éditeur
+    div.querySelectorAll(".floating-text").forEach(el => el.remove());
+    div.querySelectorAll(".resize-handle").forEach(el => el.remove());
+
+    // Supprimer les styles inline (optionnel mais propre)
+    div.querySelectorAll("*").forEach(el => el.removeAttribute("style"));
+
+    return div.innerHTML;
+}
+
+/* ============================================================
    CHARGER LES ACTUS
 ============================================================ */
 export async function loadActus() {
@@ -48,11 +65,13 @@ export function renderActus() {
         const card = document.createElement("div");
         card.className = "admin-card";
 
+        const previewTexte = nettoyerHTML(actu.texte).slice(0, 200) + "…";
+
         card.innerHTML = `
             <div>
                 <div class="admin-image-preview" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
                 <h3>${actu.titre}</h3>
-                <p>${actu.texte || ""}</p>
+                <p>${previewTexte}</p>
                 <small>Date prévue : ${actu.date_pub}</small>
                 ${actu.published ? `<span class="badge-published">Publié</span>` : `<span class="badge-draft">Brouillon</span>`}
             </div>
@@ -110,7 +129,7 @@ export function renderActus() {
             console.log("→ EDIT demandé pour ID :", id);
 
             document.getElementById("actu-titre").value = actu.titre;
-            document.getElementById("actu-texte").value = actu.texte;
+            document.getElementById("actu-texte").value = nettoyerHTML(actu.texte);
             document.getElementById("actu-date").value = actu.date_pub;
 
             const form = document.getElementById("actu-form");
@@ -249,3 +268,4 @@ export function setupActuForm() {
         renderActus();
     });
 }
+
