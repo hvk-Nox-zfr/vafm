@@ -140,6 +140,11 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
+    // ❌ Empêcher le drag si on clique sur la poignée de resize
+    if (e.target.classList.contains("resize-handle")) {
+      return;
+    }
+
     // 👉 Toujours sélectionner le bloc
     document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
     el.classList.add("selected");
