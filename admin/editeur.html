@@ -5,7 +5,6 @@
   <title>Éditeur d’article</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Content Security Policy minimale pour l'éditeur -->
   <meta http-equiv="Content-Security-Policy"
         content="
           default-src 'self';
@@ -22,9 +21,11 @@
 
 <body class="admin">
 
-  <!-- Barre de mise en page blanche -->
+  <!-- BARRE DE FORMAT CANVA PRO -->
   <header id="format-toolbar" class="format-toolbar" role="toolbar" aria-label="Barre de mise en page">
-    <div class="ft-left">
+
+    <!-- Groupe Police -->
+    <div class="ft-group">
       <select id="ft-font" class="ft-control" aria-label="Police">
         <option value="Inter, system-ui, sans-serif">Inter</option>
         <option value="Georgia, serif">Georgia</option>
@@ -38,46 +39,60 @@
         <option value="18px">18</option>
         <option value="20px">20</option>
       </select>
+    </div>
 
+    <!-- Groupe Style -->
+    <div class="ft-group">
       <button id="ft-bold" class="ft-btn" aria-pressed="false" title="Gras">B</button>
       <button id="ft-italic" class="ft-btn" aria-pressed="false" title="Italique">I</button>
       <button id="ft-underline" class="ft-btn" aria-pressed="false" title="Souligné">U</button>
+    </div>
 
+    <!-- Groupe Couleur -->
+    <div class="ft-group">
       <input id="ft-color" class="ft-color" type="color" title="Couleur du texte" aria-label="Couleur">
     </div>
 
-    <div class="ft-right">
+    <!-- Groupe Alignement -->
+    <div class="ft-group">
       <button id="ft-align-left" class="ft-btn" title="Aligner à gauche">⟵</button>
       <button id="ft-align-center" class="ft-btn" title="Centrer">≡</button>
       <button id="ft-align-right" class="ft-btn" title="Aligner à droite">⟶</button>
+    </div>
 
+    <!-- Groupe Interligne -->
+    <div class="ft-group">
       <select id="ft-lineheight" class="ft-control" aria-label="Interligne">
         <option value="1">1</option>
         <option value="1.2">1.2</option>
         <option value="1.4" selected>1.4</option>
         <option value="1.6">1.6</option>
       </select>
+    </div>
 
+    <!-- Groupe Position -->
+    <div class="ft-group">
       <button id="ft-send-front" class="ft-btn" title="Mettre au premier plan">↑</button>
       <button id="ft-send-back" class="ft-btn" title="Mettre en arrière">↓</button>
     </div>
+
   </header>
 
   <div class="layout" role="application">
 
     <!-- BARRE CANVA -->
     <aside class="canva-sidebar" aria-label="Barre d'outils">
-      <button class="canva-icon" data-panel="assets" title="Éléments" aria-label="Éléments">🧩</button>
-      <button class="canva-icon" data-panel="images" title="Images" aria-label="Images">🖼</button>
-      <button class="canva-icon" data-panel="text" title="Texte" aria-label="Texte">✏️</button>
-      <button class="canva-icon" data-panel="templates" title="Templates" aria-label="Templates">📄</button>
+      <button class="canva-icon" data-panel="assets" title="Éléments">🧩</button>
+      <button class="canva-icon" data-panel="images" title="Images">🖼</button>
+      <button class="canva-icon" data-panel="text" title="Texte">✏️</button>
+      <button class="canva-icon" data-panel="templates" title="Templates">📄</button>
     </aside>
 
     <!-- PANNEAUX -->
     <aside class="canva-panel" id="panel-assets" aria-hidden="true">
       <h2>Éléments</h2>
-      <input id="element-search" class="search-input" placeholder="Rechercher un élément…" aria-label="Rechercher un élément">
-      <div id="elements-results" class="elements-grid" role="list"></div>
+      <input id="element-search" class="search-input" placeholder="Rechercher un élément…">
+      <div id="elements-results" class="elements-grid"></div>
     </aside>
 
     <aside class="canva-panel" id="panel-images" aria-hidden="true">
@@ -95,10 +110,10 @@
       <p>À venir…</p>
     </aside>
 
-    <!-- ZONE CENTRALE : page publique éditable -->
-    <main class="main" role="main">
+    <!-- ZONE CENTRALE -->
+    <main class="main">
       <div class="canvas-wrapper" id="main-canvas-wrapper">
-        <section id="editor-page" data-editor="1" class="canvas public-content" aria-label="Édition de l’article">
+        <section id="editor-page" data-editor="1" class="canvas public-content">
           <h2>Titre de l’article</h2>
           <p>Paragraphe d’introduction. Utilise la barre à gauche pour ajouter du texte ou des images.</p>
         </section>
@@ -107,13 +122,13 @@
 
   </div>
 
-  <!-- Bouton Enregistrer fixe -->
-  <button id="save-btn-top" class="btn primary save-top" aria-label="Enregistrer l'article">Enregistrer</button>
+  <!-- Bouton Enregistrer -->
+  <button id="save-btn-top" class="btn primary save-top">Enregistrer</button>
 
   <script type="module" src="supabase-init.js"></script>
   <script type="module" src="editeur.js"></script>
-  
-<input type="file" id="hidden-image-input" accept="image/*" style="display:none">
+
+  <input type="file" id="hidden-image-input" accept="image/*" style="display:none">
 
 </body>
 </html>
