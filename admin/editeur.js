@@ -83,7 +83,7 @@ function createFloatingText() {
   block.style.minWidth = "150px";
   block.style.padding = "10px";
   block.style.background = "white";
-  block.style.border = "1px dashed #ccc";
+  block.style.border = "1px dashed transparent";
   block.style.cursor = "move";
   block.style.userSelect = "none";
 
