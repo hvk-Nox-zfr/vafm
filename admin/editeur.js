@@ -406,6 +406,7 @@ function initEditor() {
   console.log("[initEditor] démarrage");
 
   const editor = document.querySelector("#editor-page");
+
   // On ne fait tourner l'éditeur QUE si le conteneur est marqué comme éditeur
   if (!editor || !editor.dataset.editor) {
     console.log("[initEditor] pas en mode éditeur, on ne fait rien");
@@ -435,3 +436,6 @@ if (document.readyState === 'loading') {
 } else {
   initEditor();
 }
+
+console.log('FIN DU FICHIER OK');
+})();
