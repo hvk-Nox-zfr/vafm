@@ -77,9 +77,10 @@ function creerCarteActu(actu) {
 
   const title = document.createElement("h3");
   title.textContent = actu.titre;
-
-  const text = document.createElement("p");
-  text.textContent = actu.texte;
+  
+  const text = document.createElement("div");
+  text.className = "actu-extrait";
+  text.innerHTML = actu.texte;
 
   const date = document.createElement("small");
   date.textContent = `Publié le ${actu.date_pub}`;
