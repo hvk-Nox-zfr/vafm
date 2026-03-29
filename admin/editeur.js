@@ -240,11 +240,34 @@ async function chargerArticle() {
   }
 
   // Injecter le HTML sauvegardé
-  document.querySelector("#editor-page").innerHTML = data.texte;
+  const editor = document.querySelector("#editor-page");
+  editor.innerHTML = data.texte;
 
-  // 🔥 Réactiver le drag sur les blocs rechargés
+  // 🔥 Réparer les blocs rechargés
   document.querySelectorAll(".floating-text").forEach(el => {
+
+    // Si le bloc n'a pas .text-content → on le reconstruit
+    if (!el.querySelector(".text-content")) {
+
+      const originalHTML = el.innerHTML;
+
+      el.innerHTML = "";
+
+      const textContent = document.createElement("div");
+      textContent.className = "text-content";
+      textContent.innerHTML = originalHTML;
+      textContent.setAttribute("contenteditable", "false");
+
+      const handle = document.createElement("div");
+      handle.className = "resize-handle";
+
+      el.appendChild(textContent);
+      el.appendChild(handle);
+    }
+
+    // Réactiver drag + resize
     makeDraggable(el);
+    makeResizable(el);
   });
 }
 
