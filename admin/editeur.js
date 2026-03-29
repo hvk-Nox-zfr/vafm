@@ -83,41 +83,35 @@ function createFloatingText() {
   block.style.minWidth = "150px";
   block.style.padding = "10px";
   block.style.background = "white";
-  block.style.border = "1px dashed transparent";
   block.style.cursor = "move";
   block.style.userSelect = "none";
 
-  // Mode par défaut : NON éditable → déplaçable
   block.setAttribute("contenteditable", "false");
 
   // Double-clic = entrer en mode édition
   block.addEventListener("dblclick", (e) => {
     e.stopPropagation();
     block.setAttribute("contenteditable", "true");
+    block.classList.add("selected"); // important
     block.style.cursor = "text";
     block.style.userSelect = "text";
     block.focus();
   });
 
-  // Quand on clique ailleurs → sortir du mode édition
+  // Quitter l’édition quand on clique ailleurs
   document.addEventListener("mousedown", (e) => {
     if (!block.contains(e.target)) {
       block.setAttribute("contenteditable", "false");
+      block.classList.remove("selected");
       block.style.cursor = "move";
       block.style.userSelect = "none";
     }
   });
 
-  // Empêcher la disparition quand le texte est vide
+  // Empêcher disparition du texte
   block.addEventListener("input", () => {
     if (block.innerHTML.trim() === "") {
       block.innerHTML = "<br>";
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.setStart(block, 0);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
     }
   });
 
