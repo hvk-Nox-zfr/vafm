@@ -68,129 +68,161 @@
     );
   }
 
-  /* ============================================================
-     ZONE DE TEXTE DÉPLAÇABLE
-     ============================================================ */
-  
-function createFloatingText() {
-  const block = document.createElement("div");
-  block.className = "floating-text";
+/* ============================================================
+   BLOC DE TEXTE FLOTTANT (CANVA-LIKE)
+============================================================ */
 
-  // Zone de texte interne
-  const textContent = document.createElement("div");
-  textContent.className = "text-content";
-  textContent.innerHTML = "Double-clique pour écrire…";
-  block.appendChild(textContent);
+function makeResizable(block) {
+    const handle = block.querySelector(".resize-handle");
+    const text = block.querySelector(".text-content");
 
-  // Poignée de redimensionnement
-  const handle = document.createElement("div");
-  handle.className = "resize-handle";
-  block.appendChild(handle);
+    if (!handle || !text) return;
 
-  // Styles initiaux
-  block.style.position = "absolute";
-  block.style.top = "120px";
-  block.style.left = "120px";
-  block.style.minWidth = "150px";
-  block.style.background = "white";
-  block.style.cursor = "move";
-  block.style.userSelect = "none";
-  block.style.fontSize = "18px";
+    let startX = 0, startY = 0;
+    let startWidth = 0, startHeight = 0;
 
-  // Mode par défaut : non éditable
-  textContent.setAttribute("contenteditable", "false");
+    handle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-  // Double-clic = entrer en édition
-  block.addEventListener("dblclick", (e) => {
-    e.stopPropagation();
-    textContent.setAttribute("contenteditable", "true");
-    block.classList.add("selected");
-    block.style.cursor = "text";
-    textContent.focus();
-  });
+        startX = e.clientX;
+        startY = e.clientY;
 
-  // Quitter édition quand on clique ailleurs
-  document.addEventListener("mousedown", (e) => {
-    if (!block.contains(e.target)) {
-      textContent.setAttribute("contenteditable", "false");
-      block.classList.remove("selected");
-      block.style.cursor = "move";
-    }
-  });
+        const rect = block.getBoundingClientRect();
+        startWidth = rect.width;
+        startHeight = rect.height;
 
-  // Empêcher disparition du texte
-  textContent.addEventListener("input", () => {
-    if (textContent.innerHTML.trim() === "") {
-      textContent.innerHTML = "<br>";
-    }
-  });
+        function move(ev) {
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
 
-  // Ajouter au DOM
-  document.querySelector("#editor-page").appendChild(block);
+            block.style.width = startWidth + dx + "px";
+            block.style.height = startHeight + dy + "px";
+        }
 
-  // Activer drag + resize
-  makeDraggable(block);
-  makeResizable(block);
+        function up() {
+            document.removeEventListener("mousemove", move);
+            document.removeEventListener("mouseup", up);
+        }
+
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", up);
+    });
 }
-  
+
 function makeDraggable(el) {
-  let startX = 0, startY = 0;
-  let origX = 0, origY = 0;
+    let startX = 0, startY = 0;
+    let origX = 0, origY = 0;
 
-  el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
+    el.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
 
-    // Toujours sélectionner le bloc
-    document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
-    el.classList.add("selected");
+        // Sélection du bloc
+        document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
+        el.classList.add("selected");
 
-    // Sécurisation : si le bloc n'a pas .text-content → on ne fait rien
-    const text = el.querySelector(".text-content");
-    if (!text) return;
+        const text = el.querySelector(".text-content");
+        if (!text) return;
 
-    // Si on clique dans la zone de texte (édition), ne pas déplacer
-    const isEditing = text.getAttribute("contenteditable") === "true";
-    if (isEditing) return;
+        // Si on édite → pas de déplacement
+        if (text.getAttribute("contenteditable") === "true") return;
 
-    // Si on clique sur la poignée de resize → ne pas déplacer
-    if (e.target.classList.contains("resize-handle")) {
-      return;
-    }
+        // Si on clique sur la poignée de resize → pas de déplacement
+        if (e.target.classList.contains("resize-handle")) return;
 
-    e.preventDefault();
+        e.preventDefault();
 
-    startX = e.clientX;
-    startY = e.clientY;
+        startX = e.clientX;
+        startY = e.clientY;
 
-    const rect = el.getBoundingClientRect();
-    const parentRect = el.parentNode.getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        const parentRect = el.parentNode.getBoundingClientRect();
 
-    origX = rect.left - parentRect.left;
-    origY = rect.top - parentRect.top;
+        origX = rect.left - parentRect.left;
+        origY = rect.top - parentRect.top;
 
-    function move(ev) {
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
+        function move(ev) {
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
 
-      el.style.left = origX + dx + "px";
-      el.style.top = origY + dy + "px";
-    }
+            el.style.left = origX + dx + "px";
+            el.style.top = origY + dy + "px";
+        }
 
-    function up() {
-      document.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseup", up);
-    }
+        function up() {
+            document.removeEventListener("mousemove", move);
+            document.removeEventListener("mouseup", up);
+        }
 
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
-  });
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", up);
+    });
 
-  // Désélectionner si on clique ailleurs
-  document.addEventListener("mousedown", (e) => {
-    if (!el.contains(e.target)) {
-      el.classList.remove("selected");
-    }
-  });
+    // Désélection si on clique ailleurs
+    document.addEventListener("mousedown", (e) => {
+        if (!el.contains(e.target)) {
+            el.classList.remove("selected");
+        }
+    });
+}
+
+function createFloatingText() {
+    const block = document.createElement("div");
+    block.className = "floating-text";
+
+    // Zone de texte
+    const textContent = document.createElement("div");
+    textContent.className = "text-content";
+    textContent.innerHTML = "Double-clique pour écrire…";
+    textContent.setAttribute("contenteditable", "false");
+    block.appendChild(textContent);
+
+    // Poignée de resize
+    const handle = document.createElement("div");
+    handle.className = "resize-handle";
+    block.appendChild(handle);
+
+    // Position initiale
+    block.style.position = "absolute";
+    block.style.top = "120px";
+    block.style.left = "120px";
+    block.style.minWidth = "150px";
+    block.style.fontSize = "18px";
+    block.style.background = "transparent"; // fond transparent
+    block.style.cursor = "move";
+    block.style.userSelect = "none";
+
+    // Double-clic → édition
+    block.addEventListener("dblclick", (e) => {
+        e.stopPropagation();
+        textContent.setAttribute("contenteditable", "true");
+        block.classList.add("selected");
+        block.style.cursor = "text";
+        textContent.focus();
+    });
+
+    // Quitter édition
+    document.addEventListener("mousedown", (e) => {
+        if (!block.contains(e.target)) {
+            textContent.setAttribute("contenteditable", "false");
+            block.classList.remove("selected");
+            block.style.cursor = "move";
+        }
+    });
+
+    // Empêcher disparition du texte
+    textContent.addEventListener("input", () => {
+        if (textContent.innerHTML.trim() === "") {
+            textContent.innerHTML = "<br>";
+        }
+    });
+
+    // Ajouter au DOM
+    document.querySelector("#editor-page").appendChild(block);
+
+    // Activer drag + resize
+    makeDraggable(block);
+    makeResizable(block);
 }
 
 async function chargerArticle() {
