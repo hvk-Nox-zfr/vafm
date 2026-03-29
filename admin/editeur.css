@@ -223,6 +223,7 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 
 /* ---------------- Format toolbar (Canva-like) ---------------- */
 /* Barre compacte, arrondie, centrée comme Canva */
+/* ---------------- Format toolbar (Canva-like) ---------------- */
 .format-toolbar {
   position: fixed;
   top: 20px;
@@ -231,10 +232,10 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 
-  padding: 10px 16px;
-  height: 48px;
+  padding: 10px 20px;
+  height: 52px;
 
   /* Effet verre dépoli Canva */
   background: rgba(255, 255, 255, 0.65);
@@ -243,7 +244,7 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 
   /* Bordure douce */
   border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 14px;
+  border-radius: 16px;
 
   /* Ombres premium */
   box-shadow:
@@ -254,28 +255,48 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
   transition: transform .15s ease, box-shadow .15s ease, background .2s ease;
 }
 
-/* Compact controls */
-.ft-control {
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,0.06);
-  background: #fff;
-  color: inherit;
-  font-size: 13px;
-  height: 32px;
-  min-width: 44px;
-  box-shadow: none;
+/* Effet hover flottant */
+.format-toolbar:hover {
+  transform: translateX(-50%) translateY(-2px);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 6px 18px rgba(0,0,0,0.10),
+    0 16px 40px rgba(0,0,0,0.16);
 }
-.ft-control select { appearance: none; -webkit-appearance: none; }
 
-.ft-btn {
-  width: 36px;
-  height: 36px;
+/* ---------------- Controls (inputs, selects) ---------------- */
+.ft-control {
+  height: 38px;
+  padding: 6px 12px;
+
   border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.6);
-  backdrop-filter: blur(8px);
+
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px);
+
+  font-size: 14px;
+  color: #0f1724;
   cursor: pointer;
+
+  transition: background .12s, box-shadow .12s;
+}
+
+.ft-control:hover {
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+/* ---------------- Buttons ---------------- */
+.ft-btn {
+  width: 38px;
+  height: 38px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px);
 
   display: flex;
   align-items: center;
@@ -283,6 +304,7 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 
   font-size: 15px;
   color: #0f1724;
+  cursor: pointer;
 
   transition: background .12s, transform .12s, box-shadow .12s;
 }
@@ -299,15 +321,19 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
   color: #3b4cca;
 }
 
-/* Color input compact */
+/* ---------------- Color picker ---------------- */
 .ft-color {
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border-radius: 8px;
-  border: 1px solid rgba(15,23,42,0.06);
-  background: #fff;
+  width: 38px;
+  height: 38px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px);
+
   cursor: pointer;
+  padding: 0;
 }
 
 /* ---------------- Accessibility & helpers ---------------- */
