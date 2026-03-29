@@ -133,43 +133,24 @@ function createFloatingText() {
   makeResizable(block);
 }
   
-function makeDraggable(el) {
-  let startX = 0, startY = 0;
-  let origX = 0, origY = 0;
+function makeResizable(block) {
+  const handle = block.querySelector(".resize-handle");
+  if (!handle) return;
 
-  el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
+  let startY = 0;
+  let startSize = 0;
 
-    // ❌ Empêcher le drag si on clique sur la poignée de resize
-    if (e.target.classList.contains("resize-handle")) {
-      return;
-    }
+  handle.addEventListener("mousedown", (e) => {
+    e.stopPropagation();   // ❗ Empêche le drag
+    e.preventDefault();    // ❗ Empêche la sélection de texte
 
-    // 👉 Toujours sélectionner le bloc
-    document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
-    el.classList.add("selected");
-
-    // 👉 Si on clique dans la zone de texte (édition), ne pas déplacer
-    const isEditing = el.querySelector(".text-content").getAttribute("contenteditable") === "true";
-    if (isEditing) return;
-
-    e.preventDefault();
-
-    startX = e.clientX;
     startY = e.clientY;
-
-    const rect = el.getBoundingClientRect();
-    const parentRect = el.parentNode.getBoundingClientRect();
-
-    origX = rect.left - parentRect.left;
-    origY = rect.top - parentRect.top;
+    startSize = parseFloat(window.getComputedStyle(block).fontSize);
 
     function move(ev) {
-      const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
-
-      el.style.left = origX + dx + "px";
-      el.style.top = origY + dy + "px";
+      const newSize = Math.max(10, startSize + dy * 0.5);
+      block.style.fontSize = newSize + "px";
     }
 
     function up() {
@@ -179,13 +160,6 @@ function makeDraggable(el) {
 
     document.addEventListener("mousemove", move);
     document.addEventListener("mouseup", up);
-  });
-
-  // 👉 Désélectionner si on clique ailleurs
-  document.addEventListener("mousedown", (e) => {
-    if (!el.contains(e.target)) {
-      el.classList.remove("selected");
-    }
   });
 }
 
