@@ -165,6 +165,29 @@ function makeDraggable(el) {
   });
 }
 
+async function chargerArticle() {
+  const client = await window.__supabaseReady;
+
+  const params = new URLSearchParams(window.location.search);
+  const actuId = Number(params.get("id"));
+
+  const { data, error } = await client
+    .from("actus")
+    .select("*")
+    .eq("id", actuId)
+    .single();
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  // 🔥 LIGNE QUI MANQUE
+  document.querySelector("#editor-page").innerHTML = data.texte;
+}
+
+chargerArticle();
+
   /* ============================================================
      TOOLBAR – FORMATAGE (WYSIWYG)
      ============================================================ */
