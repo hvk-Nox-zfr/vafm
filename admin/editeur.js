@@ -164,7 +164,6 @@ function makeDraggable(el) {
     document.addEventListener("mouseup", up);
   });
 }
-
 async function chargerArticle() {
   const client = await window.__supabaseReady;
 
@@ -182,8 +181,13 @@ async function chargerArticle() {
     return;
   }
 
-  // 🔥 LIGNE QUI MANQUE
+  // Injecter le HTML sauvegardé
   document.querySelector("#editor-page").innerHTML = data.texte;
+
+  // 🔥 Réactiver le drag sur les blocs rechargés
+  document.querySelectorAll(".floating-text").forEach(el => {
+    makeDraggable(el);
+  });
 }
 
 chargerArticle();
