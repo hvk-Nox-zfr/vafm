@@ -294,9 +294,6 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
   cursor: pointer;
 }
 
-/* Hover effect (subtil) */
-.format-toolbar:hover { transform: translateY(-2px); box-shadow: 0 14px 48px rgba(2,6,23,0.12); }
-
 /* ---------------- Accessibility & helpers ---------------- */
 .canva-icon:focus, .btn:focus, .canva-panel :focus { outline: 3px solid rgba(37,99,235,0.18); outline-offset: 2px; }
 .hidden { display: none !important; }
