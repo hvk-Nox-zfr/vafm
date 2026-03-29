@@ -127,12 +127,14 @@ function makeDraggable(el) {
   el.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
 
-    // 👉 Sélectionner ce bloc
+    // 👉 Toujours sélectionner le bloc quand on clique dessus
     document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
     el.classList.add("selected");
 
-    // 👉 Si on est en mode édition → ne pas déplacer
-    if (el.getAttribute("contenteditable") === "true") return;
+    // 👉 Si on est en mode édition → ne pas déplacer, mais garder le contour rouge
+    if (el.getAttribute("contenteditable") === "true") {
+      return;
+    }
 
     e.preventDefault();
 
@@ -162,7 +164,7 @@ function makeDraggable(el) {
     document.addEventListener("mouseup", up);
   });
 
-  // 👉 Si on clique ailleurs → désélectionner
+  // 👉 Désélectionner si on clique ailleurs
   document.addEventListener("mousedown", (e) => {
     if (!el.contains(e.target)) {
       el.classList.remove("selected");
