@@ -518,60 +518,6 @@ canvas.addEventListener("drop", (e) => {
   reader.readAsDataURL(file);
 });
 
-  /* ============================================================
-     RECHERCHE
-     ============================================================ */
-  
-const searchInput = document.getElementById("element-search");
-const resultsBox = document.getElementById("elements-results");
-
-let ELEMENTS = [];
-
-// Charger elements.json
-fetch("./elements.json")
-  .then(res => res.json())
-  .then(data => {
-    ELEMENTS = data;
-    renderElements(ELEMENTS);
-  })
-  .catch(err => console.error("Erreur JSON :", err));
-
-// Recherche dynamique
-searchInput.addEventListener("input", () => {
-  const q = searchInput.value.toLowerCase();
-
-  const filtered = ELEMENTS.filter(el =>
-    el.name.toLowerCase().includes(q) ||
-    el.category.toLowerCase().includes(q) ||
-    el.type.toLowerCase().includes(q) ||
-    (el.tags && el.tags.some(tag => tag.toLowerCase().includes(q)))
-  );
-
-  renderElements(filtered);
-});
-
-// Affichage des éléments
-function renderElements(list) {
-  resultsBox.innerHTML = "";
-
-  if (list.length === 0) {
-    resultsBox.innerHTML = "<p style='opacity:0.6'>Aucun élément trouvé</p>";
-    return;
-  }
-
-  list.forEach(el => {
-    const item = document.createElement("div");
-    item.className = "element-item";
-
-    item.innerHTML = `
-      <img src="${el.url}" alt="${el.name}" style="width:80px;height:auto;display:block;margin:auto;">
-      <div style="text-align:center;font-size:12px;margin-top:4px;">${el.name}</div>
-    `;
-
-    resultsBox.appendChild(item);
-  });
-}
-
 /* ============================================================
    INIT
    ============================================================ */
