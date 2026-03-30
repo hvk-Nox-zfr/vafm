@@ -1,17 +1,21 @@
 let ELEMENTS = [];
 
+/* ============================================================
+   CHARGEMENT DES ÉLÉMENTS
+============================================================ */
 export async function loadElements() {
     const res = await fetch("./elements.json");
     ELEMENTS = await res.json();
-    renderElements(ELEMENTS);
+    renderSuggestions();
 }
 
-
+/* ============================================================
+   SUGGESTIONS
+============================================================ */
 export function renderSuggestions() {
     const resultsBox = document.getElementById("elements-results");
     resultsBox.innerHTML = "<h4 style='opacity:0.7;margin:8px;'>Suggestions</h4>";
 
-    // Exemple : 6 éléments aléatoires
     const random = ELEMENTS.sort(() => 0.5 - Math.random()).slice(0, 6);
 
     random.forEach(el => {
@@ -19,19 +23,18 @@ export function renderSuggestions() {
         item.className = "element-item";
 
         item.innerHTML = `
-            <img src="${el.url}" alt="${el.name}">
+            <img src="${el.url}" alt="${el.name}" class="element-thumb">
             <span>${el.name}</span>
         `;
 
-        item.addEventListener("click", () => {
-            addPresetToCanvas(el);
-        });
-
+        item.addEventListener("click", () => addPresetToCanvas(el));
         resultsBox.appendChild(item);
     });
 }
 
-
+/* ============================================================
+   RECHERCHE
+============================================================ */
 export function setupSearch() {
     const searchInput = document.getElementById("element-search");
 
@@ -39,7 +42,6 @@ export function setupSearch() {
         const q = searchInput.value.toLowerCase();
 
         if (q.trim() === "") {
-            // Suggestions par défaut
             renderSuggestions();
             return;
         }
@@ -53,10 +55,12 @@ export function setupSearch() {
         renderElements(filtered);
     });
 
-    // Afficher suggestions au chargement
     renderSuggestions();
 }
 
+/* ============================================================
+   AFFICHAGE DES RÉSULTATS
+============================================================ */
 export function renderElements(list) {
     const resultsBox = document.getElementById("elements-results");
     resultsBox.innerHTML = "";
@@ -71,18 +75,18 @@ export function renderElements(list) {
         item.className = "element-item";
 
         item.innerHTML = `
-            <img src="${el.url}" alt="${el.name}">
+            <img src="${el.url}" alt="${el.name}" class="element-thumb">
             <span>${el.name}</span>
         `;
 
-        item.addEventListener("click", () => {
-            addPresetToCanvas(el);
-        });
-
+        item.addEventListener("click", () => addPresetToCanvas(el));
         resultsBox.appendChild(item);
     });
 }
 
+/* ============================================================
+   AJOUT DANS L'ÉDITEUR (TAILLE AUTO)
+============================================================ */
 export function addPresetToCanvas(el) {
     const img = document.createElement("img");
     img.src = el.url;
@@ -91,10 +95,22 @@ export function addPresetToCanvas(el) {
     img.style.position = "absolute";
     img.style.top = "150px";
     img.style.left = "150px";
-    img.style.width = "60px";
     img.style.cursor = "move";
 
-    document.querySelector("#editor-page").appendChild(img);
+    // Taille auto-réduite (comme Canva)
+    img.onload = () => {
+        const max = 80; // taille max en px
+        const ratio = img.width / img.height;
 
+        if (img.width > img.height) {
+            img.style.width = max + "px";
+            img.style.height = (max / ratio) + "px";
+        } else {
+            img.style.height = max + "px";
+            img.style.width = (max * ratio) + "px";
+        }
+    };
+
+    document.querySelector("#editor-page").appendChild(img);
     makeDraggable(img);
 }
