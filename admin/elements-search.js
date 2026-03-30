@@ -1,7 +1,7 @@
 let ELEMENTS = [];
 
 export async function loadElements() {
-    const res = await fetch("assets/elements.json");
+    const res = await fetch("./elements.json");
     ELEMENTS = await res.json();
     renderElements(ELEMENTS);
 }
