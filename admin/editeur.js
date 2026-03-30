@@ -255,9 +255,39 @@ async function chargerArticle() {
   document.querySelector("#editor-page").innerHTML = data.texte;
 
   // 🔥 Réactiver le drag sur les blocs rechargés
-  document.querySelectorAll(".floating-text").forEach(el => {
+document.querySelectorAll(".floating-text").forEach(el => {
+    const textContent = el.querySelector(".text-content");
+
+    // Réactiver drag
     makeDraggable(el);
-  });
+
+    // Réactiver resize
+    makeResizable(el);
+
+    // Réactiver double-clic pour éditer
+    el.addEventListener("dblclick", (e) => {
+        e.stopPropagation();
+        textContent.setAttribute("contenteditable", "true");
+        el.classList.add("selected");
+        el.style.cursor = "text";
+        textContent.focus();
+    });
+
+    // Empêcher drag de voler le clic
+    textContent.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+    });
+
+    // Quitter édition quand on clique ailleurs
+    document.addEventListener("mousedown", (e) => {
+        if (!el.contains(e.target)) {
+            textContent.setAttribute("contenteditable", "false");
+            el.classList.remove("selected");
+            el.style.cursor = "move";
+        }
+    });
+});
+
 }
 
 chargerArticle();
