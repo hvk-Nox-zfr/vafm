@@ -6,12 +6,43 @@ export async function loadElements() {
     renderElements(ELEMENTS);
 }
 
+
+export function renderSuggestions() {
+    const resultsBox = document.getElementById("elements-results");
+    resultsBox.innerHTML = "<h4 style='opacity:0.7;margin:8px;'>Suggestions</h4>";
+
+    // Exemple : 6 éléments aléatoires
+    const random = ELEMENTS.sort(() => 0.5 - Math.random()).slice(0, 6);
+
+    random.forEach(el => {
+        const item = document.createElement("div");
+        item.className = "element-item";
+
+        item.innerHTML = `
+            <img src="${el.url}" alt="${el.name}">
+            <span>${el.name}</span>
+        `;
+
+        item.addEventListener("click", () => {
+            addPresetToCanvas(el);
+        });
+
+        resultsBox.appendChild(item);
+    });
+}
+
+
 export function setupSearch() {
     const searchInput = document.getElementById("element-search");
-    const resultsBox = document.getElementById("elements-results");
 
     searchInput.addEventListener("input", () => {
         const q = searchInput.value.toLowerCase();
+
+        if (q.trim() === "") {
+            // Suggestions par défaut
+            renderSuggestions();
+            return;
+        }
 
         const filtered = ELEMENTS.filter(el =>
             el.name.toLowerCase().includes(q) ||
@@ -21,6 +52,9 @@ export function setupSearch() {
 
         renderElements(filtered);
     });
+
+    // Afficher suggestions au chargement
+    renderSuggestions();
 }
 
 export function renderElements(list) {
@@ -64,4 +98,3 @@ export function addPresetToCanvas(el) {
 
     makeDraggable(img);
 }
-
