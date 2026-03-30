@@ -91,7 +91,7 @@ export function addPresetToCanvas(el) {
     img.style.position = "absolute";
     img.style.top = "150px";
     img.style.left = "150px";
-    img.style.width = "120px";
+    img.style.width = "60px";
     img.style.cursor = "move";
 
     document.querySelector("#editor-page").appendChild(img);
