@@ -10,19 +10,6 @@
 </head>
 <body>
     
-<script>
-    let html = data.texte;
-
-    // Supprimer les zones d’édition
-    html = html.replace(/class="floating-text"/g, 'class="text-block"');
-    html = html.replace(/contenteditable="[^"]*"/g, "");
-    html = html.replace(/<div class="resize-handle"><\/div>/g, "");
-    html = html.replace(/Double-clique pour écrire…/g, "");
-
-    // Injecter
-    document.querySelector("#public-page").innerHTML = html;
-</script>
-    
     <header class="topbar">
         <div class="logo">
             <img src="logo/VAFM logo rouge.png" alt="Logo de la radio" class="header-logo">
