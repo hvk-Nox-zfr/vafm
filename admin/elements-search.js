@@ -16,7 +16,7 @@ export function renderSuggestions() {
     const resultsBox = document.getElementById("elements-results");
     resultsBox.innerHTML = "<h4 style='opacity:0.7;margin:8px;'>Suggestions</h4>";
 
-    const random = ELEMENTS.sort(() => 0.5 - Math.random()).slice(0, 6);
+    const random = ELEMENTS.sort(() => 0.5 - Math.random()).slice(0, 12);
 
     random.forEach(el => {
         const item = document.createElement("div");
@@ -24,7 +24,6 @@ export function renderSuggestions() {
 
         item.innerHTML = `
             <img src="${el.url}" alt="${el.name}" class="element-thumb">
-            <span>${el.name}</span>
         `;
 
         item.addEventListener("click", () => addPresetToCanvas(el));
@@ -76,7 +75,6 @@ export function renderElements(list) {
 
         item.innerHTML = `
             <img src="${el.url}" alt="${el.name}" class="element-thumb">
-            <span>${el.name}</span>
         `;
 
         item.addEventListener("click", () => addPresetToCanvas(el));
