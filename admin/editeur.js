@@ -1,3 +1,8 @@
+import { loadElements, setupSearch } from "./elements-search.js";
+
+loadElements();
+setupSearch();
+
 // editeur.js — version fusionnée et corrigée
 (function () {
   'use strict';
