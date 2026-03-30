@@ -69,3 +69,14 @@ async function chargerActu() {
 
 document.addEventListener("DOMContentLoaded", chargerActu);
 
+let html = data.texte;
+
+// Nettoyage
+html = html
+  .replace(/class="floating-text"/g, 'class="text-block"')
+  .replace(/contenteditable="[^"]*"/g, "")
+  .replace(/<div class="resize-handle"><\/div>/g, "")
+  .replace(/Double-clique pour écrire…/g, "");
+
+// Injection
+document.querySelector("#public-page").innerHTML = html;
