@@ -404,3 +404,15 @@ body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1
 .text-content[contenteditable="true"] {
   user-select: text; /* autorise la sélection quand on édite */
 }
+
+.element-thumb {
+    width: 60px;
+    height: auto;
+    display: block;
+    margin: auto;
+}
+
+.canvas-element {
+    max-width: none !important;
+    max-height: none !important;
+}
