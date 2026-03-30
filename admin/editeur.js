@@ -74,16 +74,14 @@
 
 function makeResizable(block) {
     const handle = block.querySelector(".resize-handle");
-    const text = block.querySelector(".text-content");
-
-    if (!handle || !text) return;
+    if (!handle) return;
 
     let startX = 0, startY = 0;
     let startWidth = 0, startHeight = 0;
 
     handle.addEventListener("mousedown", (e) => {
         e.preventDefault();
-        e.stopPropagation(); // ← essentiel pour ne pas bloquer l’écriture
+        e.stopPropagation();
 
         startX = e.clientX;
         startY = e.clientY;
@@ -114,52 +112,51 @@ function makeDraggable(el) {
     let startX = 0, startY = 0;
     let origX = 0, origY = 0;
 
-el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
+    el.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
 
-    const text = el.querySelector(".text-content");
+        const text = el.querySelector(".text-content");
 
-    // Si on clique dans le texte → PAS de drag
-    if (e.target.closest(".text-content")) return;
+        // Si on clique dans le texte → PAS de drag
+        if (e.target.closest(".text-content")) return;
 
-    // Si on clique sur la poignée de resize → PAS de drag
-    if (e.target.classList.contains("resize-handle")) return;
+        // Si on clique sur la poignée de resize → PAS de drag
+        if (e.target.classList.contains("resize-handle")) return;
 
-    // Sélection du bloc
-    document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
-    el.classList.add("selected");
+        // Sélection du bloc
+        document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
+        el.classList.add("selected");
 
-    // Si on est en mode édition → PAS de drag
-    if (text.getAttribute("contenteditable") === "true") return;
+        // Si on est en mode édition → PAS de drag
+        if (text.getAttribute("contenteditable") === "true") return;
 
-    // Début du drag
-    e.preventDefault();
+        e.preventDefault();
 
-    startX = e.clientX;
-    startY = e.clientY;
+        startX = e.clientX;
+        startY = e.clientY;
 
-    const rect = el.getBoundingClientRect();
-    const parentRect = el.parentNode.getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        const parentRect = el.parentNode.getBoundingClientRect();
 
-    origX = rect.left - parentRect.left;
-    origY = rect.top - parentRect.top;
+        origX = rect.left - parentRect.left;
+        origY = rect.top - parentRect.top;
 
-    function move(ev) {
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
+        function move(ev) {
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
 
-        el.style.left = origX + dx + "px";
-        el.style.top = origY + dy + "px";
-    }
+            el.style.left = origX + dx + "px";
+            el.style.top = origY + dy + "px";
+        }
 
-    function up() {
-        document.removeEventListener("mousemove", move);
-        document.removeEventListener("mouseup", up);
-    }
+        function up() {
+            document.removeEventListener("mousemove", move);
+            document.removeEventListener("mouseup", up);
+        }
 
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
-});
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", up);
+    });
 
     // Désélection si on clique ailleurs
     document.addEventListener("mousedown", (e) => {
@@ -178,6 +175,10 @@ function createFloatingText() {
     textContent.className = "text-content";
     textContent.innerHTML = "Double-clique pour écrire…";
     textContent.setAttribute("contenteditable", "false");
+
+    // Empêche la sélection du texte hors édition
+    textContent.style.userSelect = "none";
+
     block.appendChild(textContent);
 
     // Poignée de resize
@@ -193,33 +194,33 @@ function createFloatingText() {
     block.style.fontSize = "18px";
     block.style.background = "transparent";
     block.style.cursor = "move";
-    block.style.userSelect = "none";
 
+    /* --- Double clic → édition --- */
     block.addEventListener("dblclick", (e) => {
         e.stopPropagation();
         textContent.setAttribute("contenteditable", "true");
+        textContent.style.userSelect = "text"; // autorise la sélection
         block.classList.add("selected");
         block.style.cursor = "text";
         textContent.focus();
     });
 
-
-    // Empêcher le drag de voler le clic dans le texte
+    /* --- Empêcher le drag de voler le clic dans le texte --- */
     textContent.addEventListener("mousedown", (e) => {
         e.stopPropagation();
     });
 
-
-    // Quitter édition quand on clique ailleurs
+    /* --- Quitter édition quand on clique ailleurs --- */
     document.addEventListener("mousedown", (e) => {
         if (!block.contains(e.target)) {
             textContent.setAttribute("contenteditable", "false");
+            textContent.style.userSelect = "none"; // redevient non sélectionnable
             block.classList.remove("selected");
             block.style.cursor = "move";
         }
     });
 
-    // Empêcher disparition du texte
+    /* --- Empêcher disparition du texte --- */
     textContent.addEventListener("input", () => {
         if (textContent.innerHTML.trim() === "") {
             textContent.innerHTML = "<br>";
@@ -233,7 +234,6 @@ function createFloatingText() {
     makeDraggable(block);
     makeResizable(block);
 }
-
 
 async function chargerArticle() {
   const client = await window.__supabaseReady;
