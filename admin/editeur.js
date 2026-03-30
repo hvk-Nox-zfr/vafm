@@ -199,7 +199,7 @@ function createFloatingText() {
     block.addEventListener("dblclick", (e) => {
         e.stopPropagation();
         textContent.setAttribute("contenteditable", "true");
-        textContent.style.userSelect = "text"; // autorise la sélection
+        textContent.style.userSelect = "text"; // ← autorise la sélection
         block.classList.add("selected");
         block.style.cursor = "text";
         textContent.focus();
@@ -214,7 +214,7 @@ function createFloatingText() {
     document.addEventListener("mousedown", (e) => {
         if (!block.contains(e.target)) {
             textContent.setAttribute("contenteditable", "false");
-            textContent.style.userSelect = "none"; // redevient non sélectionnable
+            textContent.style.userSelect = "none"; // ← redevient non sélectionnable
             block.classList.remove("selected");
             block.style.cursor = "move";
         }
