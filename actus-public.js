@@ -26,8 +26,6 @@ async function chargerActusPubliques() {
     return;
   }
 
-  console.log("Actus reçues :", data);
-
   if (data.length <= 4) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
     return;
@@ -42,9 +40,7 @@ async function chargerActusPubliques() {
   const track = document.createElement("div");
   track.className = "carousel-track";
 
-  data.forEach(actu => {
-    track.appendChild(creerCarteActu(actu));
-  });
+  data.forEach(actu => track.appendChild(creerCarteActu(actu)));
 
   const btnRight = document.createElement("button");
   btnRight.className = "carousel-btn right";
@@ -65,11 +61,6 @@ function creerCarteActu(actu) {
   link.href = `./page.html?id=${actu.id}`;
   link.className = "actu-link";
 
-  link.addEventListener("click", event => {
-    event.preventDefault();
-    window.location.href = link.href;
-  });
-
   const image = document.createElement("div");
   image.className = "actu-image";
   image.style.backgroundImage = `url('${actu.imageUrl || "/assets/default.jpg"}')`;
@@ -80,10 +71,14 @@ function creerCarteActu(actu) {
   const text = document.createElement("div");
   text.className = "actu-extrait";
 
-  // 🔥 Supprimer le titre <h2>...</h2>
-  let propre = actu.texte.replace(/<h2[\s\S]*?<\/h2>/i, "");
+  // Nettoyage du texte pour l'extrait
+  let propre = actu.texte
+    .replace(/<h2[\s\S]*?<\/h2>/gi, "")
+    .replace(/class="floating-text"/g, "")
+    .replace(/contenteditable="[^"]*"/g, "")
+    .replace(/<div class="resize-handle"><\/div>/g, "")
+    .replace(/Double-clique pour écrire…/g, "");
 
-  // 🔥 Créer l’extrait sans le titre
   const extrait = propre.slice(0, 300) + "...";
   text.innerHTML = extrait;
 
