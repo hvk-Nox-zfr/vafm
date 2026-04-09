@@ -9,12 +9,15 @@ const params = new URLSearchParams(window.location.search);
 const idParam = params.get("id");
 const actuId = Number(idParam);
 
+// ⚠️ Le conteneur public
+const publicPage = document.querySelector("#public-page");
+
+// ⚠️ Le wrapper pour les images flottantes
 const wrapper = document.querySelector(".canvas-wrapper");
-const canvas = document.getElementById("actu-content");
 
 async function chargerActu() {
   if (!idParam || isNaN(actuId)) {
-    document.body.innerHTML = "<h2>Article introuvable</h2>";
+    publicPage.innerHTML = "<h2>Article introuvable</h2>";
     return;
   }
 
@@ -25,7 +28,7 @@ async function chargerActu() {
     .maybeSingle();
 
   if (error || !actu) {
-    document.body.innerHTML = "<h2>Article introuvable</h2>";
+    publicPage.innerHTML = "<h2>Article introuvable</h2>";
     return;
   }
 
@@ -35,14 +38,25 @@ async function chargerActu() {
   let html = actu.texte || "";
 
   html = html
+    // remplacer floating-text par un bloc normal
     .replace(/class="floating-text"/g, 'class="text-block"')
-    .replace(/contenteditable="[^"]*"/g, "")
-    .replace(/<div class="resize-handle"><\/div>/g, "")
-    .replace(/Double-clique pour écrire…/g, "")
-    .replace(/draggable="[^"]*"/g, "")
-    .replace(/style="cursor: move;?"/g, "");
 
-  canvas.innerHTML = html;
+    // supprimer les attributs d’édition
+    .replace(/contenteditable="[^"]*"/g, "")
+    .replace(/draggable="[^"]*"/g, "")
+    .replace(/style="cursor: move;?"/g, "")
+
+    // supprimer les poignées de resize
+    .replace(/<div class="resize-handle"><\/div>/g, "")
+
+    // supprimer le placeholder
+    .replace(/Double-clique pour écrire…/g, "")
+
+    // supprimer les DIV flottants vides
+    .replace(/<div class="floating-text"[^>]*><\/div>/g, "");
+
+  // Injection dans la page publique
+  publicPage.innerHTML = html;
 
   /* ============================================================
      🖼️ IMAGES FLOTTANTES
