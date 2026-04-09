@@ -1,6 +1,5 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
+// Supabase global (UMD)
+const supabase = window.supabase.createClient(
   "https://blronpowdhaumjudtgvn.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
 );
@@ -9,7 +8,7 @@ const params = new URLSearchParams(window.location.search);
 const idParam = params.get("id");
 const actuId = Number(idParam);
 
-// ⚠️ Le bon conteneur (celui de page.html)
+// Conteneurs
 const wrapper = document.querySelector(".canvas-wrapper");
 const canvas = document.getElementById("actu-content");
 
@@ -30,9 +29,7 @@ async function chargerActu() {
     return;
   }
 
-  /* ============================================================
-     🔥 NETTOYAGE DU HTML AVANT AFFICHAGE PUBLIC
-  ============================================================ */
+  /* 🔥 NETTOYAGE DU HTML */
   let html = actu.texte || "";
 
   html = html
@@ -43,12 +40,9 @@ async function chargerActu() {
     .replace(/draggable="[^"]*"/g, "")
     .replace(/style="cursor: move;?"/g, "");
 
-  // Injection dans le bon conteneur
   canvas.innerHTML = html;
 
-  /* ============================================================
-     🖼️ IMAGES FLOTTANTES
-  ============================================================ */
+  /* 🖼️ IMAGES FLOTTANTES */
   if (actu.contenu?.images) {
     actu.contenu.images.forEach(block => {
       const div = document.createElement("div");
