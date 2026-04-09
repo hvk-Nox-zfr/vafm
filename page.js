@@ -9,7 +9,7 @@ const params = new URLSearchParams(window.location.search);
 const idParam = params.get("id");
 const actuId = Number(idParam);
 
-// ⚠️ Le bon conteneur
+// ⚠️ Le bon conteneur (celui de page.html)
 const wrapper = document.querySelector(".canvas-wrapper");
 const canvas = document.getElementById("actu-content");
 
