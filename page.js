@@ -8,7 +8,6 @@ const params = new URLSearchParams(window.location.search);
 const idParam = params.get("id");
 const actuId = Number(idParam);
 
-// Conteneurs
 const wrapper = document.querySelector(".canvas-wrapper");
 const canvas = document.getElementById("actu-content");
 
@@ -29,7 +28,6 @@ async function chargerActu() {
     return;
   }
 
-  /* 🔥 NETTOYAGE DU HTML */
   let html = actu.texte || "";
 
   html = html
@@ -42,7 +40,6 @@ async function chargerActu() {
 
   canvas.innerHTML = html;
 
-  /* 🖼️ IMAGES FLOTTANTES */
   if (actu.contenu?.images) {
     actu.contenu.images.forEach(block => {
       const div = document.createElement("div");
