@@ -9,12 +9,11 @@ const params = new URLSearchParams(window.location.search);
 const idParam = params.get("id");
 const actuId = Number(idParam);
 
-// ⚠️ IMPORTANT : on récupère le wrapper, pas seulement le canvas
 const wrapper = document.querySelector(".canvas-wrapper");
 const canvas = document.getElementById("actu-content");
 
 async function chargerActu() {
-  if (idParam === null || isNaN(actuId)) {
+  if (!idParam || isNaN(actuId)) {
     document.body.innerHTML = "<h2>Article introuvable</h2>";
     return;
   }
@@ -30,18 +29,29 @@ async function chargerActu() {
     return;
   }
 
-  // 📝 Texte
-  if (actu.texte) {
-    canvas.innerHTML = actu.texte;
-  }
+  /* ============================================================
+     🔥 NETTOYAGE DU HTML AVANT AFFICHAGE PUBLIC
+  ============================================================ */
+  let html = actu.texte || "";
 
-  // 🖼️ Images flottantes
+  html = html
+    .replace(/class="floating-text"/g, 'class="text-block"')
+    .replace(/contenteditable="[^"]*"/g, "")
+    .replace(/<div class="resize-handle"><\/div>/g, "")
+    .replace(/Double-clique pour écrire…/g, "")
+    .replace(/draggable="[^"]*"/g, "")
+    .replace(/style="cursor: move;?"/g, "");
+
+  canvas.innerHTML = html;
+
+  /* ============================================================
+     🖼️ IMAGES FLOTTANTES
+  ============================================================ */
   if (actu.contenu?.images) {
     actu.contenu.images.forEach(block => {
       const div = document.createElement("div");
       div.className = "block-public";
 
-      // mêmes positions que dans l’éditeur
       div.style.left = block.x;
       div.style.top = block.y;
       div.style.width = block.width;
@@ -51,7 +61,6 @@ async function chargerActu() {
       const img = document.createElement("img");
       img.src = block.url;
 
-      // mêmes offsets internes que dans l’éditeur
       img.style.position = "absolute";
       img.style.left = block.offsetX;
       img.style.top = block.offsetY;
@@ -60,23 +69,9 @@ async function chargerActu() {
       img.style.objectFit = "contain";
 
       div.appendChild(img);
-
-      // ⚠️ IMPORTANT : on ajoute dans le wrapper, pas dans le canvas
       wrapper.appendChild(div);
     });
   }
 }
 
 document.addEventListener("DOMContentLoaded", chargerActu);
-
-let html = data.texte;
-
-// Nettoyage
-html = html
-  .replace(/class="floating-text"/g, 'class="text-block"')
-  .replace(/contenteditable="[^"]*"/g, "")
-  .replace(/<div class="resize-handle"><\/div>/g, "")
-  .replace(/Double-clique pour écrire…/g, "");
-
-// Injection
-document.querySelector("#public-page").innerHTML = html;
