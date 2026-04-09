@@ -2,24 +2,42 @@
 // Exports: loadEmissions, setupEmissionForm
 // Auto-run only when loaded via <script type="module" data-autoload>
 
+// --- Supabase global UMD ---
+const supabase = window.supabase.createClient(
+  "https://blronpowdhaumjudtgvn.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
+);
+
 export async function loadEmissions(options = {}) {
   const { containerId = 'emissions-list', limit = 1000 } = options;
 
-  const supabase = await (window.__supabaseReady || (async () => {
-    if (window.supabase) return window.supabase;
-    try {
-      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-      const SUPABASE_URL = 'https://blronpowdhaumjudtgvn.supabase.co';
-      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI';
-      const client = createClient(SUPABASE_URL, SUPABASE_KEY);
-      window.supabase = window.supabase || client;
-      window.__supabaseReady = window.__supabaseReady || Promise.resolve(client);
-      return client;
-    } catch (err) {
-      console.error("Impossible d'initialiser Supabase dynamiquement:", err);
-      return null;
-    }
-  })());
+  const { data, error } = await supabase
+    .from("emissions")
+    .select("*")
+    .limit(limit)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Erreur Supabase :", error);
+    return;
+  }
+
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  data.forEach(em => {
+    const div = document.createElement("div");
+    div.className = "emission-item";
+    div.innerHTML = `
+      <strong>${em.titre}</strong><br>
+      <em>${em.horaires || ""}</em><br>
+      <p>${em.description || ""}</p>
+    `;
+    container.appendChild(div);
+  });
+}
 
   if (!supabase) {
     console.error('Supabase non disponible. Abandon.');
