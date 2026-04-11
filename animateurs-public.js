@@ -1,3 +1,4 @@
+console.log("animateurs-public.js exécuté à", performance.now());
 console.log("📡 animateurs-public.js chargé");
 
 // Connexion Supabase (nom unique pour éviter les conflits)
