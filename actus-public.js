@@ -1,11 +1,8 @@
-// Supabase global (UMD)
-const supabase = window.supabase.createClient(
-  "https://blronpowdhaumjudtgvn.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
-);
+// Connexion Supabase (client global unique)
+const supabasePublic = window.__supabaseClient;
 
 async function chargerActusPubliques() {
-  const { data, error } = await supabase
+  const { data, error } = await supabasePublic
     .from("actus")
     .select("id, titre, texte, date_pub, imageUrl")
     .eq("published", true)
