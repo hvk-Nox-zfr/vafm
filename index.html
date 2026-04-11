@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ma Webradio</title>
+
+    <!-- ⚠️ Charger Supabase AVANT tout, sans defer -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="animation.css">
 </head>
@@ -111,18 +114,17 @@
     <footer class="footer">
         © 2026 VAFM — Tous droits réservés
     </footer>
-    
-<script src="supabase-client.js"></script>
 
-<script defer src="script.js"></script>
-<script defer src="animation.js"></script>
-<script defer src="animateurs-public.js"></script>
-<script defer src="emission.js"></script>
-<script defer src="actus-public.js"></script>
+    <!-- ⚠️ Tous tes scripts à toi en defer -->
+    <script defer src="supabase-client.js"></script>
+    <script defer src="script.js"></script>
+    <script defer src="animation.js"></script>
+    <script defer src="animateurs-public.js"></script>
+    <script defer src="emission.js"></script>
+    <script defer src="actus-public.js"></script>
 
     <div id="transition-overlay">
         <img src="logo/VAFM logo rouge.png" alt="Logo VAFM" id="transition-logo">
     </div>
 </body>
 </html>
-
