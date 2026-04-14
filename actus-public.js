@@ -1,8 +1,8 @@
-// Connexion Supabase (client global unique)
-const supabasePublic = window.__supabaseClient;
+// Utiliser le client global, sans recréer la variable
+const supabase = window.__supabaseClient;
 
 async function chargerActusPubliques() {
-  const { data, error } = await supabasePublic
+  const { data, error } = await supabase
     .from("actus")
     .select("id, titre, texte, date_pub, imageUrl")
     .eq("published", true)
