@@ -1,13 +1,13 @@
 console.log("animateurs-public.js exécuté à", performance.now());
 console.log("📡 animateurs-public.js chargé");
 
-// Connexion Supabase (nom unique pour éviter les conflits)
-const supabasePublic = window.__supabaseClient;
+// Utiliser le client global, sans recréer la variable
+const supabase = window.__supabaseClient;
 
 async function loadPublicAnimateurs() {
   console.log("🔄 Chargement des animateurs…");
 
-  const { data, error } = await supabasePublic
+  const { data, error } = await supabase
     .from("animateurs")
     .select("*")
     .order("created_at", { ascending: false });
