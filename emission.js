@@ -1,12 +1,12 @@
 console.log("📡 emission.js chargé");
 
-// Connexion Supabase (client global unique)
-const supabasePublic = window.__supabaseClient;
+// Utiliser le client global, sans recréer la variable
+const supabase = window.__supabaseClient;
 
 async function loadPublicEmissions() {
     console.log("🔄 Chargement des émissions…");
 
-    const { data, error } = await supabasePublic
+    const { data, error } = await supabase
         .from("emissions")
         .select("*")
         .order("created_at", { ascending: false });
@@ -41,4 +41,3 @@ function displayPublicEmissions(list) {
 }
 
 document.addEventListener("DOMContentLoaded", loadPublicEmissions);
-
