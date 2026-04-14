@@ -1,13 +1,13 @@
 console.log("animateurs-public.js exécuté à", performance.now());
 console.log("📡 animateurs-public.js chargé");
 
-// Utiliser le client global, sans recréer la variable
-const supabase = window.__supabaseClient;
+// Client Supabase global (nom sûr)
+const db = window.__supabaseClient;
 
 async function loadPublicAnimateurs() {
   console.log("🔄 Chargement des animateurs…");
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("animateurs")
     .select("*")
     .order("created_at", { ascending: false });
