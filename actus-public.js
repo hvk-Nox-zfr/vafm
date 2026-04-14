@@ -1,8 +1,8 @@
 // Utiliser le client global, sans recréer la variable
-const supabase = window.__supabaseClient;
+const db = window.__supabaseClient;
 
 async function chargerActusPubliques() {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("actus")
     .select("id, titre, texte, date_pub, imageUrl")
     .eq("published", true)
