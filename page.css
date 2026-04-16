@@ -87,3 +87,22 @@
 .logo-home:hover .home-icon path {
     stroke: url(#stroke-gradient);
 }
+
+/* Bloquer le curseur "move" et forcer le curseur normal */
+.block-public,
+.canvas .text-block,
+.canvas [draggable],
+.canvas *[data-draggable="true"] {
+  cursor: default !important;
+}
+
+/* Si tu veux que le texte garde le curseur texte */
+.canvas .text-block,
+.canvas .text-block * {
+  cursor: text !important;
+}
+
+/* Images : curseur pointeur si tu veux indiquer clic, sinon default */
+.block-public img {
+  cursor: default !important;
+}
