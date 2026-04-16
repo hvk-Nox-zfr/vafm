@@ -21,10 +21,12 @@ async function chargerActu() {
     .maybeSingle();
 
   if (error || !actu) {
+    console.error("❌ Erreur Supabase :", error);
     canvas.innerHTML = "<h2>Article introuvable</h2>";
     return;
   }
 
+  // --- Nettoyage du HTML avant affichage ---
   let html = actu.texte || "";
 
   html = html
@@ -37,25 +39,28 @@ async function chargerActu() {
 
   canvas.innerHTML = html;
 
-  if (actu.contenu?.images) {
+  // --- Affichage des images positionnées ---
+  if (actu.contenu?.images && Array.isArray(actu.contenu.images)) {
     actu.contenu.images.forEach(block => {
       const div = document.createElement("div");
       div.className = "block-public";
 
-      div.style.left = block.x;
-      div.style.top = block.y;
-      div.style.width = block.width;
-      div.style.height = block.height;
+      // Sécurisation des valeurs
       div.style.position = "absolute";
+      div.style.left = block.x || "0px";
+      div.style.top = block.y || "0px";
+      div.style.width = block.width || "200px";
+      div.style.height = block.height || "200px";
 
       const img = document.createElement("img");
-      img.src = block.url;
+      img.src = block.url || "";
+      img.alt = "Image de l'article";
 
       img.style.position = "absolute";
-      img.style.left = block.offsetX;
-      img.style.top = block.offsetY;
-      img.style.width = block.imgWidth;
-      img.style.height = block.imgHeight;
+      img.style.left = block.offsetX || "0px";
+      img.style.top = block.offsetY || "0px";
+      img.style.width = block.imgWidth || "100%";
+      img.style.height = block.imgHeight || "100%";
       img.style.objectFit = "contain";
 
       div.appendChild(img);
