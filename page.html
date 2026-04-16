@@ -1,46 +1,57 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Actualité</title>
-    <link rel="stylesheet" href="page.css">
+  <meta charset="UTF-8">
+  <title>Actualité</title>
+  <link rel="stylesheet" href="page.css">
 
-    <meta http-equiv="Content-Security-Policy" 
-          content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
+  <!-- Content Security Policy adaptée -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://vafmlaradio.fr 'unsafe-inline'; connect-src 'self' https://blronpowdhaumjudtgvn.supabase.co; img-src 'self' data: https://vafmlaradio.fr https://via.placeholder.com; style-src 'self' 'unsafe-inline';">
+
+  <!-- favicon pour éviter 404 -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
 
-    <header class="topbar">
-        <div class="logo">
-            <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
-        </div>
+  <header class="topbar">
+    <div class="logo">
+      <img src="logo/VAFM logo rouge.png" alt="Logo de la radio">
+    </div>
 
-        <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
-            <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                        <stop offset="0%" stop-color="#ff3366" />
-                        <stop offset="100%" stop-color="#8b5bff" />
-                    </linearGradient>
-                </defs>
-                <path d="M3 10L12 3L21 10V21H14V14H10V21H3V10Z" />
-            </svg>
-        </a>
+    <a href="index.html" class="logo-home" aria-label="Retour à l'accueil">
+      <svg viewBox="0 0 24 24" class="home-icon" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="stroke-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stop-color="#ff3366" />
+            <stop offset="100%" stop-color="#8b5bff" />
+          </linearGradient>
+        </defs>
+        <path d="M3 10L12 3L21 10V21H14V14H10V21H3V10Z" />
+      </svg>
+    </a>
 
-        <button class="nav-toggle">☰</button>
-    </header>
+    <button class="nav-toggle">☰</button>
+  </header>
 
-    <main>
-        <div class="canvas-wrapper">
-            <div id="actu-content" class="canvas"></div>
-        </div>
-    </main>
+  <main>
+    <div class="canvas-wrapper">
+      <div id="actu-content" class="canvas"></div>
+    </div>
+  </main>
 
-    <!-- ✔ Charger Supabase en global -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- 1 CDN Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
-    <!-- ✔ Charger ton script en normal (pas module) -->
-    <script src="page.js"></script>
+  <!-- 2 Initialisation du client Supabase (une seule fois) -->
+  <script src="/vafm/supabase-client.js?v=7" defer></script>
+
+  <!-- 3 Scripts qui utilisent Supabase -->
+  <script src="/vafm/page.js?v=7" defer></script>
+  <script src="/vafm/animateurs-public.js?v=7" defer></script>
+  <script src="/vafm/actus-public.js?v=7" defer></script>
+  <script src="/vafm/emission.js?v=7" defer></script>
+  <script src="/vafm/script.js?v=7" defer></script>
 
 </body>
 </html>
