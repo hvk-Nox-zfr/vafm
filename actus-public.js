@@ -1,18 +1,22 @@
-// Utiliser le client global, sans recréer la variable
+// Utiliser le client global Supabase
 const db = window.__supabaseClient;
 
 async function chargerActusPubliques() {
+  const container = document.getElementById("actus-public");
+  if (!container) return;
+
+  container.innerHTML = "<p>Chargement...</p>";
+
   const { data, error } = await db
     .from("actus")
     .select("id, titre, texte, date_pub, imageUrl")
     .eq("published", true)
     .order("date_pub", { ascending: false });
 
-  const container = document.getElementById("actus-public");
-  container.innerHTML = "";
+  container.innerHTML = ""; // reset propre
 
   if (error) {
-    console.error("Erreur Supabase :", error);
+    console.error("❌ Erreur Supabase :", error);
     container.innerHTML = "<p>Impossible de charger les actualités.</p>";
     return;
   }
@@ -22,11 +26,13 @@ async function chargerActusPubliques() {
     return;
   }
 
+  // Si 4 actus ou moins → pas de carousel
   if (data.length <= 4) {
     data.forEach(actu => container.appendChild(creerCarteActu(actu)));
     return;
   }
 
+  // Mode carousel
   container.classList.add("carousel-paged");
 
   const btnLeft = document.createElement("button");
@@ -67,7 +73,7 @@ function creerCarteActu(actu) {
   const text = document.createElement("div");
   text.className = "actu-extrait";
 
-  let propre = actu.texte
+  let propre = (actu.texte || "")
     .replace(/<h2[\s\S]*?<\/h2>/gi, "")
     .replace(/class="floating-text"/g, "")
     .replace(/contenteditable="[^"]*"/g, "")
@@ -90,3 +96,4 @@ function creerCarteActu(actu) {
 }
 
 document.addEventListener("DOMContentLoaded", chargerActusPubliques);
+
