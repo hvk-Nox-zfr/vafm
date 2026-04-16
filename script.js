@@ -17,6 +17,7 @@ let hasStarted = false;
 if (playBtn && audio && playIcon) {
     playBtn.addEventListener("click", async () => {
         try {
+            // Première lecture
             if (!hasStarted) {
                 await audio.play();
                 audio.volume = 1;
@@ -27,6 +28,7 @@ if (playBtn && audio && playIcon) {
                 return;
             }
 
+            // Mute / Unmute
             if (!isMuted) {
                 audio.volume = 0;
                 isMuted = true;
