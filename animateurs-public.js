@@ -1,9 +1,7 @@
 console.log("📡 animateurs-public.js chargé");
 
-// Client Supabase global
-const db = window.__supabaseClient;
-
 async function loadPublicAnimateurs() {
+  const db = (window.getDb && window.getDb()) || window.__supabaseClient;
   const container = document.getElementById("animateurs-public");
   if (!container) return;
 
@@ -11,20 +9,29 @@ async function loadPublicAnimateurs() {
 
   console.log("🔄 Chargement des animateurs…");
 
-  const { data, error } = await db
-    .from("animateurs")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await db
+      .from("animateurs")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("❌ Erreur Supabase :", error);
+    if (error) {
+      console.error("❌ Erreur Supabase :", error);
+      container.innerHTML = "<p>Impossible de charger les animateurs.</p>";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      container.innerHTML = "<p>Aucun animateur pour le moment.</p>";
+      return;
+    }
+
+    console.log("📡 Animateurs reçus :", data);
+    displayPublicAnimateurs(data);
+  } catch (e) {
+    console.error("❌ Erreur lors du chargement des animateurs :", e);
     container.innerHTML = "<p>Impossible de charger les animateurs.</p>";
-    return;
   }
-
-  console.log("📡 Animateurs reçus :", data);
-
-  displayPublicAnimateurs(data);
 }
 
 function displayPublicAnimateurs(list) {
@@ -37,16 +44,19 @@ function displayPublicAnimateurs(list) {
     const card = document.createElement("div");
     card.className = "animateur-card";
 
-    const image = anim.image_url || "https://via.placeholder.com/120";
-    const nom = anim.nom || "Sans nom";
-    const emission = anim.emission || "";
-    const description = anim.description || "";
+    const image = anim?.image_url || "https://via.placeholder.com/120";
+    const nom = anim?.nom || "Sans nom";
+    const emission = anim?.emission || "";
+    const description = anim?.description || "";
+
+    // Éviter l'injection HTML en échappant les valeurs simples
+    const esc = str => String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     card.innerHTML = `
-      <img src="${image}" alt="${nom}">
-      <h3>${nom}</h3>
-      <p><strong>${emission}</strong></p>
-      <p>${description}</p>
+      <img src="${esc(image)}" alt="${esc(nom)}">
+      <h3>${esc(nom)}</h3>
+      <p><strong>${esc(emission)}</strong></p>
+      <p>${esc(description)}</p>
     `;
 
     container.appendChild(card);
