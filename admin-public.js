@@ -59,7 +59,6 @@ function afficherActusPublic() {
 }
 
 afficherActusPublic();
-afficherActusPublic();
 
 function afficherEmissions() {
     const container = document.getElementById("emissions-public");
