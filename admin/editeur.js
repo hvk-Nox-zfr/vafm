@@ -1,223 +1,306 @@
+// editeur.js (version corrigée et améliorée)
+// Assure-toi que supabase-init.js (module ESM) est chargé avant ce fichier.
+
+// Import des utilitaires d'éléments
 import { loadElements, setupSearch } from "./elements-search.js";
 
 loadElements();
 setupSearch();
 
-// --- Supabase global UMD ---
-const supabase = window.supabase.createClient(
-  "https://blronpowdhaumjudtgvn.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJscm9ucG93ZGhhdW1qdWR0Z3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODU4MDAsImV4cCI6MjA4NDU2MTgwMH0.ThzU_Eqgwy0Qx2vTO381R0HHvV1jfhsAZFxY-Aw4hXI"
-);
-
-console.log("editeur.js loaded");
-
-  /* ----------------- Helpers ----------------- */
-  function $(sel, root = document) {
-    return root.querySelector(sel);
+/* ----------------- Supabase safe getter ----------------- */
+async function getDb() {
+  if (window.__supabaseClient) return window.__supabaseClient;
+  if (window.__supabaseReady) {
+    try {
+      const client = await window.__supabaseReady;
+      return client;
+    } catch (err) {
+      console.error("getDb: supabase init rejected", err);
+      throw err;
+    }
   }
-  function $all(sel, root = document) {
-    return Array.from(root.querySelectorAll(sel));
-  }
+  throw new Error("Supabase non initialisé");
+}
 
-  /* ============================================================
-     AJOUT DE CONTENU (WYSIWYG)
-     ============================================================ */
+/* ----------------- Helpers ----------------- */
+function $(sel, root = document) {
+  return root.querySelector(sel);
+}
+function $all(sel, root = document) {
+  return Array.from(root.querySelectorAll(sel));
+}
 
-  function addTitle() {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML("beforeend", "<h2>Nouveau titre</h2>");
-  }
+/* ============================================================
+   AJOUT DE CONTENU (WYSIWYG)
+   ============================================================ */
 
-  function addSubtitle() {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML("beforeend", "<h3>Nouveau sous-titre</h3>");
-  }
+function addTitle() {
+  const editor = $("#editor-page");
+  if (!editor) return;
+  editor.insertAdjacentHTML("beforeend", "<h2>Nouveau titre</h2>");
+}
 
-  function addParagraph() {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML("beforeend", "<p>Nouveau paragraphe…</p>");
-  }
+function addSubtitle() {
+  const editor = $("#editor-page");
+  if (!editor) return;
+  editor.insertAdjacentHTML("beforeend", "<h3>Nouveau sous-titre</h3>");
+}
 
-  function addImage(src) {
-    const editor = $("#editor-page");
-    editor.insertAdjacentHTML(
-      "beforeend",
-      `<img src="${src}" style="max-width:100%; margin:20px 0;">`
-    );
-  }
+function addParagraph() {
+  const editor = $("#editor-page");
+  if (!editor) return;
+  editor.insertAdjacentHTML("beforeend", "<p>Nouveau paragraphe…</p>");
+}
+
+function addImage(src) {
+  const editor = $("#editor-page");
+  if (!editor) return;
+  // alt ajouté pour accessibilité
+  editor.insertAdjacentHTML(
+    "beforeend",
+    `<img src="${src}" style="max-width:100%; margin:20px 0;" alt="Image insérée">`
+  );
+}
 
 /* ============================================================
    BLOC DE TEXTE FLOTTANT (CANVA-LIKE)
-============================================================ */
+   ============================================================ */
 
 function makeResizable(block) {
-    const handle = block.querySelector(".resize-handle");
-    if (!handle) return;
+  const handle = block.querySelector(".resize-handle");
+  if (!handle) return;
 
-    let startX = 0, startY = 0;
-    let startWidth = 0, startHeight = 0;
+  let startX = 0, startY = 0;
+  let startWidth = 0, startHeight = 0;
 
-    handle.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+  handle.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-        startX = e.clientX;
-        startY = e.clientY;
+    startX = e.clientX;
+    startY = e.clientY;
 
-        const rect = block.getBoundingClientRect();
-        startWidth = rect.width;
-        startHeight = rect.height;
+    const rect = block.getBoundingClientRect();
+    startWidth = rect.width;
+    startHeight = rect.height;
 
-        function move(ev) {
-            const dx = ev.clientX - startX;
-            const dy = ev.clientY - startY;
+    function move(ev) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
 
-            block.style.width = startWidth + dx + "px";
-            block.style.height = startHeight + dy + "px";
-        }
+      block.style.width = Math.max(50, startWidth + dx) + "px";
+      block.style.height = Math.max(20, startHeight + dy) + "px";
+    }
 
-        function up() {
-            document.removeEventListener("mousemove", move);
-            document.removeEventListener("mouseup", up);
-        }
+    function up() {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+    }
 
-        document.addEventListener("mousemove", move);
-        document.addEventListener("mouseup", up);
-    });
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  });
+
+  // Touch support
+  handle.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    const rect = block.getBoundingClientRect();
+    startWidth = rect.width;
+    startHeight = rect.height;
+
+    function moveTouch(ev) {
+      const t = ev.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      block.style.width = Math.max(50, startWidth + dx) + "px";
+      block.style.height = Math.max(20, startHeight + dy) + "px";
+    }
+    function endTouch() {
+      document.removeEventListener("touchmove", moveTouch);
+      document.removeEventListener("touchend", endTouch);
+    }
+    document.addEventListener("touchmove", moveTouch, { passive: false });
+    document.addEventListener("touchend", endTouch);
+  }, { passive: false });
 }
 
 function makeDraggable(el) {
-    let startX = 0, startY = 0;
-    let origX = 0, origY = 0;
+  let startX = 0, startY = 0;
+  let origX = 0, origY = 0;
+  let dragging = false;
 
-    el.addEventListener("mousedown", (e) => {
-        if (e.button !== 0) return;
+  el.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
 
-        const text = el.querySelector(".text-content");
+    // Si on clique dans le texte → PAS de drag
+    if (e.target.closest(".text-content")) return;
 
-        // Si on clique dans le texte → PAS de drag
-        if (e.target.closest(".text-content")) return;
+    // Si on clique sur la poignée de resize → PAS de drag
+    if (e.target.classList && e.target.classList.contains("resize-handle")) return;
 
-        // Si on clique sur la poignée de resize → PAS de drag
-        if (e.target.classList.contains("resize-handle")) return;
+    // Sélection du bloc
+    document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
+    el.classList.add("selected");
 
-        // Sélection du bloc
-        document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
-        el.classList.add("selected");
+    const text = el.querySelector(".text-content");
+    if (text && text.getAttribute("contenteditable") === "true") return;
 
-        // Si on est en mode édition → PAS de drag
-        if (text.getAttribute("contenteditable") === "true") return;
+    e.preventDefault();
+    dragging = true;
 
-        e.preventDefault();
+    startX = e.clientX;
+    startY = e.clientY;
 
-        startX = e.clientX;
-        startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    const parentRect = el.parentNode.getBoundingClientRect();
 
-        const rect = el.getBoundingClientRect();
-        const parentRect = el.parentNode.getBoundingClientRect();
+    origX = rect.left - parentRect.left;
+    origY = rect.top - parentRect.top;
 
-        origX = rect.left - parentRect.left;
-        origY = rect.top - parentRect.top;
+    function move(ev) {
+      if (!dragging) return;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
 
-        function move(ev) {
-            const dx = ev.clientX - startX;
-            const dy = ev.clientY - startY;
+      el.style.left = Math.max(0, origX + dx) + "px";
+      el.style.top = Math.max(0, origY + dy) + "px";
+    }
 
-            el.style.left = origX + dx + "px";
-            el.style.top = origY + dy + "px";
-        }
+    function up() {
+      dragging = false;
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+    }
 
-        function up() {
-            document.removeEventListener("mousemove", move);
-            document.removeEventListener("mouseup", up);
-        }
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  });
 
-        document.addEventListener("mousemove", move);
-        document.addEventListener("mouseup", up);
-    });
+  // Désélection si on clique ailleurs
+  document.addEventListener("mousedown", (e) => {
+    if (!el.contains(e.target)) {
+      el.classList.remove("selected");
+    }
+  });
 
-    // Désélection si on clique ailleurs
-    document.addEventListener("mousedown", (e) => {
-        if (!el.contains(e.target)) {
-            el.classList.remove("selected");
-        }
-    });
+  // Touch support
+  el.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    const rect = el.getBoundingClientRect();
+    const parentRect = el.parentNode.getBoundingClientRect();
+    origX = rect.left - parentRect.left;
+    origY = rect.top - parentRect.top;
+
+    function moveTouch(ev) {
+      const tt = ev.touches[0];
+      const dx = tt.clientX - startX;
+      const dy = tt.clientY - startY;
+      el.style.left = Math.max(0, origX + dx) + "px";
+      el.style.top = Math.max(0, origY + dy) + "px";
+    }
+    function endTouch() {
+      document.removeEventListener("touchmove", moveTouch);
+      document.removeEventListener("touchend", endTouch);
+    }
+    document.addEventListener("touchmove", moveTouch, { passive: false });
+    document.addEventListener("touchend", endTouch);
+  }, { passive: false });
 }
 
 function createFloatingText() {
-    const block = document.createElement("div");
-    block.className = "floating-text";
+  const editor = $("#editor-page");
+  if (!editor) return;
 
-    // Zone de texte
-    const textContent = document.createElement("div");
-    textContent.className = "text-content";
-    textContent.innerHTML = "Double-clique pour écrire…";
-    textContent.setAttribute("contenteditable", "false");
+  const block = document.createElement("div");
+  block.className = "floating-text";
 
-    // Empêche la sélection du texte hors édition
-    textContent.style.userSelect = "none";
+  // Zone de texte
+  const textContent = document.createElement("div");
+  textContent.className = "text-content";
+  textContent.innerHTML = "Double-clique pour écrire…";
+  textContent.setAttribute("contenteditable", "false");
+  textContent.style.userSelect = "none";
 
-    block.appendChild(textContent);
+  block.appendChild(textContent);
 
-    // Poignée de resize
-    const handle = document.createElement("div");
-    handle.className = "resize-handle";
-    block.appendChild(handle);
+  // Poignée de resize
+  const handle = document.createElement("div");
+  handle.className = "resize-handle";
+  block.appendChild(handle);
 
-    // Position initiale
-    block.style.position = "absolute";
-    block.style.top = "120px";
-    block.style.left = "120px";
-    block.style.minWidth = "150px";
-    block.style.fontSize = "18px";
-    block.style.background = "transparent";
-    block.style.cursor = "move";
+  // Position initiale
+  block.style.position = "absolute";
+  block.style.top = "120px";
+  block.style.left = "120px";
+  block.style.minWidth = "150px";
+  block.style.fontSize = "18px";
+  block.style.background = "transparent";
+  block.style.cursor = "move";
 
-    /* --- Double clic → édition --- */
-    block.addEventListener("dblclick", (e) => {
-        e.stopPropagation();
-        textContent.setAttribute("contenteditable", "true");
-        textContent.style.userSelect = "text"; // ← autorise la sélection
-        block.classList.add("selected");
-        block.style.cursor = "text";
-        textContent.focus();
-    });
+  /* --- Double clic → édition --- */
+  block.addEventListener("dblclick", (e) => {
+    e.stopPropagation();
+    textContent.setAttribute("contenteditable", "true");
+    textContent.style.userSelect = "text";
+    block.classList.add("selected");
+    block.style.cursor = "text";
+    textContent.focus();
+  });
 
-    /* --- Empêcher le drag de voler le clic dans le texte --- */
-    textContent.addEventListener("mousedown", (e) => {
-        e.stopPropagation();
-    });
+  /* --- Empêcher le drag de voler le clic dans le texte --- */
+  textContent.addEventListener("mousedown", (e) => {
+    e.stopPropagation();
+  });
 
-    /* --- Quitter édition quand on clique ailleurs --- */
-    document.addEventListener("mousedown", (e) => {
-        if (!block.contains(e.target)) {
-            textContent.setAttribute("contenteditable", "false");
-            textContent.style.userSelect = "none"; // ← redevient non sélectionnable
-            block.classList.remove("selected");
-            block.style.cursor = "move";
-        }
-    });
+  /* --- Quitter édition quand on clique ailleurs --- */
+  document.addEventListener("mousedown", (e) => {
+    if (!block.contains(e.target)) {
+      textContent.setAttribute("contenteditable", "false");
+      textContent.style.userSelect = "none";
+      block.classList.remove("selected");
+      block.style.cursor = "move";
+    }
+  });
 
-    /* --- Empêcher disparition du texte --- */
-    textContent.addEventListener("input", () => {
-        if (textContent.innerHTML.trim() === "") {
-            textContent.innerHTML = "<br>";
-        }
-    });
+  /* --- Empêcher disparition du texte --- */
+  textContent.addEventListener("input", () => {
+    if (textContent.innerHTML.trim() === "") {
+      textContent.innerHTML = "<br>";
+    }
+  });
 
-    // Ajouter au DOM
-    document.querySelector("#editor-page").appendChild(block);
+  // Ajouter au DOM
+  editor.appendChild(block);
 
-    // Activer drag + resize
-    makeDraggable(block);
-    makeResizable(block);
+  // Activer drag + resize
+  makeDraggable(block);
+  makeResizable(block);
 }
 
+/* ============================================================
+   CHARGER ARTICLE (utilise getDb)
+   ============================================================ */
+
 async function chargerArticle() {
-  const client = await window.__supabaseReady;
+  let client;
+  try {
+    client = await getDb();
+  } catch (err) {
+    console.warn("chargerArticle: supabase non disponible", err);
+    return;
+  }
 
   const params = new URLSearchParams(window.location.search);
   const actuId = Number(params.get("id"));
+  if (!actuId) {
+    console.warn("chargerArticle: id manquant");
+    return;
+  }
 
   const { data, error } = await client
     .from("actus")
@@ -226,192 +309,186 @@ async function chargerArticle() {
     .single();
 
   if (error) {
-    console.error(error);
+    console.error("chargerArticle supabase error:", error);
     return;
   }
 
   // Injecter le HTML sauvegardé
-  document.querySelector("#editor-page").innerHTML = data.texte;
+  const editor = $("#editor-page");
+  if (!editor) return;
+  editor.innerHTML = data.texte || "";
 
-  // 🔥 Réactiver le drag sur les blocs rechargés
-document.querySelectorAll(".floating-text").forEach(el => {
+  // Réactiver le drag/resize/édition sur les blocs rechargés
+  document.querySelectorAll(".floating-text").forEach(el => {
     const textContent = el.querySelector(".text-content");
-
-    // Réactiver drag
     makeDraggable(el);
-
-    // Réactiver resize
     makeResizable(el);
 
-    // Réactiver double-clic pour éditer
+    // Réattacher handlers d'édition si nécessaire (déduplication)
     el.addEventListener("dblclick", (e) => {
-        e.stopPropagation();
+      e.stopPropagation();
+      if (textContent) {
         textContent.setAttribute("contenteditable", "true");
         el.classList.add("selected");
         el.style.cursor = "text";
         textContent.focus();
+      }
     });
 
-    // Empêcher drag de voler le clic
-    textContent.addEventListener("mousedown", (e) => {
-        e.stopPropagation();
-    });
+    textContent?.addEventListener("mousedown", (e) => e.stopPropagation());
 
     // Quitter édition quand on clique ailleurs
     document.addEventListener("mousedown", (e) => {
-        if (!el.contains(e.target)) {
-            textContent.setAttribute("contenteditable", "false");
-            el.classList.remove("selected");
-            el.style.cursor = "move";
-        }
-    });
-});
-
-}
-
-chargerArticle();
-
-  /* ============================================================
-     TOOLBAR – FORMATAGE (WYSIWYG)
-     ============================================================ */
-
-  function applyInlineStyle(cmd, value = null) {
-    document.execCommand(cmd, false, value);
-  }
-
-  function applyBlockStyle(styleCallback) {
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-
-    const range = selection.getRangeAt(0);
-    let node = range.commonAncestorContainer;
-
-    if (node.nodeType === 3) {
-      node = node.parentNode;
-    }
-
-    styleCallback(node);
-  }
-
-  function attachFormatToolbarHandlers() {
-    const toolbar = $('#format-toolbar');
-    if (!toolbar) return console.warn('Toolbar introuvable');
-
-    console.log('Toolbar détectée:', toolbar);
-
-    $('#ft-font', toolbar)?.addEventListener('change', (e) => {
-      applyBlockStyle(node => node.style.fontFamily = e.target.value);
-    });
-
-    $('#ft-size', toolbar)?.addEventListener('change', (e) => {
-      applyBlockStyle(node => node.style.fontSize = e.target.value);
-    });
-
-    $('#ft-bold', toolbar)?.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyInlineStyle('bold');
-    });
-
-    $('#ft-italic', toolbar)?.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyInlineStyle('italic');
-    });
-
-    $('#ft-underline', toolbar)?.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyInlineStyle('underline');
-    });
-
-    $('#ft-color', toolbar)?.addEventListener('input', (e) => {
-      applyInlineStyle('foreColor', e.target.value);
-    });
-
-    $('#ft-align-left', toolbar)?.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyBlockStyle(node => node.style.textAlign = 'left');
-    });
-
-    $('#ft-align-center', toolbar)?.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyBlockStyle(node => node.style.textAlign = 'center');
-    });
-
-    $('#ft-align-right', toolbar)?.addEventListener('click', (e) => {
-      e.preventDefault();
-      applyBlockStyle(node => node.style.textAlign = 'right');
-    });
-
-    $('#ft-lineheight', toolbar)?.addEventListener('change', (e) => {
-      applyBlockStyle(node => node.style.lineHeight = e.target.value);
-    });
-
-    console.log('[toolbar] handlers attachés');
-  }
-
-  /* ============================================================
-     PANNEAUX CANVA
-     ============================================================ */
-
-  function attachSidebarHandlers() {
-    $('#add-floating-text')?.addEventListener('click', () => {
-      createFloatingText();
-    });
-
-    $('#add-image')?.addEventListener('click', () => {
-      const input = document.getElementById("hidden-image-input");
-      input.value = ""; // reset
-      input.click();
-    });
-
-
-    const icons = $all('.canva-icon');
-    const panels = $all('.canva-panel');
-
-    function closeAll() {
-      panels.forEach(p => {
-        p.classList.remove('open');
-        p.setAttribute('aria-hidden', 'true');
-      });
-      icons.forEach(i => i.classList.remove('active'));
-    }
-
-    icons.forEach(icon => {
-      const key = icon.dataset.panel;
-      const panel = $('#panel-' + key);
-      if (!panel) return;
-
-      icon.addEventListener('mouseenter', () => {
-        closeAll();
-        panel.classList.add('open');
-        panel.setAttribute('aria-hidden', 'false');
-        icon.classList.add('active');
-      });
-
-      icon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeAll();
-        panel.classList.add('open');
-        panel.setAttribute('aria-hidden', 'false');
-        icon.classList.add('active');
-      });
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
-        closeAll();
+      if (!el.contains(e.target)) {
+        textContent?.setAttribute("contenteditable", "false");
+        el.classList.remove("selected");
+        el.style.cursor = "move";
       }
     });
+  });
+}
+
+/* ============================================================
+   TOOLBAR – FORMATAGE (WYSIWYG)
+   ============================================================ */
+
+function applyInlineStyle(cmd, value = null) {
+  document.execCommand(cmd, false, value);
+}
+
+function applyBlockStyle(styleCallback) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  let node = range.commonAncestorContainer;
+
+  if (node.nodeType === 3) {
+    node = node.parentNode;
   }
 
-  /* ============================================================
-     SAUVEGARDE
-     ============================================================ */
-  
+  styleCallback(node);
+}
+
+function attachFormatToolbarHandlers() {
+  const toolbar = $('#format-toolbar');
+  if (!toolbar) return console.warn('Toolbar introuvable');
+
+  $('#ft-font', toolbar)?.addEventListener('change', (e) => {
+    applyBlockStyle(node => node.style.fontFamily = e.target.value);
+  });
+
+  $('#ft-size', toolbar)?.addEventListener('change', (e) => {
+    applyBlockStyle(node => node.style.fontSize = e.target.value);
+  });
+
+  $('#ft-bold', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyInlineStyle('bold');
+  });
+
+  $('#ft-italic', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyInlineStyle('italic');
+  });
+
+  $('#ft-underline', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyInlineStyle('underline');
+  });
+
+  $('#ft-color', toolbar)?.addEventListener('input', (e) => {
+    applyInlineStyle('foreColor', e.target.value);
+  });
+
+  $('#ft-align-left', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(node => node.style.textAlign = 'left');
+  });
+
+  $('#ft-align-center', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(node => node.style.textAlign = 'center');
+  });
+
+  $('#ft-align-right', toolbar)?.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyBlockStyle(node => node.style.textAlign = 'right');
+  });
+
+  $('#ft-lineheight', toolbar)?.addEventListener('change', (e) => {
+    applyBlockStyle(node => node.style.lineHeight = e.target.value);
+  });
+
+  console.log('[toolbar] handlers attachés');
+}
+
+/* ============================================================
+   PANNEAUX CANVA
+   ============================================================ */
+
+function attachSidebarHandlers() {
+  $('#add-floating-text')?.addEventListener('click', () => {
+    createFloatingText();
+  });
+
+  $('#add-image')?.addEventListener('click', () => {
+    const input = document.getElementById("hidden-image-input");
+    if (!input) return;
+    input.value = ""; // reset
+    input.click();
+  });
+
+  const icons = $all('.canva-icon');
+  const panels = $all('.canva-panel');
+
+  function closeAll() {
+    panels.forEach(p => {
+      p.classList.remove('open');
+      p.setAttribute('aria-hidden', 'true');
+    });
+    icons.forEach(i => i.classList.remove('active'));
+  }
+
+  icons.forEach(icon => {
+    const key = icon.dataset.panel;
+    const panel = $('#panel-' + key);
+    if (!panel) return;
+
+    icon.addEventListener('mouseenter', () => {
+      closeAll();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      icon.classList.add('active');
+    });
+
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAll();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      icon.classList.add('active');
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
+      closeAll();
+    }
+  });
+}
+
+/* ============================================================
+   SAUVEGARDE
+   ============================================================ */
+
 async function sauvegarder() {
   console.log("[sauvegarder] démarrage");
 
-  const client = await window.__supabaseReady;
-  if (!client) {
+  let client;
+  try {
+    client = await getDb();
+  } catch (err) {
     alert("Supabase non initialisé");
     return;
   }
@@ -425,71 +502,84 @@ async function sauvegarder() {
     return;
   }
 
-  const html = document.querySelector("#editor-page").innerHTML;
-
-  const { data, error } = await client
-    .from("actus")
-    .update({
-      texte: html // ← CORRECTION ICI
-    })
-    .eq("id", actuId)
-    .select();
-
-  console.log("DATA :", data);
-  console.log("ERROR :", error);
-
-  if (error) {
-    console.error(error);
-    alert("Erreur Supabase");
+  const editor = $("#editor-page");
+  if (!editor) {
+    alert("Éditeur introuvable");
     return;
   }
 
-  alert("Enregistré !");
+  const html = editor.innerHTML;
+
+  try {
+    const { data, error } = await client
+      .from("actus")
+      .update({ texte: html })
+      .eq("id", actuId)
+      .select();
+
+    console.log("DATA :", data);
+    console.log("ERROR :", error);
+
+    if (error) {
+      console.error(error);
+      alert("Erreur Supabase");
+      return;
+    }
+
+    alert("Enregistré !");
+  } catch (err) {
+    console.error("sauvegarder: erreur réseau", err);
+    alert("Erreur réseau lors de la sauvegarde");
+  }
 }
 
-// ❌ enlève cet appel global
-// chargerArticle();
+/* ============================================================
+   FILE INPUT + DRAG & DROP
+   ============================================================ */
 
-// Import d’image depuis l’explorateur
-document.getElementById("hidden-image-input")?.addEventListener("change", function () {
-  const file = this.files[0];
-  if (!file) return;
+const hiddenInput = document.getElementById("hidden-image-input");
+if (hiddenInput) {
+  hiddenInput.addEventListener("change", function () {
+    const file = this.files[0];
+    if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    addImage(e.target.result); // base64
-  };
-  reader.readAsDataURL(file);
-});
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      addImage(e.target.result); // base64
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
-  const canvas = document.getElementById("editor-page");
+const canvas = document.getElementById("editor-page");
+if (canvas) {
+  // Empêche le comportement par défaut
+  ["dragenter", "dragover", "dragleave", "drop"].forEach(evt => {
+    canvas.addEventListener(evt, e => e.preventDefault());
+  });
 
-// Empêche le comportement par défaut
-["dragenter", "dragover", "dragleave", "drop"].forEach(evt => {
-  canvas.addEventListener(evt, e => e.preventDefault());
-});
+  // Style visuel (optionnel)
+  canvas.addEventListener("dragover", () => {
+    canvas.classList.add("drag-hover");
+  });
+  canvas.addEventListener("dragleave", () => {
+    canvas.classList.remove("drag-hover");
+  });
 
-// Style visuel (optionnel)
-canvas.addEventListener("dragover", () => {
-  canvas.classList.add("drag-hover");
-});
-canvas.addEventListener("dragleave", () => {
-  canvas.classList.remove("drag-hover");
-});
+  // Dépôt d’image
+  canvas.addEventListener("drop", (e) => {
+    canvas.classList.remove("drag-hover");
 
-// Dépôt d’image
-canvas.addEventListener("drop", (e) => {
-  canvas.classList.remove("drag-hover");
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
 
-  const file = e.dataTransfer.files[0];
-  if (!file || !file.type.startsWith("image/")) return;
-
-  const reader = new FileReader();
-  reader.onload = function (ev) {
-    addImage(ev.target.result);
-  };
-  reader.readAsDataURL(file);
-});
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      addImage(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 /* ============================================================
    INIT
@@ -531,4 +621,3 @@ if (document.readyState === 'loading') {
 }
 
 console.log('FIN DU FICHIER OK');
-})();
