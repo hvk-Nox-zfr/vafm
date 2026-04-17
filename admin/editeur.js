@@ -619,5 +619,34 @@ if (document.readyState === 'loading') {
 } else {
   initEditor();
 }
+// Supprimer la floating-text sélectionnée avec Delete / Backspace
+document.addEventListener('keydown', (e) => {
+  // Ignorer si on tape dans un champ éditable (input, textarea, contenteditable)
+  const active = document.activeElement;
+  if (!active) return;
+  const tag = active.tagName;
+  const isEditableElement = active.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || active.getAttribute('role') === 'textbox';
+  if (isEditableElement) return;
+
+  // Touches à gérer
+  if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+
+  // Trouver la floating-text sélectionnée
+  const selected = document.querySelector('.floating-text.selected');
+  if (!selected) return;
+
+  // Si le bloc est en mode édition (sécurité), ne pas supprimer
+  const textContent = selected.querySelector('.text-content');
+  if (textContent && textContent.getAttribute('contenteditable') === 'true') return;
+
+  // Optionnel : confirmation utilisateur (décommenter si souhaité)
+  // if (!confirm('Supprimer cette zone de texte ?')) return;
+
+  // Empêcher le comportement par défaut (ex: navigation arrière sur Backspace)
+  e.preventDefault();
+
+  // Supprimer le bloc du DOM
+  selected.remove();
+});
 
 console.log('FIN DU FICHIER OK');
