@@ -1,11 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Éditeur d’article</title>
+  <title>Éditeur d’article — VAFM</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Content Security Policy adaptée (garde esm.sh/unpkg si tu importes des modules ESM) -->
   <meta http-equiv="Content-Security-Policy"
         content="
           default-src 'self';
@@ -18,14 +17,20 @@
         ">
 
   <link rel="stylesheet" href="./editeur.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script type="module" src="./editeur.js" defer></script>
 </head>
 
-<body class="admin">
+<body class="editor admin">
 
-  <!-- BARRE DE FORMAT CANVA PRO -->
-  <header id="format-toolbar" class="format-toolbar" role="toolbar" aria-label="Barre de mise en page">
-    <!-- (contenu inchangé) -->
-    <div class="ft-group">
+  <!-- Top floating toolbar -->
+  <header id="format-toolbar" class="format-toolbar" role="toolbar" aria-label="Barre de mise en forme">
+    <div class="toolbar-left">
+      <button id="undo-btn" class="ft-btn" title="Annuler" aria-label="Annuler">↶</button>
+      <button id="redo-btn" class="ft-btn" title="Rétablir" aria-label="Rétablir">↷</button>
+
+      <div class="divider"></div>
+
       <select id="ft-font" class="ft-control" aria-label="Police">
         <option value="Inter, system-ui, sans-serif">Inter</option>
         <option value="Georgia, serif">Georgia</option>
@@ -39,88 +44,140 @@
         <option value="18px">18</option>
         <option value="20px">20</option>
       </select>
+
+      <div class="divider"></div>
+
+      <button id="ft-bold" class="ft-btn" aria-pressed="false" title="Gras" aria-label="Gras">B</button>
+      <button id="ft-italic" class="ft-btn" aria-pressed="false" title="Italique" aria-label="Italique">I</button>
+      <button id="ft-underline" class="ft-btn" aria-pressed="false" title="Souligné" aria-label="Souligné">U</button>
+
+      <input id="ft-color" class="ft-color" type="color" title="Couleur du texte" aria-label="Couleur du texte">
     </div>
 
-    <div class="ft-group">
-      <button id="ft-bold" class="ft-btn" aria-pressed="false" title="Gras">B</button>
-      <button id="ft-italic" class="ft-btn" aria-pressed="false" title="Italique">I</button>
-      <button id="ft-underline" class="ft-btn" aria-pressed="false" title="Souligné">U</button>
-    </div>
+    <div class="toolbar-right">
+      <button id="toggle-grid" class="ft-btn" title="Afficher la grille" aria-pressed="false" aria-label="Afficher la grille">▦</button>
+      <button id="toggle-snap" class="ft-btn" title="Activer l'accrochage" aria-pressed="false" aria-label="Activer l'accrochage">⤓</button>
 
-    <div class="ft-group">
-      <input id="ft-color" class="ft-color" type="color" title="Couleur du texte" aria-label="Couleur">
-    </div>
+      <div class="divider"></div>
 
-    <div class="ft-group">
-      <button id="ft-align-left" class="ft-btn" title="Aligner à gauche">⟵</button>
-      <button id="ft-align-center" class="ft-btn" title="Centrer">≡</button>
-      <button id="ft-align-right" class="ft-btn" title="Aligner à droite">⟶</button>
-    </div>
+      <label for="zoom" class="sr-only">Zoom</label>
+      <input id="zoom" type="range" min="50" max="200" value="100" aria-label="Zoom" class="zoom-range">
 
-    <div class="ft-group">
-      <select id="ft-lineheight" class="ft-control" aria-label="Interligne">
-        <option value="1">1</option>
-        <option value="1.2">1.2</option>
-        <option value="1.4" selected>1.4</option>
-        <option value="1.6">1.6</option>
-      </select>
-    </div>
-
-    <div class="ft-group">
-      <button id="ft-send-front" class="ft-btn" title="Mettre au premier plan">↑</button>
-      <button id="ft-send-back" class="ft-btn" title="Mettre en arrière">↓</button>
+      <button id="preview-btn" class="ft-btn" title="Aperçu public" aria-label="Aperçu public">👁</button>
+      <button id="save-btn" class="ft-btn primary" title="Enregistrer" aria-label="Enregistrer">💾</button>
     </div>
   </header>
 
   <div class="layout" role="application">
+
+    <!-- Left vertical toolbar -->
     <aside class="canva-sidebar" aria-label="Barre d'outils">
-      <button class="canva-icon" data-panel="assets" title="Éléments">🧩</button>
-      <button class="canva-icon" data-panel="images" title="Images">🖼</button>
-      <button class="canva-icon" data-panel="text" title="Texte">✏️</button>
-      <button class="canva-icon" data-panel="templates" title="Templates">📄</button>
+      <button class="canva-icon" data-panel="assets" title="Éléments" aria-label="Éléments">🧩</button>
+      <button class="canva-icon" data-panel="images" title="Images" aria-label="Images">🖼</button>
+      <button class="canva-icon" data-panel="text" title="Texte" aria-label="Texte">✏️</button>
+      <button class="canva-icon" data-panel="shapes" title="Formes" aria-label="Formes">⬡</button>
+      <button class="canva-icon" data-panel="templates" title="Templates" aria-label="Templates">📄</button>
     </aside>
 
-    <aside class="canva-panel" id="panel-assets" aria-hidden="true">
-      <h2>Éléments</h2>
-      <input id="element-search" class="search-input" placeholder="Rechercher un élément…">
-      <div id="elements-results" class="elements-grid"></div>
+    <!-- Panels -->
+    <aside class="canva-panel" id="panel-assets" aria-hidden="true" aria-label="Panneau éléments">
+      <h3>Éléments</h3>
+      <input id="element-search" class="search-input" placeholder="Rechercher un élément…" aria-label="Rechercher un élément">
+      <div id="elements-results" class="elements-grid" aria-live="polite"></div>
     </aside>
 
-    <aside class="canva-panel" id="panel-images" aria-hidden="true">
-      <h2>Images</h2>
+    <aside class="canva-panel" id="panel-images" aria-hidden="true" aria-label="Panneau images">
+      <h3>Images</h3>
       <button id="add-image" class="btn full">+ Importer une image</button>
+      <div id="images-list" class="elements-grid"></div>
     </aside>
 
-    <aside class="canva-panel" id="panel-text" aria-hidden="true">
-      <h2>Texte</h2>
+    <aside class="canva-panel" id="panel-text" aria-hidden="true" aria-label="Panneau texte">
+      <h3>Texte</h3>
       <button id="add-floating-text" class="btn full">+ Zone de texte</button>
+      <button id="add-heading" class="btn full">+ Titre</button>
     </aside>
 
-    <aside class="canva-panel" id="panel-templates" aria-hidden="true">
-      <h2>Templates</h2>
-      <p>À venir…</p>
+    <aside class="canva-panel" id="panel-templates" aria-hidden="true" aria-label="Panneau templates">
+      <h3>Templates</h3>
+      <div class="templates-grid"></div>
     </aside>
 
-    <main class="main">
+    <!-- Main canvas area -->
+    <main class="main" role="main" aria-label="Zone d'édition">
+      <div class="canvas-toolbar" aria-hidden="true">
+        <div class="breadcrumbs">Article › Édition</div>
+      </div>
+
       <div class="canvas-wrapper" id="main-canvas-wrapper">
-        <section id="editor-page" data-editor="1" class="canvas public-content">
-          <h2>Titre de l’article</h2>
-          <p>Paragraphe d’introduction. Utilise la barre à gauche pour ajouter du texte ou des images.</p>
+        <!-- simulated public page container -->
+        <section id="editor-page" data-editor="1" class="canvas public-content" tabindex="0" aria-label="Aperçu article">
+          <div class="page-surface">
+            <h1 class="page-title">Titre de l’article</h1>
+            <p class="page-intro">Paragraphe d’introduction. Utilise la barre à gauche pour ajouter du texte ou des images.</p>
+
+            <!-- floating elements will be appended here -->
+          </div>
         </section>
+
+        <!-- editor overlay for handles, selection, decorations -->
+        <div id="editor-layer" class="editor-layer" aria-hidden="false"></div>
       </div>
     </main>
+
+    <!-- Right properties panel -->
+    <aside class="properties-panel" aria-label="Propriétés">
+      <div class="properties-header">
+        <h4>Propriétés</h4>
+        <button id="close-properties" class="ft-btn" aria-label="Fermer panneau">✕</button>
+      </div>
+
+      <div id="properties-content" class="properties-content">
+        <p class="muted">Sélectionne un élément pour modifier ses propriétés.</p>
+
+        <div class="prop-group" data-prop="position">
+          <label>Position</label>
+          <div class="prop-row">
+            <input id="prop-left" type="number" step="1" placeholder="left (px)" aria-label="Position gauche">
+            <input id="prop-top" type="number" step="1" placeholder="top (px)" aria-label="Position haut">
+          </div>
+        </div>
+
+        <div class="prop-group" data-prop="size">
+          <label>Taille</label>
+          <div class="prop-row">
+            <input id="prop-width" type="number" step="1" placeholder="width (px)" aria-label="Largeur">
+            <input id="prop-height" type="number" step="1" placeholder="height (px)" aria-label="Hauteur">
+          </div>
+        </div>
+
+        <div class="prop-group" data-prop="style">
+          <label>Style</label>
+          <div class="prop-row">
+            <input id="prop-fontsize" type="number" step="1" placeholder="font-size (px)" aria-label="Taille de police">
+            <input id="prop-color" type="color" aria-label="Couleur">
+          </div>
+        </div>
+
+        <div class="prop-actions">
+          <button id="bring-front" class="btn full">Mettre au premier plan</button>
+          <button id="send-back" class="btn full">Mettre en arrière</button>
+        </div>
+      </div>
+    </aside>
+
   </div>
 
-  <!-- Bouton Enregistrer -->
-  <button id="save-btn-top" class="btn primary save-top">Enregistrer</button>
+  <!-- Floating save button -->
+  <button id="save-btn-top" class="btn primary save-top" title="Enregistrer">Enregistrer</button>
 
-  <input type="file" id="hidden-image-input" accept="image/*" style="display:none">
+  <!-- Hidden file input for images -->
+  <input type="file" id="hidden-image-input" accept="image/*" style="display:none" aria-hidden="true">
 
-  <!-- Ordre de chargement CORRECT pour la version UMD de supabase-init.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="./supabase-init.js" defer></script>
-  <script type="module" src="./editeur.js"></script>
+  <!-- Small helper: keyboard hints -->
+  <div class="keyboard-hints" aria-hidden="true">
+    <span class="kbd">Del</span> Supprimer • <span class="kbd">Ctrl</span> + Z Annuler • <span class="kbd">Ctrl</span> + Y Rétablir
+  </div>
 
 </body>
 </html>
-
