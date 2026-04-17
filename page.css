@@ -1,94 +1,99 @@
-/* ---------------- TOPBAR ---------------- */
-.topbar {
-    height: 90px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 7vw;
-    background: rgba(255, 255, 255, 0.96);
-    border-bottom: 1px solid #f0f0f0;
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    overflow: hidden;
+/* === Layout variables partagées === */
+:root{
+  --content-max-width: 1000px;
+  --content-padding-horizontal: 7vw;
+  --content-margin-vertical: 40px;
+  --content-min-height: 600px;
+  --bg-page: #fff;
+  --border-light: #f0f0f0;
+  --text-size-default: 18px;
+  --radius-default: 6px;
 }
 
-.logo img {
-    max-height: 100px;
-    width: auto;
-    object-fit: contain;
+/* Box sizing global pour éviter les décalages */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* === Topbar === */
+.topbar{
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--content-padding-horizontal);
+  background: rgba(255,255,255,0.96);
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  overflow: hidden;
 }
 
-/* Désactiver complètement le bouton hamburger */
-.nav-toggle {
-    display: none !important;
+/* Logo */
+.logo img{
+  max-height: 100px;
+  width: auto;
+  object-fit: contain;
 }
 
-/* ---------------- CANVAS PUBLIC ---------------- */
+/* Masquer le hamburger si besoin */
+.nav-toggle{ display: none !important; }
 
-.canvas-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 1000px;   /* largeur identique à l’éditeur */
-    margin: 40px auto;   /* centrage */
-    min-height: 600px;
-}
-
-.canvas {
-    position: relative;
-    width: 100%;
-    min-height: 600px;
-}
-
-/* (Optionnel) si tu veux garder .actu-canvas */
+/* === Conteneur public standardisé === */
+.canvas-wrapper,
+.article-container,
 .actu-canvas {
-    position: relative;
-    width: 100%;
-    min-height: 600px;
-    margin: 0;
-    padding: 0;
-    background: transparent;
+  width: 100%;
+  max-width: var(--content-max-width);
+  padding-left: calc(var(--content-padding-horizontal));
+  padding-right: calc(var(--content-padding-horizontal));
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: var(--content-margin-vertical);
+  margin-bottom: var(--content-margin-vertical);
+  min-height: var(--content-min-height);
+  position: relative;
+  background: transparent;
 }
 
-/* ---------------- BLOCS PUBLIC ---------------- */
-
-.block-public {
-    position: absolute;   /* même comportement que dans l’éditeur */
-    background: white;
-    border-radius: 6px;
-    overflow: hidden;
+/* Assurer que la zone canvas occupe tout l'espace du conteneur */
+.canvas,
+.actu-canvas {
+  width: 100%;
+  min-height: var(--content-min-height);
+  position: relative;
 }
 
-.text-public {
-    font-size: 18px;
-    white-space: pre-wrap;
+/* === Blocs publics (éléments positionnés) === */
+.block-public{
+  position: absolute;
+  background: var(--bg-page);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  /* éviter marges/padding implicites */
+  margin: 0;
+  padding: 0;
 }
 
-/* ---------------- HOME ICON ---------------- */
-
-.logo-home {
-    width: 36px;
-    height: 36px;
-    display: inline-block;
-    transition: transform 0.3s ease;
+/* Texte public */
+.text-public{
+  font-size: var(--text-size-default);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  color: #111;
+  padding: 8px 12px;
 }
 
-.logo-home:hover {
-    transform: scale(1.1);
+/* Images dans les blocs */
+.block-public img{
+  display: block;
+  max-width: 100%;
+  height: auto;
+  cursor: default !important;
 }
 
-.home-icon path {
-    fill: none;
-    stroke: #999;
-    stroke-width: 2;
-    transition: stroke 0.6s ease;
-}
-
-.logo-home:hover .home-icon path {
-    stroke: url(#stroke-gradient);
-}
-
-/* Bloquer le curseur "move" et forcer le curseur normal */
+/* === Curseurs et interactions publiques === */
+/* Empêcher le curseur move sur la page publique */
 .block-public,
 .canvas .text-block,
 .canvas [draggable],
@@ -96,13 +101,45 @@
   cursor: default !important;
 }
 
-/* Si tu veux que le texte garde le curseur texte */
+/* Garder le curseur texte pour les éléments textuels */
 .canvas .text-block,
 .canvas .text-block * {
   cursor: text !important;
 }
 
-/* Images : curseur pointeur si tu veux indiquer clic, sinon default */
-.block-public img {
-  cursor: default !important;
+/* === Home icon styles === */
+.logo-home{
+  width: 36px;
+  height: 36px;
+  display: inline-block;
+  transition: transform 0.3s ease;
 }
+.logo-home:hover{ transform: scale(1.1); }
+.home-icon path{
+  fill: none;
+  stroke: #999;
+  stroke-width: 2;
+  transition: stroke 0.6s ease;
+}
+.logo-home:hover .home-icon path{ stroke: url(#stroke-gradient); }
+
+/* === Debug helpers (désactiver en production) === */
+/* .canvas-wrapper { outline: 1px dashed rgba(0,0,0,0.05); } */
+/* .block-public { outline: 1px solid rgba(0,0,0,0.03); } */
+
+/* === Responsive adjustments === */
+@media (max-width: 900px){
+  :root{
+    --content-padding-horizontal: 4vw;
+    --content-max-width: 720px;
+  }
+}
+@media (max-width: 480px){
+  :root{
+    --content-padding-horizontal: 3vw;
+    --content-max-width: 100%;
+    --content-margin-vertical: 20px;
+    --content-min-height: 400px;
+  }
+}
+
