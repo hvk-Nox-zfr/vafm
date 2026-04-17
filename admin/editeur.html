@@ -5,6 +5,7 @@
   <title>Éditeur d’article</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <!-- Content Security Policy adaptée (garde esm.sh/unpkg si tu importes des modules ESM) -->
   <meta http-equiv="Content-Security-Policy"
         content="
           default-src 'self';
@@ -125,6 +126,11 @@
   <!-- Bouton Enregistrer -->
   <button id="save-btn-top" class="btn primary save-top">Enregistrer</button>
 
+  <!--
+    Choix recommandé : utiliser l'approche ESM (import depuis esm.sh) ou la version UMD.
+    Ici on garde les modules : supabase-init.js doit importer createClient depuis esm.sh
+    et s'exécuter avant editeur.js. Modules s'exécutent dans l'ordre d'apparition.
+  -->
   <script type="module" src="supabase-init.js"></script>
   <script type="module" src="editeur.js"></script>
 
@@ -132,4 +138,3 @@
 
 </body>
 </html>
-
