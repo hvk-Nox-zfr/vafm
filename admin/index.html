@@ -1,148 +1,164 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administration – VAFM</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Administration – VAFM</title>
 
-    <link rel="stylesheet" href="admin.css">
+  <!-- Styles -->
+  <link rel="stylesheet" href="admin.css">
+
+  <!-- Charger la version UMD de Supabase (doit être chargé AVANT supabase-init.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- Ton init UMD (doit exposer window.__supabaseReady et window.getDb) -->
+  <script src="./supabase-init.js"></script>
 </head>
-<body>
+<body class="admin">
 
-<!-- 🔐 Vérification de connexion AVANT d'afficher la page -->
-<script>
-if (localStorage.getItem("admin_logged") !== "true") {
-    window.location.href = "login.html";
-}
-</script>
-
-<header class="admin-header">
-    <h1>VAFM – Administration</h1>
-    <h2 id="welcome"></h2>
-
-    <nav class="admin-nav">
-        <button data-section="actus">Actualités</button>
-        <button data-section="animateurs">Animateurs</button>
-        <button data-section="emissions">Émissions</button>
-    </nav>
-</header>
-
-<!-- 🔓 Déconnexion -->
-<button class="logout-btn" onclick="logout()">Déconnexion</button>
-
-<script>
-function logout() {
-    localStorage.removeItem("admin_logged");
-    localStorage.removeItem("admin_user");
-    window.location.href = "login.html";
-}
-</script>
-
-<!-- 🔥 Script qui affiche "Salut Hugo !" APRÈS que l'élément existe -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const user = localStorage.getItem("admin_user");
-    if (user) {
-        document.getElementById("welcome").textContent = "Salut " + user + " !";
+  <!-- Vérification de connexion (exécutée immédiatement pour redirection rapide) -->
+  <script>
+    if (localStorage.getItem("admin_logged") !== "true") {
+      window.location.href = "login.html";
     }
-});
-</script>
+  </script>
 
-<main id="admin-content">
+  <header class="admin-header" role="banner" aria-label="En-tête administration">
+    <div class="brand">
+      <h1>VAFM – Administration</h1>
+      <p id="welcome" class="welcome" aria-live="polite"></p>
+    </div>
+
+    <nav class="admin-nav" role="navigation" aria-label="Navigation administration">
+      <button class="nav-btn" data-section="actus" aria-pressed="true">Actualités</button>
+      <button class="nav-btn" data-section="animateurs">Animateurs</button>
+      <button class="nav-btn" data-section="emissions">Émissions</button>
+    </nav>
+  </header>
+
+  <main id="admin-content" role="main" class="container">
 
     <!-- ACTUALITÉS -->
-    <section id="actus" class="admin-section">
-        <h2>Gestion des actualités</h2>
-        <button class="add-btn" id="add-actu">+ Ajouter une actualité</button>
-        <div id="actus-list" class="admin-list"></div>
+    <section id="actus" class="admin-section" aria-labelledby="actus-title">
+      <div class="section-head">
+        <h2 id="actus-title">Gestion des actualités</h2>
+        <button class="add-btn" id="add-actu" aria-haspopup="dialog">+ Ajouter une actualité</button>
+      </div>
+      <div id="actus-list" class="admin-list" aria-live="polite"></div>
     </section>
 
     <!-- MODAL ACTUALITÉ -->
-    <div id="actu-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Nouvelle actualité</h3>
+    <div id="actu-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="actu-modal-title">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h3 id="actu-modal-title">Nouvelle actualité</h3>
+          <button class="modal-close" data-close="actu-modal" aria-label="Fermer">✕</button>
+        </header>
 
-            <form id="actu-form">
-                <input type="text" id="actu-titre" placeholder="Titre de l'actualité" required>
-                <textarea id="actu-texte" placeholder="Texte de l'actualité" required></textarea>
-                <input type="date" id="actu-date">
-                <input type="file" id="actu-image" accept="image/*">
+        <form id="actu-form" class="modal-form" novalidate>
+          <label for="actu-titre">Titre</label>
+          <input type="text" id="actu-titre" name="titre" placeholder="Titre de l'actualité" required>
 
-                <div class="modal-actions">
-                    <button type="submit">Enregistrer</button>
-                    <button type="button" id="close-modal">Annuler</button>
-                </div>
-            </form>
-        </div>
+          <label for="actu-texte">Texte</label>
+          <textarea id="actu-texte" name="texte" placeholder="Texte de l'actualité" rows="6" required></textarea>
+
+          <div class="form-row">
+            <label for="actu-date">Date</label>
+            <input type="date" id="actu-date" name="date">
+          </div>
+
+          <div class="form-row">
+            <label for="actu-image">Image (optionnelle)</label>
+            <input type="file" id="actu-image" name="image" accept="image/*">
+          </div>
+
+          <footer class="modal-actions">
+            <button type="submit" class="btn-primary">Enregistrer</button>
+            <button type="button" class="btn-secondary" data-close="actu-modal">Annuler</button>
+          </footer>
+        </form>
+      </div>
     </div>
 
     <!-- ANIMATEURS -->
-    <section id="animateurs" class="admin-section">
-        <h2>Gestion des animateurs</h2>
-        <button class="add-btn" id="add-animateur">+ Ajouter un animateur</button>
-        <div id="animateurs-list" class="admin-list"></div>
+    <section id="animateurs" class="admin-section hidden" aria-labelledby="animateurs-title">
+      <div class="section-head">
+        <h2 id="animateurs-title">Gestion des animateurs</h2>
+        <button class="add-btn" id="add-animateur" aria-haspopup="dialog">+ Ajouter un animateur</button>
+      </div>
+      <div id="animateurs-list" class="admin-list"></div>
     </section>
 
     <!-- POPUP ANIMATEUR -->
-    <div id="popup-animateur" class="popup-overlay">
-        <div class="popup">
-            <h2 id="popup-animateur-title">Nouvel animateur</h2>
+    <div id="popup-animateur" class="popup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="popup-animateur-title">
+      <div class="popup" role="document">
+        <header class="popup-header">
+          <h3 id="popup-animateur-title">Nouvel animateur</h3>
+          <button class="modal-close" data-close="popup-animateur" aria-label="Fermer">✕</button>
+        </header>
 
-            <label>Nom de l’animateur</label>
-            <input type="text" id="animateur-nom">
+        <div class="popup-body">
+          <label for="animateur-nom">Nom de l’animateur</label>
+          <input id="animateur-nom" type="text">
 
-            <label>Émission associée</label>
-            <input type="text" id="animateur-emission">
+          <label for="animateur-emission">Émission associée</label>
+          <input id="animateur-emission" type="text">
 
-            <label>Description</label>
-            <textarea id="animateur-description"></textarea>
+          <label for="animateur-description">Description</label>
+          <textarea id="animateur-description" rows="4"></textarea>
 
-            <label>Photo de l’animateur</label>
-            <div id="drop-zone" class="drop-zone">
-                <p>Glissez une image ici ou cliquez pour parcourir</p>
-                <input type="file" id="animateur-image" accept="image/*">
-            </div>
+          <label>Photo de l’animateur</label>
+          <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Zone de dépôt d'image">
+            <p>Glissez une image ici ou cliquez pour parcourir</p>
+            <input type="file" id="animateur-image" accept="image/*" aria-label="Choisir une image">
+          </div>
 
-            <img id="preview-image" class="preview-image hidden">
-
-            <div class="popup-buttons">
-                <button id="popup-animateur-save" class="btn-primary">Enregistrer</button>
-                <button id="popup-animateur-cancel" class="btn-secondary">Annuler</button>
-            </div>
+          <img id="preview-image" class="preview-image hidden" alt="Aperçu de l'image">
         </div>
-    </div>
 
-    <!-- POPUP EMISSION -->
-    <div id="popup-emission" class="popup-overlay">
-        <div class="popup">
-            <h2 id="popup-emission-title">Nouvelle émission</h2>
-
-            <label>Nom de l’émission</label>
-            <input type="text" id="emission-nom">
-
-            <label>Horaires</label>
-            <input type="text" id="emission-horaires" placeholder="Ex : Lundi 18h - 20h">
-
-            <label>Description</label>
-            <textarea id="emission-description"></textarea>
-
-            <div class="popup-buttons">
-                <button id="popup-emission-save" class="btn-primary">Enregistrer</button>
-                <button id="popup-emission-cancel" class="btn-secondary">Annuler</button>
-            </div>
-        </div>
+        <footer class="popup-buttons">
+          <button id="popup-animateur-save" class="btn-primary">Enregistrer</button>
+          <button id="popup-animateur-cancel" class="btn-secondary" data-close="popup-animateur">Annuler</button>
+        </footer>
+      </div>
     </div>
 
     <!-- ÉMISSIONS -->
-    <section id="emissions" class="admin-section">
-        <h2>Gestion des émissions</h2>
-        <button class="add-btn" id="add-emission">+ Ajouter une émission</button>
-        <div id="emissions-admin" class="admin-list"></div>
+    <section id="emissions" class="admin-section hidden" aria-labelledby="emissions-title">
+      <div class="section-head">
+        <h2 id="emissions-title">Gestion des émissions</h2>
+        <button class="add-btn" id="add-emission" aria-haspopup="dialog">+ Ajouter une émission</button>
+      </div>
+      <div id="emissions-admin" class="admin-list"></div>
     </section>
 
-</main>
-    
-<script type="module" src="./admin.js"></script>
+  </main>
+
+  <!-- Logout floating button -->
+  <button id="logout" class="logout-btn" aria-label="Se déconnecter">Déconnexion</button>
+
+  <!-- Scripts de l'application (modules) -->
+  <!-- admin.js est un module qui importe admin-actus.js et emissions.js -->
+  <script type="module" src="./admin.js" defer></script>
+
+  <!-- Petit script utilitaire pour fermer modals via data-close (fallback si admin.js n'est pas encore exécuté) -->
+  <script>
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-close]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-close');
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('show', 'hidden');
+    });
+
+    // Afficher le nom d'utilisateur si présent (fallback)
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = localStorage.getItem('admin_user');
+      if (user) {
+        const w = document.getElementById('welcome');
+        if (w) w.textContent = `Salut ${user} !`;
+      }
+    });
+  </script>
 </body>
 </html>
