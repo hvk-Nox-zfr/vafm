@@ -1,148 +1,206 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administration – VAFM</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Administration – VAFM</title>
 
-    <link rel="stylesheet" href="admin.css">
+  <!-- Supabase UMD (si utilisé) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+  <!-- Styles et script de l'admin -->
+  <link rel="stylesheet" href="admin.css">
+  <script type="module" src="./admin.js" defer></script>
 </head>
-<body>
+<body class="admin">
 
-<!-- 🔐 Vérification de connexion AVANT d'afficher la page -->
-<script>
-if (localStorage.getItem("admin_logged") !== "true") {
-    window.location.href = "login.html";
-}
-</script>
-
-<header class="admin-header">
-    <h1>VAFM – Administration</h1>
-    <h2 id="welcome"></h2>
-
-    <nav class="admin-nav">
-        <button data-section="actus">Actualités</button>
-        <button data-section="animateurs">Animateurs</button>
-        <button data-section="emissions">Émissions</button>
-    </nav>
-</header>
-
-<!-- 🔓 Déconnexion -->
-<button class="logout-btn" onclick="logout()">Déconnexion</button>
-
-<script>
-function logout() {
-    localStorage.removeItem("admin_logged");
-    localStorage.removeItem("admin_user");
-    window.location.href = "login.html";
-}
-</script>
-
-<!-- 🔥 Script qui affiche "Salut Hugo !" APRÈS que l'élément existe -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const user = localStorage.getItem("admin_user");
-    if (user) {
-        document.getElementById("welcome").textContent = "Salut " + user + " !";
-    }
-});
-</script>
-
-<main id="admin-content">
-
-    <!-- ACTUALITÉS -->
-    <section id="actus" class="admin-section">
-        <h2>Gestion des actualités</h2>
-        <button class="add-btn" id="add-actu">+ Ajouter une actualité</button>
-        <div id="actus-list" class="admin-list"></div>
-    </section>
-
-    <!-- MODAL ACTUALITÉ -->
-    <div id="actu-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Nouvelle actualité</h3>
-
-            <form id="actu-form">
-                <input type="text" id="actu-titre" placeholder="Titre de l'actualité" required>
-                <textarea id="actu-texte" placeholder="Texte de l'actualité" required></textarea>
-                <input type="date" id="actu-date">
-                <input type="file" id="actu-image" accept="image/*">
-
-                <div class="modal-actions">
-                    <button type="submit">Enregistrer</button>
-                    <button type="button" id="close-modal">Annuler</button>
-                </div>
-            </form>
-        </div>
+  <!-- Auth check moved to admin.js for cleaner HTML -->
+  <header class="admin-header" role="banner" aria-label="En-tête administration">
+    <div class="brand">
+      <h1 class="brand-title">VAFM</h1>
+      <p class="brand-sub">Console d'administration</p>
     </div>
 
-    <!-- ANIMATEURS -->
-    <section id="animateurs" class="admin-section">
-        <h2>Gestion des animateurs</h2>
-        <button class="add-btn" id="add-animateur">+ Ajouter un animateur</button>
+    <div class="header-actions" aria-hidden="false">
+      <div class="user-welcome" id="welcome" aria-live="polite"></div>
+
+      <nav class="admin-nav" role="navigation" aria-label="Navigation administration">
+        <button class="nav-btn" data-section="actus" aria-pressed="true">Actualités</button>
+        <button class="nav-btn" data-section="animateurs">Animateurs</button>
+        <button class="nav-btn" data-section="emissions">Émissions</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="admin-content" role="main">
+
+    <!-- Left column: contenu principal -->
+    <section id="panel-left" class="panel-left">
+
+      <!-- ACTUALITÉS -->
+      <section id="actus" class="admin-section" data-section="actus" aria-labelledby="actus-title">
+        <div class="section-head">
+          <h2 id="actus-title">Gestion des actualités</h2>
+          <div class="section-actions">
+            <button class="add-btn" id="add-actu" aria-haspopup="dialog">+ Ajouter une actualité</button>
+          </div>
+        </div>
+
+        <div id="actus-list" class="admin-list" aria-live="polite" aria-relevant="additions removals"></div>
+      </section>
+
+      <!-- ANIMATEURS -->
+      <section id="animateurs" class="admin-section hidden" data-section="animateurs" aria-labelledby="animateurs-title">
+        <div class="section-head">
+          <h2 id="animateurs-title">Gestion des animateurs</h2>
+          <div class="section-actions">
+            <button class="add-btn" id="add-animateur" aria-haspopup="dialog">+ Ajouter un animateur</button>
+          </div>
+        </div>
+
         <div id="animateurs-list" class="admin-list"></div>
-    </section>
+      </section>
 
-    <!-- POPUP ANIMATEUR -->
-    <div id="popup-animateur" class="popup-overlay">
-        <div class="popup">
-            <h2 id="popup-animateur-title">Nouvel animateur</h2>
-
-            <label>Nom de l’animateur</label>
-            <input type="text" id="animateur-nom">
-
-            <label>Émission associée</label>
-            <input type="text" id="animateur-emission">
-
-            <label>Description</label>
-            <textarea id="animateur-description"></textarea>
-
-            <label>Photo de l’animateur</label>
-            <div id="drop-zone" class="drop-zone">
-                <p>Glissez une image ici ou cliquez pour parcourir</p>
-                <input type="file" id="animateur-image" accept="image/*">
-            </div>
-
-            <img id="preview-image" class="preview-image hidden">
-
-            <div class="popup-buttons">
-                <button id="popup-animateur-save" class="btn-primary">Enregistrer</button>
-                <button id="popup-animateur-cancel" class="btn-secondary">Annuler</button>
-            </div>
+      <!-- ÉMISSIONS -->
+      <section id="emissions" class="admin-section hidden" data-section="emissions" aria-labelledby="emissions-title">
+        <div class="section-head">
+          <h2 id="emissions-title">Gestion des émissions</h2>
+          <div class="section-actions">
+            <button class="add-btn" id="add-emission" aria-haspopup="dialog">+ Ajouter une émission</button>
+          </div>
         </div>
-    </div>
 
-    <!-- POPUP EMISSION -->
-    <div id="popup-emission" class="popup-overlay">
-        <div class="popup">
-            <h2 id="popup-emission-title">Nouvelle émission</h2>
-
-            <label>Nom de l’émission</label>
-            <input type="text" id="emission-nom">
-
-            <label>Horaires</label>
-            <input type="text" id="emission-horaires" placeholder="Ex : Lundi 18h - 20h">
-
-            <label>Description</label>
-            <textarea id="emission-description"></textarea>
-
-            <div class="popup-buttons">
-                <button id="popup-emission-save" class="btn-primary">Enregistrer</button>
-                <button id="popup-emission-cancel" class="btn-secondary">Annuler</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ÉMISSIONS -->
-    <section id="emissions" class="admin-section">
-        <h2>Gestion des émissions</h2>
-        <button class="add-btn" id="add-emission">+ Ajouter une émission</button>
         <div id="emissions-admin" class="admin-list"></div>
+      </section>
     </section>
 
-</main>
-    
-<script type="module" src="./admin.js"></script>
+    <!-- Right column: outils / aperçu / quick actions -->
+    <aside id="panel-right" class="panel-right" role="complementary" aria-label="Outils">
+      <div class="card">
+        <h3>Raccourcis</h3>
+        <p><span class="kbd">N</span> : nouvelle actualité — <span class="kbd">Esc</span> : fermer modal</p>
+      </div>
+
+      <div class="card">
+        <h3>Prévisualisation</h3>
+        <p>Utilisez la prévisualisation pour vérifier l'apparence des articles.</p>
+        <button id="preview-article" class="btn-secondary">Ouvrir aperçu</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Modal : Actualité (accessible) -->
+  <div id="actu-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="actu-modal-title">
+    <div class="modal-content" role="document">
+      <header class="modal-header">
+        <h3 id="actu-modal-title">Nouvelle actualité</h3>
+        <button class="modal-close" data-close="actu-modal" aria-label="Fermer la fenêtre">✕</button>
+      </header>
+
+      <form id="actu-form" class="modal-form" novalidate>
+        <label for="actu-titre">Titre</label>
+        <input type="text" id="actu-titre" name="titre" placeholder="Titre de l'actualité" required>
+
+        <label for="actu-texte">Texte</label>
+        <textarea id="actu-texte" name="texte" placeholder="Texte de l'actualité" rows="6" required></textarea>
+
+        <div class="form-row">
+          <label for="actu-date">Date</label>
+          <input type="date" id="actu-date" name="date">
+        </div>
+
+        <div class="form-row">
+          <label for="actu-image">Image (optionnelle)</label>
+          <input type="file" id="actu-image" name="image" accept="image/*">
+        </div>
+
+        <footer class="modal-actions">
+          <button type="submit" class="btn-primary">Enregistrer</button>
+          <button type="button" class="btn-secondary" data-close="actu-modal">Annuler</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- Popup : Ajouter animateur -->
+  <div id="popup-animateur" class="popup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="popup-animateur-title">
+    <div class="popup" role="document">
+      <header class="popup-header">
+        <h3 id="popup-animateur-title">Nouvel animateur</h3>
+        <button class="modal-close" data-close="popup-animateur" aria-label="Fermer">✕</button>
+      </header>
+
+      <div class="popup-body">
+        <label for="animateur-nom">Nom</label>
+        <input id="animateur-nom" type="text">
+
+        <label for="animateur-emission">Émission</label>
+        <input id="animateur-emission" type="text">
+
+        <label for="animateur-description">Description</label>
+        <textarea id="animateur-description" rows="4"></textarea>
+
+        <label>Photo</label>
+        <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Zone de dépôt d'image">
+          <p>Glissez une image ici ou cliquez pour parcourir</p>
+          <input type="file" id="animateur-image" accept="image/*" aria-label="Choisir une image">
+        </div>
+
+        <img id="preview-image" class="preview-image hidden" alt="Aperçu de l'image">
+      </div>
+
+      <footer class="popup-buttons">
+        <button id="popup-animateur-save" class="btn-primary">Enregistrer</button>
+        <button id="popup-animateur-cancel" class="btn-secondary" data-close="popup-animateur">Annuler</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Popup : Ajouter émission -->
+  <div id="popup-emission" class="popup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="popup-emission-title">
+    <div class="popup" role="document">
+      <header class="popup-header">
+        <h3 id="popup-emission-title">Nouvelle émission</h3>
+        <button class="modal-close" data-close="popup-emission" aria-label="Fermer">✕</button>
+      </header>
+
+      <div class="popup-body">
+        <label for="emission-nom">Nom</label>
+        <input id="emission-nom" type="text">
+
+        <label for="emission-horaires">Horaires</label>
+        <input id="emission-horaires" type="text" placeholder="Ex : Lundi 18h - 20h">
+
+        <label for="emission-description">Description</label>
+        <textarea id="emission-description" rows="4"></textarea>
+      </div>
+
+      <footer class="popup-buttons">
+        <button id="popup-emission-save" class="btn-primary">Enregistrer</button>
+        <button id="popup-emission-cancel" class="btn-secondary" data-close="popup-emission">Annuler</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Template item (hidden) -->
+  <template id="tmpl-item">
+    <div class="item" role="article">
+      <div class="meta">
+        <img src="" alt="" class="thumb hidden">
+        <div>
+          <div class="title"></div>
+          <div class="sub"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" data-action="edit">Éditer</button>
+        <button class="btn-secondary" data-action="delete">Supprimer</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Logout floating button -->
+  <button id="logout" class="logout-btn" aria-label="Se déconnecter">Déconnexion</button>
+
 </body>
 </html>
