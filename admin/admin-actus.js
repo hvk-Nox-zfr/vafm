@@ -1,6 +1,25 @@
 console.log("ADMIN ACTUS CHARGÉ");
 
-import { supabase } from "./supabase-init.js";
+/* ============================================================
+   Compatibilité Supabase UMD
+   (utiliser getSupabaseClient() au lieu d'import ESM)
+============================================================ */
+async function getSupabaseClient() {
+  if (window.__supabaseReady && typeof window.__supabaseReady.then === 'function') {
+    try {
+      await window.__supabaseReady;
+    } catch (err) {
+      console.error('getSupabaseClient: __supabaseReady rejected', err);
+      throw err;
+    }
+  }
+  const client = (typeof window.getDb === 'function' && window.getDb()) || window.__supabaseClient || window.supabaseClient || window.supabase;
+  if (!client) throw new Error('Supabase client non initialisé');
+  // exposer pour compatibilité
+  window.supabase = client;
+  window.supabaseClient = client;
+  return client;
+}
 
 let actus = [];
 
@@ -27,6 +46,8 @@ function nettoyerHTML(html) {
 export async function loadActus() {
     console.log("Chargement des actus…");
 
+    const supabase = await getSupabaseClient();
+
     const { data, error } = await supabase
         .from("actus")
         .select("*")
@@ -38,7 +59,7 @@ export async function loadActus() {
         console.error("Erreur chargement actus :", error);
         actus = [];
     } else {
-        actus = data;
+        actus = data || [];
     }
 }
 
@@ -53,7 +74,7 @@ export function renderActus() {
 
     container.innerHTML = "";
 
-    if (actus.length === 0) {
+    if (!Array.isArray(actus) || actus.length === 0) {
         container.innerHTML = "<p>Aucune actualité pour le moment.</p>";
         return;
     }
@@ -70,9 +91,9 @@ export function renderActus() {
         card.innerHTML = `
             <div>
                 <div class="admin-image-preview" style="background-image: url('${actu.imageUrl || "assets/default.jpg"}');"></div>
-                <h3>${actu.titre}</h3>
+                <h3>${actu.titre || ''}</h3>
                 <p>${previewTexte}</p>
-                <small>Date prévue : ${actu.date_pub}</small>
+                <small>Date prévue : ${actu.date_pub || '—'}</small>
                 ${actu.published ? `<span class="badge-published">Publié</span>` : `<span class="badge-draft">Brouillon</span>`}
             </div>
 
@@ -86,81 +107,77 @@ export function renderActus() {
             </div>
         `;
 
-        /* ============================================================
-           PUBLISH
-        ============================================================ */
+        /* PUBLISH */
         card.querySelector("[data-action='publish']")?.addEventListener("click", async () => {
             console.log("→ PUBLISH demandé pour ID :", id);
-
-            const { data, error } = await supabase
-                .from("actus")
-                .update({ published: true })
-                .eq("id", id)
-                .select();
-
-            console.log("Résultat publish :", { data, error });
-
+            try {
+              const supabase = await getSupabaseClient();
+              const { data, error } = await supabase
+                  .from("actus")
+                  .update({ published: true })
+                  .eq("id", id)
+                  .select();
+              console.log("Résultat publish :", { data, error });
+            } catch (err) {
+              console.error("Publish error:", err);
+            }
             await loadActus();
             renderActus();
         });
 
-        /* ============================================================
-           UNPUBLISH
-        ============================================================ */
+        /* UNPUBLISH */
         card.querySelector("[data-action='unpublish']")?.addEventListener("click", async () => {
             console.log("→ UNPUBLISH demandé pour ID :", id);
-
-            const { data, error } = await supabase
-                .from("actus")
-                .update({ published: false })
-                .eq("id", id)
-                .select();
-
-            console.log("Résultat unpublish :", { data, error });
-
+            try {
+              const supabase = await getSupabaseClient();
+              const { data, error } = await supabase
+                  .from("actus")
+                  .update({ published: false })
+                  .eq("id", id)
+                  .select();
+              console.log("Résultat unpublish :", { data, error });
+            } catch (err) {
+              console.error("Unpublish error:", err);
+            }
             await loadActus();
             renderActus();
         });
 
-        /* ============================================================
-           EDIT
-        ============================================================ */
+        /* EDIT */
         card.querySelector("[data-action='edit']").addEventListener("click", () => {
             console.log("→ EDIT demandé pour ID :", id);
 
-            document.getElementById("actu-titre").value = actu.titre;
-            document.getElementById("actu-texte").value = nettoyerHTML(actu.texte);
-            document.getElementById("actu-date").value = actu.date_pub;
+            document.getElementById("actu-titre").value = actu.titre || '';
+            document.getElementById("actu-texte").value = nettoyerHTML(actu.texte) || '';
+            document.getElementById("actu-date").value = actu.date_pub || '';
 
             const form = document.getElementById("actu-form");
-            form.dataset.editId = id;
+            if (form) form.dataset.editId = id;
 
             document.getElementById("actu-modal").classList.remove("hidden");
         });
 
-        /* ============================================================
-           DELETE
-        ============================================================ */
+        /* DELETE */
         card.querySelector("[data-action='delete']").addEventListener("click", async () => {
             if (!confirm("Supprimer cette actualité ?")) return;
 
             console.log("→ DELETE demandé pour ID :", id);
-
-            const { data, error } = await supabase
-                .from("actus")
-                .delete()
-                .eq("id", id)
-                .select();
-
-            console.log("Résultat delete :", { data, error });
-
+            try {
+              const supabase = await getSupabaseClient();
+              const { data, error } = await supabase
+                  .from("actus")
+                  .delete()
+                  .eq("id", id)
+                  .select();
+              console.log("Résultat delete :", { data, error });
+            } catch (err) {
+              console.error("Delete error:", err);
+            }
             await loadActus();
             renderActus();
         });
 
-        /* ============================================================
-           EDIT CONTENT
-        ============================================================ */
+        /* EDIT CONTENT */
         card.querySelector("[data-action='edit-content']").addEventListener("click", () => {
             console.log("→ EDIT CONTENT pour ID :", id);
             window.location.href = `editeur.html?id=${id}`;
@@ -207,6 +224,8 @@ export function setupActuForm() {
             return;
         }
 
+        const supabase = await getSupabaseClient();
+
         let imageUrl = "https://vafmlaradio.fr/assets/default.jpg";
 
         if (file) {
@@ -224,9 +243,11 @@ export function setupActuForm() {
                 return;
             }
 
-            imageUrl = supabase.storage
+            const { data: publicData } = await supabase.storage
                 .from("uploads")
-                .getPublicUrl(fileName).data.publicUrl;
+                .getPublicUrl(fileName);
+
+            imageUrl = publicData?.publicUrl || imageUrl;
         }
 
         let error;
@@ -256,7 +277,7 @@ export function setupActuForm() {
         console.log("Résultat submit :", error);
 
         if (error) {
-            alert("Erreur Supabase : " + error.message);
+            alert("Erreur Supabase : " + (error.message || JSON.stringify(error)));
             return;
         }
 
