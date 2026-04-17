@@ -54,17 +54,82 @@ a { color:var(--accent); }
 
 /* Main canvas */
 .main { display:flex; flex-direction:column; gap:12px; }
-.canvas-wrapper { background:transparent; display:flex; justify-content:center; align-items:flex-start; padding:12px; }
+/* ---------- Canvas public plus grand et centré (remplace l'ancienne règle) ---------- */
+.canvas-wrapper { display:flex; justify-content:center; align-items:flex-start; padding:20px; }
 .canvas.public-content {
-  width: 820px;
-  min-height: 560px;
+  width: 980px;               /* taille normale plus grande */
+  min-height: 720px;         /* hauteur confortable */
+  max-width: calc(100% - 48px);
+  margin: 0 auto;
+  padding: 48px;             /* espace intérieur pour simuler page */
+  box-sizing: border-box;
+  position: relative;
   background: #fff;
   border-radius: 14px;
-  padding: 36px;
-  box-shadow: 0 20px 60px rgba(2,6,23,0.06);
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(15,23,42,0.03);
+  border: 1px solid rgba(15,23,42,0.04);
+  box-shadow: 0 30px 80px rgba(2,6,23,0.06);
+  overflow: visible;
+}
+
+/* ---------- Safe area (colonne centrale) ---------- */
+.canvas.public-content .content-safe-area {
+  position: absolute;
+  top: 48px;                 /* align with padding */
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 640px;              /* largeur du contenu public (modifiable) */
+  pointer-events: none;      /* guides don't block interactions */
+}
+
+/* thin vertical guide bars at left and right edges of safe area */
+.canvas.public-content .content-safe-area::before,
+.canvas.public-content .content-safe-area::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(99,102,241,0.12), rgba(99,102,241,0.06));
+  border-radius: 2px;
+  left: 0;
+  transform: translateX(-50%);
+  opacity: 0.9;
+}
+.canvas.public-content .content-safe-area::after {
+  left: 100%;
+  transform: translateX(-50%);
+}
+
+/* subtle center line */
+.canvas.public-content .content-safe-area .center-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(15,23,42,0.04);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* highlight when snapped */
+.floating.snap-center { outline: 2px dashed rgba(37,99,235,0.28); transform: translateZ(0); transition: outline .25s; }
+
+/* guide toggle button inside canvas */
+.guide-toggle {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 80;
+  background: rgba(255,255,255,0.95);
+  border-radius: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(15,23,42,0.04);
+  box-shadow: 0 8px 20px rgba(2,6,23,0.06);
+  cursor: pointer;
+  font-weight:700;
+  color:var(--muted);
 }
 
 /* page surface */
