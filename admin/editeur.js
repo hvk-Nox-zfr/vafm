@@ -1,652 +1,372 @@
-// editeur.js (version corrigée et améliorée)
-// Assure-toi que supabase-init.js (module ESM) est chargé avant ce fichier.
-
-// Import des utilitaires d'éléments
-import { loadElements, setupSearch } from "./elements-search.js";
-
-loadElements();
-setupSearch();
-
-/* ----------------- Supabase safe getter ----------------- */
-async function getDb() {
-  if (window.__supabaseClient) return window.__supabaseClient;
-  if (window.__supabaseReady) {
-    try {
-      const client = await window.__supabaseReady;
-      return client;
-    } catch (err) {
-      console.error("getDb: supabase init rejected", err);
-      throw err;
+// editeur.js — interactions de base pour l'éditeur (drag, resize, add text/image, save)
+(() => {
+  // Helpers Supabase UMD safe
+  async function getSupabaseClient() {
+    if (window.__supabaseReady && typeof window.__supabaseReady.then === 'function') {
+      try { await window.__supabaseReady; } catch (e) { /* ignore */ }
     }
-  }
-  throw new Error("Supabase non initialisé");
-}
-
-/* ----------------- Helpers ----------------- */
-function $(sel, root = document) {
-  return root.querySelector(sel);
-}
-function $all(sel, root = document) {
-  return Array.from(root.querySelectorAll(sel));
-}
-
-/* ============================================================
-   AJOUT DE CONTENU (WYSIWYG)
-   ============================================================ */
-
-function addTitle() {
-  const editor = $("#editor-page");
-  if (!editor) return;
-  editor.insertAdjacentHTML("beforeend", "<h2>Nouveau titre</h2>");
-}
-
-function addSubtitle() {
-  const editor = $("#editor-page");
-  if (!editor) return;
-  editor.insertAdjacentHTML("beforeend", "<h3>Nouveau sous-titre</h3>");
-}
-
-function addParagraph() {
-  const editor = $("#editor-page");
-  if (!editor) return;
-  editor.insertAdjacentHTML("beforeend", "<p>Nouveau paragraphe…</p>");
-}
-
-function addImage(src) {
-  const editor = $("#editor-page");
-  if (!editor) return;
-  // alt ajouté pour accessibilité
-  editor.insertAdjacentHTML(
-    "beforeend",
-    `<img src="${src}" style="max-width:100%; margin:20px 0;" alt="Image insérée">`
-  );
-}
-
-/* ============================================================
-   BLOC DE TEXTE FLOTTANT (CANVA-LIKE)
-   ============================================================ */
-
-function makeResizable(block) {
-  const handle = block.querySelector(".resize-handle");
-  if (!handle) return;
-
-  let startX = 0, startY = 0;
-  let startWidth = 0, startHeight = 0;
-
-  handle.addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    startX = e.clientX;
-    startY = e.clientY;
-
-    const rect = block.getBoundingClientRect();
-    startWidth = rect.width;
-    startHeight = rect.height;
-
-    function move(ev) {
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-
-      block.style.width = Math.max(50, startWidth + dx) + "px";
-      block.style.height = Math.max(20, startHeight + dy) + "px";
-    }
-
-    function up() {
-      document.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseup", up);
-    }
-
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
-  });
-
-  // Touch support
-  handle.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    startX = touch.clientX;
-    startY = touch.clientY;
-    const rect = block.getBoundingClientRect();
-    startWidth = rect.width;
-    startHeight = rect.height;
-
-    function moveTouch(ev) {
-      const t = ev.touches[0];
-      const dx = t.clientX - startX;
-      const dy = t.clientY - startY;
-      block.style.width = Math.max(50, startWidth + dx) + "px";
-      block.style.height = Math.max(20, startHeight + dy) + "px";
-    }
-    function endTouch() {
-      document.removeEventListener("touchmove", moveTouch);
-      document.removeEventListener("touchend", endTouch);
-    }
-    document.addEventListener("touchmove", moveTouch, { passive: false });
-    document.addEventListener("touchend", endTouch);
-  }, { passive: false });
-}
-
-function makeDraggable(el) {
-  let startX = 0, startY = 0;
-  let origX = 0, origY = 0;
-  let dragging = false;
-
-  el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-
-    // Si on clique dans le texte → PAS de drag
-    if (e.target.closest(".text-content")) return;
-
-    // Si on clique sur la poignée de resize → PAS de drag
-    if (e.target.classList && e.target.classList.contains("resize-handle")) return;
-
-    // Sélection du bloc
-    document.querySelectorAll(".floating-text").forEach(b => b.classList.remove("selected"));
-    el.classList.add("selected");
-
-    const text = el.querySelector(".text-content");
-    if (text && text.getAttribute("contenteditable") === "true") return;
-
-    e.preventDefault();
-    dragging = true;
-
-    startX = e.clientX;
-    startY = e.clientY;
-
-    const rect = el.getBoundingClientRect();
-    const parentRect = el.parentNode.getBoundingClientRect();
-
-    origX = rect.left - parentRect.left;
-    origY = rect.top - parentRect.top;
-
-    function move(ev) {
-      if (!dragging) return;
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-
-      el.style.left = Math.max(0, origX + dx) + "px";
-      el.style.top = Math.max(0, origY + dy) + "px";
-    }
-
-    function up() {
-      dragging = false;
-      document.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseup", up);
-    }
-
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
-  });
-
-  // Désélection si on clique ailleurs
-  document.addEventListener("mousedown", (e) => {
-    if (!el.contains(e.target)) {
-      el.classList.remove("selected");
-    }
-  });
-
-  // Touch support
-  el.addEventListener("touchstart", (e) => {
-    const t = e.touches[0];
-    startX = t.clientX;
-    startY = t.clientY;
-    const rect = el.getBoundingClientRect();
-    const parentRect = el.parentNode.getBoundingClientRect();
-    origX = rect.left - parentRect.left;
-    origY = rect.top - parentRect.top;
-
-    function moveTouch(ev) {
-      const tt = ev.touches[0];
-      const dx = tt.clientX - startX;
-      const dy = tt.clientY - startY;
-      el.style.left = Math.max(0, origX + dx) + "px";
-      el.style.top = Math.max(0, origY + dy) + "px";
-    }
-    function endTouch() {
-      document.removeEventListener("touchmove", moveTouch);
-      document.removeEventListener("touchend", endTouch);
-    }
-    document.addEventListener("touchmove", moveTouch, { passive: false });
-    document.addEventListener("touchend", endTouch);
-  }, { passive: false });
-}
-
-function createFloatingText() {
-  const editor = $("#editor-page");
-  if (!editor) return;
-
-  const block = document.createElement("div");
-  block.className = "floating-text";
-
-  // Zone de texte
-  const textContent = document.createElement("div");
-  textContent.className = "text-content";
-  textContent.innerHTML = "Double-clique pour écrire…";
-  textContent.setAttribute("contenteditable", "false");
-  textContent.style.userSelect = "none";
-
-  block.appendChild(textContent);
-
-  // Poignée de resize
-  const handle = document.createElement("div");
-  handle.className = "resize-handle";
-  block.appendChild(handle);
-
-  // Position initiale
-  block.style.position = "absolute";
-  block.style.top = "120px";
-  block.style.left = "120px";
-  block.style.minWidth = "150px";
-  block.style.fontSize = "18px";
-  block.style.background = "transparent";
-  block.style.cursor = "move";
-
-  /* --- Double clic → édition --- */
-  block.addEventListener("dblclick", (e) => {
-    e.stopPropagation();
-    textContent.setAttribute("contenteditable", "true");
-    textContent.style.userSelect = "text";
-    block.classList.add("selected");
-    block.style.cursor = "text";
-    textContent.focus();
-  });
-
-  /* --- Empêcher le drag de voler le clic dans le texte --- */
-  textContent.addEventListener("mousedown", (e) => {
-    e.stopPropagation();
-  });
-
-  /* --- Quitter édition quand on clique ailleurs --- */
-  document.addEventListener("mousedown", (e) => {
-    if (!block.contains(e.target)) {
-      textContent.setAttribute("contenteditable", "false");
-      textContent.style.userSelect = "none";
-      block.classList.remove("selected");
-      block.style.cursor = "move";
-    }
-  });
-
-  /* --- Empêcher disparition du texte --- */
-  textContent.addEventListener("input", () => {
-    if (textContent.innerHTML.trim() === "") {
-      textContent.innerHTML = "<br>";
-    }
-  });
-
-  // Ajouter au DOM
-  editor.appendChild(block);
-
-  // Activer drag + resize
-  makeDraggable(block);
-  makeResizable(block);
-}
-
-/* ============================================================
-   CHARGER ARTICLE (utilise getDb)
-   ============================================================ */
-
-async function chargerArticle() {
-  let client;
-  try {
-    client = await getDb();
-  } catch (err) {
-    console.warn("chargerArticle: supabase non disponible", err);
-    return;
+    const client = (typeof window.getDb === 'function' && window.getDb()) || window.__supabaseClient || window.supabaseClient || window.supabase;
+    if (!client) return null;
+    window.supabase = client;
+    window.supabaseClient = client;
+    return client;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const actuId = Number(params.get("id"));
-  if (!actuId) {
-    console.warn("chargerArticle: id manquant");
-    return;
+  // DOM refs
+  const canvas = document.getElementById('editor-page');
+  const layer = document.getElementById('editor-layer');
+  const addTextBtn = document.getElementById('add-floating-text');
+  const addImageBtn = document.getElementById('add-image');
+  const hiddenInput = document.getElementById('hidden-image-input');
+  const saveBtn = document.getElementById('save-btn-top');
+  const properties = document.getElementById('properties-content');
+
+  // state
+  let selected = null;
+  let elements = []; // {id, type, leftPct, topPct, widthPct, heightPct, data}
+  let idCounter = Date.now();
+
+  // util: convert px to percent relative to canvas
+  function toPercent(x, y, w, h) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      leftPct: Math.round((x - rect.left) / rect.width * 10000) / 100,
+      topPct: Math.round((y - rect.top) / rect.height * 10000) / 100,
+      widthPct: Math.round(w / rect.width * 10000) / 100,
+      heightPct: Math.round(h / rect.height * 10000) / 100
+    };
+  }
+  function fromPercent(p) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      left: rect.left + rect.width * (p.leftPct / 100),
+      top: rect.top + rect.height * (p.topPct / 100),
+      width: rect.width * (p.widthPct / 100),
+      height: rect.height * (p.heightPct / 100)
+    };
   }
 
-  const { data, error } = await client
-    .from("actus")
-    .select("*")
-    .eq("id", actuId)
-    .single();
-
-  if (error) {
-    console.error("chargerArticle supabase error:", error);
-    return;
+  // create floating text
+  function createFloatingText(opts = {}) {
+    const el = document.createElement('div');
+    el.className = 'floating';
+    el.dataset.id = ++idCounter;
+    el.innerHTML = `<div class="text" contenteditable="true" spellcheck="false">${opts.text || 'Texte'}</div><div class="resize-handle" aria-hidden="true"></div>`;
+    canvas.appendChild(el);
+    // default position center
+    const rect = canvas.getBoundingClientRect();
+    const left = rect.left + rect.width * 0.08;
+    const top = rect.top + rect.height * 0.12;
+    el.style.left = (left - rect.left) + 'px';
+    el.style.top = (top - rect.top) + 'px';
+    el.style.width = (rect.width * 0.4) + 'px';
+    attachInteractions(el);
+    selectElement(el);
+    persistState();
   }
 
-  // Injecter le HTML sauvegardé
-  const editor = $("#editor-page");
-  if (!editor) return;
-  editor.innerHTML = data.texte || "";
+  // create image element from file or url
+  function createImageElement(src) {
+    const el = document.createElement('div');
+    el.className = 'floating';
+    el.dataset.id = ++idCounter;
+    el.innerHTML = `<img src="${src}" alt="image"><div class="resize-handle" aria-hidden="true"></div>`;
+    canvas.appendChild(el);
+    const rect = canvas.getBoundingClientRect();
+    el.style.left = (rect.width * 0.1) + 'px';
+    el.style.top = (rect.height * 0.12) + 'px';
+    el.style.width = (rect.width * 0.5) + 'px';
+    el.style.height = (rect.height * 0.4) + 'px';
+    attachInteractions(el);
+    selectElement(el);
+    persistState();
+  }
 
-  // Réactiver le drag/resize/édition sur les blocs rechargés
-  document.querySelectorAll(".floating-text").forEach(el => {
-    const textContent = el.querySelector(".text-content");
-    makeDraggable(el);
-    makeResizable(el);
+  // attach drag + resize + click
+  function attachInteractions(el) {
+    el.style.position = 'absolute';
+    const handle = el.querySelector('.resize-handle');
+    let dragging = false;
+    let resizing = false;
+    let start = null;
+    let startRect = null;
 
-    // Réattacher handlers d'édition si nécessaire (déduplication)
-    el.addEventListener("dblclick", (e) => {
+    // pointerdown for drag
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target === handle) return; // resize handled separately
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      dragging = true;
+      start = { x: e.clientX, y: e.clientY };
+      const r = el.getBoundingClientRect();
+      startRect = { left: r.left, top: r.top, width: r.width, height: r.height };
+      selectElement(el);
+    });
+
+    // pointerdown for resize
+    handle?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      if (textContent) {
-        textContent.setAttribute("contenteditable", "true");
-        el.classList.add("selected");
-        el.style.cursor = "text";
-        textContent.focus();
+      handle.setPointerCapture(e.pointerId);
+      resizing = true;
+      start = { x: e.clientX, y: e.clientY };
+      const r = el.getBoundingClientRect();
+      startRect = { left: r.left, top: r.top, width: r.width, height: r.height };
+      selectElement(el);
+    });
+
+    // pointermove global
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging && !resizing) return;
+      const rectCanvas = canvas.getBoundingClientRect();
+      if (dragging) {
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        let newLeft = startRect.left + dx;
+        let newTop = startRect.top + dy;
+        // clamp inside canvas
+        newLeft = Math.max(rectCanvas.left, Math.min(newLeft, rectCanvas.right - startRect.width));
+        newTop = Math.max(rectCanvas.top, Math.min(newTop, rectCanvas.bottom - startRect.height));
+        el.style.left = (newLeft - rectCanvas.left) + 'px';
+        el.style.top = (newTop - rectCanvas.top) + 'px';
+        updatePropertiesFromElement(el);
+      } else if (resizing) {
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        let newW = Math.max(40, startRect.width + dx);
+        let newH = Math.max(24, startRect.height + dy);
+        // clamp to canvas
+        newW = Math.min(newW, rectCanvas.right - startRect.left);
+        newH = Math.min(newH, rectCanvas.bottom - startRect.top);
+        el.style.width = newW + 'px';
+        el.style.height = newH + 'px';
+        updatePropertiesFromElement(el);
       }
     });
 
-    textContent?.addEventListener("mousedown", (e) => e.stopPropagation());
-
-    // Quitter édition quand on clique ailleurs
-    document.addEventListener("mousedown", (e) => {
-      if (!el.contains(e.target)) {
-        textContent?.setAttribute("contenteditable", "false");
-        el.classList.remove("selected");
-        el.style.cursor = "move";
+    // pointerup
+    window.addEventListener('pointerup', (e) => {
+      if (dragging || resizing) {
+        dragging = false;
+        resizing = false;
+        persistState();
       }
     });
-  });
-}
 
-/* ============================================================
-   TOOLBAR – FORMATAGE (WYSIWYG)
-   ============================================================ */
-
-function applyInlineStyle(cmd, value = null) {
-  document.execCommand(cmd, false, value);
-}
-
-function applyBlockStyle(styleCallback) {
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return;
-
-  const range = selection.getRangeAt(0);
-  let node = range.commonAncestorContainer;
-
-  if (node.nodeType === 3) {
-    node = node.parentNode;
-  }
-
-  styleCallback(node);
-}
-
-function attachFormatToolbarHandlers() {
-  const toolbar = $('#format-toolbar');
-  if (!toolbar) return console.warn('Toolbar introuvable');
-
-  $('#ft-font', toolbar)?.addEventListener('change', (e) => {
-    applyBlockStyle(node => node.style.fontFamily = e.target.value);
-  });
-
-  $('#ft-size', toolbar)?.addEventListener('change', (e) => {
-    applyBlockStyle(node => node.style.fontSize = e.target.value);
-  });
-
-  $('#ft-bold', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyInlineStyle('bold');
-  });
-
-  $('#ft-italic', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyInlineStyle('italic');
-  });
-
-  $('#ft-underline', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyInlineStyle('underline');
-  });
-
-  $('#ft-color', toolbar)?.addEventListener('input', (e) => {
-    applyInlineStyle('foreColor', e.target.value);
-  });
-
-  $('#ft-align-left', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyBlockStyle(node => node.style.textAlign = 'left');
-  });
-
-  $('#ft-align-center', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyBlockStyle(node => node.style.textAlign = 'center');
-  });
-
-  $('#ft-align-right', toolbar)?.addEventListener('click', (e) => {
-    e.preventDefault();
-    applyBlockStyle(node => node.style.textAlign = 'right');
-  });
-
-  $('#ft-lineheight', toolbar)?.addEventListener('change', (e) => {
-    applyBlockStyle(node => node.style.lineHeight = e.target.value);
-  });
-
-  console.log('[toolbar] handlers attachés');
-}
-
-/* ============================================================
-   PANNEAUX CANVA
-   ============================================================ */
-
-function attachSidebarHandlers() {
-  $('#add-floating-text')?.addEventListener('click', () => {
-    createFloatingText();
-  });
-
-  $('#add-image')?.addEventListener('click', () => {
-    const input = document.getElementById("hidden-image-input");
-    if (!input) return;
-    input.value = ""; // reset
-    input.click();
-  });
-
-  const icons = $all('.canva-icon');
-  const panels = $all('.canva-panel');
-
-  function closeAll() {
-    panels.forEach(p => {
-      p.classList.remove('open');
-      p.setAttribute('aria-hidden', 'true');
-    });
-    icons.forEach(i => i.classList.remove('active'));
-  }
-
-  icons.forEach(icon => {
-    const key = icon.dataset.panel;
-    const panel = $('#panel-' + key);
-    if (!panel) return;
-
-    icon.addEventListener('mouseenter', () => {
-      closeAll();
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden', 'false');
-      icon.classList.add('active');
-    });
-
-    icon.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closeAll();
-      panel.classList.add('open');
-      panel.setAttribute('aria-hidden', 'false');
-      icon.classList.add('active');
-    });
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.canva-panel') && !e.target.closest('.canva-icon')) {
-      closeAll();
+    // double click to edit text
+    const text = el.querySelector('.text');
+    if (text) {
+      text.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        text.focus();
+      });
+      // blur persist
+      text.addEventListener('blur', () => persistState());
     }
-  });
-}
 
-/* ============================================================
-   SAUVEGARDE
-   ============================================================ */
-
-async function sauvegarder() {
-  console.log("[sauvegarder] démarrage");
-
-  let client;
-  try {
-    client = await getDb();
-  } catch (err) {
-    alert("Supabase non initialisé");
-    return;
+    // click to select
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectElement(el);
+    });
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const actuId = Number(params.get("id"));
-  console.log("actuId =", actuId);
-
-  if (!actuId) {
-    alert("ID d'article manquant");
-    return;
-  }
-
-  const editor = $("#editor-page");
-  if (!editor) {
-    alert("Éditeur introuvable");
-    return;
-  }
-
-  const html = editor.innerHTML;
-
-  try {
-    const { data, error } = await client
-      .from("actus")
-      .update({ texte: html })
-      .eq("id", actuId)
-      .select();
-
-    console.log("DATA :", data);
-    console.log("ERROR :", error);
-
-    if (error) {
-      console.error(error);
-      alert("Erreur Supabase");
+  // select element
+  function selectElement(el) {
+    // deselect previous
+    document.querySelectorAll('.floating.selected').forEach(x => x.classList.remove('selected'));
+    if (!el) {
+      selected = null;
+      clearProperties();
       return;
     }
-
-    alert("Enregistré !");
-  } catch (err) {
-    console.error("sauvegarder: erreur réseau", err);
-    alert("Erreur réseau lors de la sauvegarde");
-  }
-}
-
-/* ============================================================
-   FILE INPUT + DRAG & DROP
-   ============================================================ */
-
-const hiddenInput = document.getElementById("hidden-image-input");
-if (hiddenInput) {
-  hiddenInput.addEventListener("change", function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      addImage(e.target.result); // base64
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-const canvas = document.getElementById("editor-page");
-if (canvas) {
-  // Empêche le comportement par défaut
-  ["dragenter", "dragover", "dragleave", "drop"].forEach(evt => {
-    canvas.addEventListener(evt, e => e.preventDefault());
-  });
-
-  // Style visuel (optionnel)
-  canvas.addEventListener("dragover", () => {
-    canvas.classList.add("drag-hover");
-  });
-  canvas.addEventListener("dragleave", () => {
-    canvas.classList.remove("drag-hover");
-  });
-
-  // Dépôt d’image
-  canvas.addEventListener("drop", (e) => {
-    canvas.classList.remove("drag-hover");
-
-    const file = e.dataTransfer.files[0];
-    if (!file || !file.type.startsWith("image/")) return;
-
-    const reader = new FileReader();
-    reader.onload = function (ev) {
-      addImage(ev.target.result);
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-/* ============================================================
-   INIT
-   ============================================================ */
-
-function initEditor() {
-  console.log("[initEditor] démarrage");
-
-  const editor = document.querySelector("#editor-page");
-
-  // On ne fait tourner l'éditeur QUE si le conteneur est marqué comme éditeur
-  if (!editor || !editor.dataset.editor) {
-    console.log("[initEditor] pas en mode éditeur, on ne fait rien");
-    return;
+    el.classList.add('selected');
+    selected = el;
+    updatePropertiesFromElement(el);
   }
 
-  // Charger l'article uniquement en mode éditeur
-  chargerArticle();
+  // update properties panel from element
+  function updatePropertiesFromElement(el) {
+    if (!properties) return;
+    properties.innerHTML = '';
+    const rect = el.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const left = Math.round((rect.left - canvasRect.left));
+    const top = Math.round((rect.top - canvasRect.top));
+    const width = Math.round(rect.width);
+    const height = Math.round(rect.height);
 
-  attachFormatToolbarHandlers();
-  attachSidebarHandlers();
+    properties.insertAdjacentHTML('beforeend', `
+      <div><strong>Élément ${el.dataset.id}</strong></div>
+      <div class="prop-row"><input id="prop-left" type="number" value="${left}" /><input id="prop-top" type="number" value="${top}" /></div>
+      <div class="prop-row"><input id="prop-width" type="number" value="${width}" /><input id="prop-height" type="number" value="${height}" /></div>
+      <div class="prop-row"><input id="prop-fontsize" type="number" value="${parseInt(window.getComputedStyle(el.querySelector('.text')||el).fontSize)||16}" /><input id="prop-color" type="color" value="#000000" /></div>
+      <div><button id="prop-delete" class="btn full">Supprimer</button></div>
+    `);
 
-  const saveBtn = document.getElementById("save-btn-top");
-  if (saveBtn && !saveBtn._saveAttached) {
-    saveBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      sauvegarder();
+    // wire inputs
+    document.getElementById('prop-left').addEventListener('input', (e) => {
+      el.style.left = e.target.value + 'px';
     });
-    saveBtn._saveAttached = true;
+    document.getElementById('prop-top').addEventListener('input', (e) => {
+      el.style.top = e.target.value + 'px';
+    });
+    document.getElementById('prop-width').addEventListener('input', (e) => {
+      el.style.width = e.target.value + 'px';
+    });
+    document.getElementById('prop-height').addEventListener('input', (e) => {
+      el.style.height = e.target.value + 'px';
+    });
+    document.getElementById('prop-fontsize').addEventListener('input', (e) => {
+      const t = el.querySelector('.text');
+      if (t) t.style.fontSize = e.target.value + 'px';
+    });
+    document.getElementById('prop-delete').addEventListener('click', () => {
+      el.remove();
+      selectElement(null);
+      persistState();
+    });
   }
 
-  console.log("[initEditor] OK");
-}
+  function clearProperties() {
+    if (properties) properties.innerHTML = '<p class="muted">Sélectionne un élément pour modifier ses propriétés.</p>';
+  }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initEditor);
-} else {
-  initEditor();
-}
-// Supprimer la floating-text sélectionnée avec Delete / Backspace
-document.addEventListener('keydown', (e) => {
-  // Ignorer si on tape dans un champ éditable (input, textarea, contenteditable)
-  const active = document.activeElement;
-  if (!active) return;
-  const tag = active.tagName;
-  const isEditableElement = active.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || active.getAttribute('role') === 'textbox';
-  if (isEditableElement) return;
+  // persist state to localStorage (and attempt Supabase if available)
+  async function persistState() {
+    const rectCanvas = canvas.getBoundingClientRect();
+    const nodes = Array.from(canvas.querySelectorAll('.floating'));
+    const data = nodes.map(n => {
+      const r = n.getBoundingClientRect();
+      const left = Math.round((r.left - rectCanvas.left) / rectCanvas.width * 10000) / 100;
+      const top = Math.round((r.top - rectCanvas.top) / rectCanvas.height * 10000) / 100;
+      const width = Math.round(r.width / rectCanvas.width * 10000) / 100;
+      const height = Math.round(r.height / rectCanvas.height * 10000) / 100;
+      const type = n.querySelector('img') ? 'image' : 'text';
+      const content = type === 'text' ? (n.querySelector('.text')?.innerHTML || '') : (n.querySelector('img')?.src || '');
+      return { id: n.dataset.id, type, leftPct: left, topPct: top, widthPct: width, heightPct: height, content };
+    });
+    localStorage.setItem('editeur_state', JSON.stringify(data));
+    // try to save to Supabase if available and if page has ?id= (article)
+    const supabase = await getSupabaseClient();
+    if (!supabase) return;
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    if (!id) return;
+    try {
+      // upsert into 'actus' table content field (assumes JSON column 'contenu')
+      await supabase.from('actus').update({ contenu: data }).eq('id', id);
+    } catch (err) {
+      // ignore network errors silently
+      console.warn('Supabase save failed', err);
+    }
+  }
 
-  // Touches à gérer
-  if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+  // load persisted state
+  function loadState() {
+    const raw = localStorage.getItem('editeur_state');
+    if (!raw) return;
+    try {
+      const arr = JSON.parse(raw);
+      arr.forEach(item => {
+        if (item.type === 'text') {
+          const el = document.createElement('div');
+          el.className = 'floating';
+          el.dataset.id = item.id || ++idCounter;
+          el.innerHTML = `<div class="text" contenteditable="true">${item.content || 'Texte'}</div><div class="resize-handle"></div>`;
+          canvas.appendChild(el);
+          const rect = canvas.getBoundingClientRect();
+          el.style.left = (rect.width * item.leftPct / 100) + 'px';
+          el.style.top = (rect.height * item.topPct / 100) + 'px';
+          el.style.width = (rect.width * item.widthPct / 100) + 'px';
+          el.style.height = (rect.height * item.heightPct / 100) + 'px';
+          attachInteractions(el);
+        } else if (item.type === 'image') {
+          const el = document.createElement('div');
+          el.className = 'floating';
+          el.dataset.id = item.id || ++idCounter;
+          el.innerHTML = `<img src="${item.content}" alt="image"><div class="resize-handle"></div>`;
+          canvas.appendChild(el);
+          const rect = canvas.getBoundingClientRect();
+          el.style.left = (rect.width * item.leftPct / 100) + 'px';
+          el.style.top = (rect.height * item.topPct / 100) + 'px';
+          el.style.width = (rect.width * item.widthPct / 100) + 'px';
+          el.style.height = (rect.height * item.heightPct / 100) + 'px';
+          attachInteractions(el);
+        }
+      });
+    } catch (err) {
+      console.warn('loadState parse error', err);
+    }
+  }
 
-  // Trouver la floating-text sélectionnée
-  const selected = document.querySelector('.floating-text.selected');
-  if (!selected) return;
+  // wire UI
+  addTextBtn?.addEventListener('click', () => createFloatingText());
+  addImageBtn?.addEventListener('click', () => hiddenInput?.click());
+  hiddenInput?.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    createImageElement(url);
+    // attempt upload to supabase storage in background
+    (async () => {
+      const supabase = await getSupabaseClient();
+      if (!supabase) return;
+      try {
+        const fileName = `editeur/${Date.now()}-${f.name}`;
+        const { error } = await supabase.storage.from('uploads').upload(fileName, f);
+        if (!error) {
+          const { data } = await supabase.storage.from('uploads').getPublicUrl(fileName);
+          // replace last created image src with public url
+          const last = canvas.querySelector('.floating img:last-of-type');
+          if (last) last.src = data.publicUrl;
+          persistState();
+        }
+      } catch (err) { console.warn('upload failed', err); }
+    })();
+  });
 
-  // Si le bloc est en mode édition (sécurité), ne pas supprimer
-  const textContent = selected.querySelector('.text-content');
-  if (textContent && textContent.getAttribute('contenteditable') === 'true') return;
+  // click outside to deselect
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.floating')) selectElement(null);
+  });
 
-  // Optionnel : confirmation utilisateur (décommenter si souhaité)
-  // if (!confirm('Supprimer cette zone de texte ?')) return;
+  // keyboard delete
+  document.addEventListener('keydown', (e) => {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selected) {
+      selected.remove();
+      selectElement(null);
+      persistState();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      saveAction();
+    }
+  });
 
-  // Empêcher le comportement par défaut (ex: navigation arrière sur Backspace)
-  e.preventDefault();
+  // save action (local + supabase)
+  async function saveAction() {
+    await persistState();
+    // visual feedback
+    const btn = saveBtn;
+    if (!btn) return;
+    const old = btn.textContent;
+    btn.textContent = 'Enregistré ✓';
+    btn.classList.add('primary');
+    setTimeout(() => { btn.textContent = old; btn.classList.remove('primary'); }, 1200);
+  }
+  saveBtn?.addEventListener('click', saveAction);
 
-  // Supprimer le bloc du DOM
-  selected.remove();
-});
+  // init
+  clearProperties();
+  loadState();
 
-console.log('FIN DU FICHIER OK');
+  // expose for console debugging
+  window.__editeur = {
+    createFloatingText,
+    createImageElement,
+    persistState,
+    loadState,
+    getState: () => JSON.parse(localStorage.getItem('editeur_state') || '[]')
+  };
+})();
