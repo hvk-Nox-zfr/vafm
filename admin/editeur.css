@@ -1,441 +1,128 @@
-/* ===========================================================
-   editeur.css — version consolidée et synchronisée avec page.css
-   =========================================================== */
+/* editeur.css — thème futuriste clair, minimal et utilisable (copy/paste) */
 
-/* === Shared layout variables === */
-:root {
-  --content-max-width: 1000px;
-  --content-padding-horizontal: 7vw;
-  --content-margin-vertical: 40px;
-  --content-min-height: 600px;
-  --content-bg: #ffffff;
-  --content-radius: 6px;
-  --content-text-size: 18px;
+/* Root */
+:root{
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --muted: #6b7280;
   --accent: #2563eb;
-  --topbar-height: 56px;
+  --accent-2: #7c3aed;
+  --glass: rgba(255,255,255,0.6);
+  --radius: 12px;
+  --shadow: 0 10px 30px rgba(2,6,23,0.06);
+  --gap: 14px;
+  --ui-font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Global box-sizing */
-*, *::before, *::after { box-sizing: border-box; }
+/* Reset */
+* { box-sizing: border-box; }
+html,body { height:100%; margin:0; font-family:var(--ui-font); background:var(--bg); color:#0f1724; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+a { color:var(--accent); }
 
-/* Basic reset */
-html, body {
-  height: 100%;
-  margin: 0;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #0f1724;
-  background: #f8fafc;
-}
-
-/* ---------------- TOPBAR ---------------- */
-.topbar {
-  height: var(--topbar-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  gap: 12px;
-  background: #111827;
-  color: #ffffff;
-  z-index: 120;
-  position: relative;
-  box-shadow: 0 1px 0 rgba(15,23,42,0.06);
-}
-.topbar-left, .topbar-center, .topbar-right { display: flex; align-items: center; gap: 8px; }
-.topbar-center { flex: 1; justify-content: center; }
-.topbar h1 { margin: 0; font-size: 16px; font-weight: 600; color: #f8fafc; }
-
-/* ---------------- Buttons ---------------- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-}
-.btn.ghost { background: transparent; color: #e6eefc; border: 1px solid rgba(255,255,255,0.04); }
-.btn.primary { background: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(37,99,235,0.12); }
-.btn.full { width: 100%; justify-content: center; }
-
-/* ---------------- Layout principal ---------------- */
-body.admin .layout {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: 12px;
-  height: calc(100vh - var(--topbar-height));
-  position: relative;
-  overflow: hidden;
-}
-
-/* ---------------- Canva sidebar ---------------- */
-body.admin .canva-sidebar {
-  background: #0b1220;
-  color: #f9fafb;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 0;
-  gap: 8px;
-  z-index: 150;
-  border-right: 1px solid rgba(255,255,255,0.02);
-}
-body.admin .canva-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #111827;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  color: #e6eefc;
-  transition: background 0.12s ease, transform 0.12s ease;
-  border: none;
-}
-body.admin .canva-icon:hover,
-body.admin .canva-icon.active {
-  background: var(--accent);
-  transform: translateX(2px);
-  color: #fff;
-}
-
-/* Panels déroulants */
-body.admin .canva-panel {
-  position: absolute;
-  left: 56px;
-  top: 0;
-  height: calc(100vh - var(--topbar-height));
-  width: 0;
-  padding: 0;
-  overflow: hidden;
-  background: #0f1724;
-  color: #f9fafb;
-  transition: width 220ms cubic-bezier(.2,.9,.2,1), padding 180ms ease, opacity 160ms;
-  box-shadow: 0 8px 24px rgba(2,6,23,0.45);
-  z-index: 140;
-  border-radius: 0 8px 8px 0;
-  pointer-events: none;
-  opacity: 0;
-}
-body.admin .canva-panel.open,
-body.admin .canva-panel[aria-hidden="false"] {
-  width: 260px;
-  padding: 16px;
-  pointer-events: auto;
-  opacity: 1;
-}
-body.admin .canva-panel h2 { margin: 0 0 12px 0; font-size: 13px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.06em; }
-.search-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color: #e6eefc; }
-
-/* ---------------- Canvas wrapper and public page ---------------- */
-/* Harmonisation avec la page publique : mêmes dimensions et centrage */
-.canvas-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: var(--content-max-width);
-  margin: var(--content-margin-vertical) auto;
-  min-height: var(--content-min-height);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 0;
-  box-sizing: border-box;
-  overflow: visible;
-  z-index: 1;
-}
-
-/* canvas doit correspondre exactement au conteneur public */
-/* IMPORTANT : padding interne mis à 0 pour que les positions absolues soient cohérentes */
-.canvas {
-  position: relative;
-  width: 100%;
-  min-height: var(--content-min-height);
-  background: var(--content-bg);
-  padding: 0;
-  border-radius: var(--content-radius);
-  box-sizing: border-box;
-  overflow: visible;
-  z-index: 2;
-  color: #0f1724;
-  box-shadow: 0 6px 20px rgba(2,6,23,0.06);
-}
-
-/* Public content */
-.public-content h2 { margin-top: 0; font-size: 28px; color: #0f1724; }
-.public-content p { color: #374151; line-height: 1.6; }
-
-/* ---------------- Editor layer ---------------- */
-/* editor-layer doit recouvrir exactement la .canvas */
-#editor-layer, .editor-layer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: auto;
-  z-index: 129;
-  background: transparent;
-  box-sizing: border-box;
-}
-
-/* ---------------- Blocks (image & texte) ---------------- */
-.block-public {
-  position: absolute;
-  border: 1px dashed rgba(15,23,42,0.12);
-  background: rgba(255,255,255,0.02);
-  border-radius: var(--content-radius);
-  overflow: hidden;
-}
-.block-public.selected {
-  outline: 2px solid var(--accent);
-  box-shadow: 0 6px 18px rgba(37,99,235,0.12);
-}
-
-/* Text block editable */
-.block-public.text-block {
-  background: rgba(255,255,255,0.02);
-  border: 1px dashed rgba(15,23,42,0.08);
-  border-radius: var(--content-radius);
-  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
-  transition: box-shadow .12s, outline .12s;
-  user-select: none;
-  min-height: 28px;
-}
-.block-public.text-block.selected {
-  outline: 2px solid var(--accent);
-  box-shadow: 0 10px 30px rgba(37,99,235,0.12);
-}
-.block-public .text-block-content {
-  color: #0f1724;
-  background: transparent;
-  width: 100%;
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-word;
-  user-select: text;
-  padding: 8px 12px;
-}
-
-/* Resize handle */
-.resize-handle {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  right: 6px;
-  bottom: 6px;
-  background: rgba(15,23,42,0.6);
-  border-radius: 3px;
-  cursor: se-resize;
-  z-index: 20;
-}
-.block-public .resize-handle.bottom-right {
-  width: 12px;
-  height: 12px;
-  right: 6px;
-  bottom: 6px;
-}
-
-/* ---------------- Format toolbar ---------------- */
+/* Top toolbar */
 .format-toolbar {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 12px 22px;
-  height: 54px;
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 16px;
-  box-shadow:
-    0 4px 12px rgba(0,0,0,0.06),
-    0 12px 32px rgba(0,0,0,0.12);
-  z-index: 160;
-  transition: transform .15s ease, box-shadow .15s ease, background .2s ease;
-}
-.format-toolbar:hover {
-  transform: translateX(-50%) translateY(-2px);
-  background: rgba(255, 255, 255, 0.75);
-  box-shadow:
-    0 6px 18px rgba(0,0,0,0.10),
-    0 16px 40px rgba(0,0,0,0.16);
+  position: sticky;
+  top: 12px;
+  z-index: 60;
+  margin: 12px auto;
+  width: calc(100% - 48px);
+  max-width:1200px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,251,255,0.85));
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(15,23,42,0.04);
 }
 
-/* ---------------- Groupes visuels ---------------- */
-.ft-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-right: 16px;
-  border-right: 1px solid rgba(0,0,0,0.08);
-}
-.ft-group:last-child {
-  border-right: none;
-  padding-right: 0;
+/* toolbar groups */
+.toolbar-left, .toolbar-right { display:flex; align-items:center; gap:8px; }
+.ft-control { padding:8px 10px; border-radius:8px; border:1px solid rgba(15,23,42,0.06); background:#fff; font-size:13px; }
+.ft-btn { background:transparent; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700; color:var(--muted); }
+.ft-btn.primary { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; box-shadow: 0 8px 20px rgba(37,99,235,0.12); }
+.divider { width:1px; height:28px; background:rgba(15,23,42,0.04); border-radius:2px; }
+
+/* Layout */
+.layout { display:grid; grid-template-columns: 64px 320px 1fr 320px; gap:18px; max-width:1400px; margin:18px auto; padding:0 18px; align-items:start; }
+.canva-sidebar { background:transparent; display:flex; flex-direction:column; gap:8px; align-items:center; padding-top:6px; }
+.canva-icon { width:44px; height:44px; border-radius:10px; border:none; background:#fff; box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; }
+.canva-panel { background:var(--panel); border-radius:12px; padding:12px; box-shadow:var(--shadow); min-height:120px; display:flex; flex-direction:column; gap:8px; }
+.canva-panel[aria-hidden="true"] { display:none; }
+
+/* Main canvas */
+.main { display:flex; flex-direction:column; gap:12px; }
+.canvas-wrapper { background:transparent; display:flex; justify-content:center; align-items:flex-start; padding:12px; }
+.canvas.public-content {
+  width: 820px;
+  min-height: 560px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 36px;
+  box-shadow: 0 20px 60px rgba(2,6,23,0.06);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(15,23,42,0.03);
 }
 
-/* ---------------- Controls ---------------- */
-.ft-control {
-  height: 40px;
-  padding: 6px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(10px);
-  font-size: 14px;
-  color: #0f1724;
-  cursor: pointer;
-  transition: background .12s, box-shadow .12s;
-}
-.ft-control:hover {
-  background: rgba(255,255,255,0.85);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
-}
+/* page surface */
+.page-surface { width:100%; height:100%; position:relative; }
+.page-title { margin:0 0 12px 0; font-size:28px; letter-spacing:-0.4px; }
+.page-intro { margin:0 0 18px 0; color:var(--muted); }
 
-/* ---------------- Buttons small ---------------- */
-.ft-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  color: #0f1724;
-  cursor: pointer;
-  transition: background .12s, transform .12s, box-shadow .12s;
-}
-.ft-btn:hover {
+/* Floating elements */
+.floating {
+  position:absolute;
+  min-width:40px;
+  min-height:24px;
+  padding:6px 8px;
+  border-radius:8px;
   background: rgba(255,255,255,0.9);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.ft-btn[aria-pressed="true"] {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #3b4cca;
-}
-
-/* ---------------- Color picker ---------------- */
-.ft-color {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(10px);
-  cursor: pointer;
-  padding: 0;
-}
-
-/* ---------------- Floating text ---------------- */
-.floating-text {
-  position: absolute;
-  background: transparent;
-  min-width: 150px;
-  z-index: 50;
-  border: 1px dashed transparent;
-  transition: border-color 0.15s ease;
-}
-.floating-text.selected { border-color: var(--accent); }
-.floating-text .drag-handle {
-  width: 100%;
-  height: 12px;
-  background: transparent;
+  border:1px dashed transparent;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.06);
   cursor: move;
   user-select: none;
+  touch-action: none;
 }
-.floating-text .text-content {
-  padding: 10px;
-  cursor: text;
-  min-height: 20px;
-  user-select: text;
-  background: transparent;
-}
-.floating-text .resize-handle {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent);
-  position: absolute;
-  bottom: -8px;
-  right: -8px;
-  cursor: nwse-resize;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+.floating.selected { border-color: rgba(37,99,235,0.6); box-shadow: 0 12px 30px rgba(37,99,235,0.08); }
+
+/* text element */
+.floating .text { font-size:16px; line-height:1.4; color:#0f1724; }
+
+/* image element */
+.floating img { display:block; max-width:100%; max-height:100%; border-radius:8px; object-fit:cover; }
+
+/* resize handle */
+.resize-handle {
+  position:absolute;
+  width:12px; height:12px; background:var(--accent); border-radius:3px; right:-6px; bottom:-6px; cursor:se-resize; box-shadow:0 6px 18px rgba(37,99,235,0.12);
 }
 
-/* Editor drag hover */
-#editor-page.drag-hover {
-  outline: 3px dashed rgba(74,144,226,0.9);
-  background: rgba(74, 144, 226, 0.06);
-}
+/* editor overlay */
+.editor-layer { position:absolute; inset:0; pointer-events:none; }
 
-/* text-content selection rules */
-.text-content { user-select: none; }
-.text-content[contenteditable="true"] { user-select: text; }
+/* properties panel */
+.properties-panel { background:var(--panel); border-radius:12px; padding:12px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:10px; }
+.properties-header { display:flex; justify-content:space-between; align-items:center; }
+.properties-content { display:flex; flex-direction:column; gap:8px; }
+.prop-row { display:flex; gap:8px; }
+.prop-row input { flex:1; padding:8px; border-radius:8px; border:1px solid rgba(15,23,42,0.06); }
 
-/* Elements grid */
-#elements-results {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-  gap: 12px;
-  padding: 10px;
-}
-.element-item {
-  background: #1e1e1e;
-  border-radius: 8px;
-  padding: 8px;
-  cursor: pointer;
-  transition: 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.element-item:hover { background: #2a2a2a; }
-.element-thumb {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-  pointer-events: none;
-}
-.canvas-element {
-  max-width: none !important;
-  max-height: none !important;
-}
+/* buttons */
+.btn { padding:10px 12px; border-radius:10px; border:none; cursor:pointer; font-weight:700; }
+.btn.full { width:100%; }
+.btn.primary { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; }
+.btn.secondary { background:transparent; border:1px solid rgba(15,23,42,0.06); color:var(--muted); }
 
-/* ---------------- Cursor rules for editor interactions ---------------- */
-/* Allow text cursor inside editable content, default elsewhere */
-.block-public,
-.canvas .text-block,
-.canvas [draggable],
-.canvas *[data-draggable="true"] { cursor: default !important; }
-.canvas .text-block, .canvas .text-block * { cursor: text !important; }
+/* small helpers */
+.kbd { display:inline-block; padding:4px 8px; border-radius:6px; background:#f3f4f6; border:1px solid rgba(15,23,42,0.03); font-weight:700; font-size:12px; }
 
-/* ---------------- Responsive adjustments ---------------- */
-@media (max-width: 900px) {
-  :root {
-    --content-padding-horizontal: 4vw;
-    --content-max-width: 720px;
-  }
-  body.admin .layout { grid-template-columns: 56px 1fr; }
-}
-@media (max-width: 480px) {
-  :root {
-    --content-padding-horizontal: 3vw;
-    --content-max-width: 100%;
-    --content-margin-vertical: 20px;
-    --content-min-height: 400px;
-  }
-  .format-toolbar { display: none; }
+/* responsive */
+@media (max-width:1200px) {
+  .layout { grid-template-columns: 56px 1fr; }
+  .canva-panel { display:none; }
+  .properties-panel { display:none; }
+  .canvas.public-content { width: 92%; padding:20px; }
 }
