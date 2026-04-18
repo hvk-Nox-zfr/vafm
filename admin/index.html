@@ -132,6 +132,35 @@
       <div id="emissions-admin" class="admin-list"></div>
     </section>
 
+    <!-- POPUP EMISSION (ajouté) -->
+    <div id="popup-emission" class="popup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="popup-emission-title">
+      <div class="popup" role="document" style="max-width:720px;">
+        <header class="popup-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #eee;">
+          <h3 id="popup-emission-title" style="margin:0;font-size:18px;">Nouvelle émission</h3>
+          <button class="modal-close" data-close="popup-emission" aria-label="Fermer" style="background:none;border:none;font-size:18px;cursor:pointer;">✕</button>
+        </header>
+
+        <div class="popup-body" style="padding:16px; display:flex; flex-direction:column; gap:10px;">
+          <label>Nom de l’émission
+            <input id="emission-nom" type="text" placeholder="Nom" required style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;">
+          </label>
+
+          <label>Horaires
+            <input id="emission-horaires" type="text" placeholder="Ex : Lundi 18h - 20h" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;">
+          </label>
+
+          <label>Description
+            <textarea id="emission-description" rows="5" placeholder="Description" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;"></textarea>
+          </label>
+        </div>
+
+        <footer class="popup-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid #eee;">
+          <button id="popup-emission-cancel" class="btn btn-secondary" data-close="popup-emission" type="button" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;">Annuler</button>
+          <button id="popup-emission-save" class="btn btn-primary" type="button" style="padding:8px 12px;border-radius:8px;border:none;background:linear-gradient(90deg,#2563eb,#7c3aed);color:#fff;cursor:pointer;">Enregistrer</button>
+        </footer>
+      </div>
+    </div>
+
   </main>
 
   <!-- Logout floating button -->
@@ -143,16 +172,47 @@
 
   <!-- Petit script utilitaire pour fermer modals via data-close (fallback si admin.js n'est pas encore exécuté) -->
   <script>
+    // data-close handler (fallback)
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-close]');
       if (!btn) return;
       const id = btn.getAttribute('data-close');
       const el = document.getElementById(id);
-      if (el) el.classList.remove('show', 'hidden');
+      if (!el) return;
+      // hide in an accessible way
+      el.classList.remove('show');
+      el.classList.add('hidden');
+      el.style.display = 'none';
+      el.setAttribute('aria-hidden', 'true');
     });
 
-    // Afficher le nom d'utilisateur si présent (fallback)
+    // small helper to show a popup (used if admin.js not yet wired)
+    function showPopup(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('hidden');
+      el.classList.add('show');
+      el.style.display = 'block';
+      el.setAttribute('aria-hidden', 'false');
+      // focus first input if present
+      const first = el.querySelector('input, textarea, button');
+      if (first) first.focus();
+    }
+
+    // wire add-emission fallback to open popup if admin.js hasn't attached handlers yet
     document.addEventListener('DOMContentLoaded', () => {
+      const addEmission = document.getElementById('add-emission');
+      if (addEmission) {
+        addEmission.addEventListener('click', (ev) => {
+          // prefer admin.js behavior if it already opened popup; fallback to showPopup
+          const popup = document.getElementById('popup-emission');
+          if (popup && popup.classList.contains('hidden')) {
+            showPopup('popup-emission');
+          }
+        });
+      }
+
+      // Afficher le nom d'utilisateur si présent (fallback)
       const user = localStorage.getItem('admin_user');
       if (user) {
         const w = document.getElementById('welcome');
@@ -162,3 +222,4 @@
   </script>
 </body>
 </html>
+
