@@ -75,10 +75,24 @@
 
         <!-- ACTUALITÉS -->
         <section id="actus" class="section section-alt">
-            <h2>Actualités</h2>
-            <p class="section-intro">Les dernières infos de la radio.</p>
-            <div id="actus-public"></div>
+          <h2>Actualités</h2>
+          <p class="section-intro">Les dernières infos de la radio.</p>
+
+          <div id="actus-public"></div>
+
+          <!-- Overlay Actus : placer ici, juste après #actus-public -->
+          <div id="actus-overlay" class="actus-overlay" role="region" aria-label="Annonce actualités" aria-hidden="false">
+            <div class="actus-overlay-content" role="dialog" aria-labelledby="actus-overlay-title">
+              <h2 id="actus-overlay-title">Arrive bientôt</h2>
+              <p>On prépare du nouveau contenu — revenez bientôt.</p>
+              <div class="overlay-actions">
+                <button id="actus-overlay-close" class="btn">Fermer</button>
+                <button id="actus-overlay-hide-forever" class="btn btn-secondary">Ne plus afficher</button>
+              </div>
+            </div>
+          </div>
         </section>
+
 
         <!-- CONTACT -->
         <section class="section" id="contact">
