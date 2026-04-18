@@ -155,6 +155,7 @@ export function ouvrirPopupEmission(em = null) {
 }
 
 /* ---------- Sauvegarder émission (create / update) ---------- */
+// Remplacer saveEmission par ceci (logging détaillé)
 async function saveEmission(payload) {
   let supabase;
   try {
@@ -164,28 +165,45 @@ async function saveEmission(payload) {
     throw err;
   }
 
+  // debug: afficher payload
+  console.log('saveEmission payload:', payload);
+
   try {
     if (payload.id) {
-      const { error } = await supabase.from('emissions').update({
-        nom: payload.nom,
-        horaires: payload.horaires,
-        description: payload.description
-      }).eq('id', payload.id);
-      if (error) throw error;
+      const res = await supabase
+        .from('emissions')
+        .update({
+          nom: payload.nom,
+          horaires: payload.horaires,
+          description: payload.description
+        })
+        .eq('id', payload.id);
+
+      console.log('Supabase update response:', res);
+      if (res.error) throw res.error;
     } else {
-      const { error } = await supabase.from('emissions').insert([{
-        nom: payload.nom,
-        horaires: payload.horaires,
-        description: payload.description
-      }]);
-      if (error) throw error;
+      const res = await supabase
+        .from('emissions')
+        .insert([{
+          nom: payload.nom,
+          horaires: payload.horaires,
+          description: payload.description
+        }]);
+
+      console.log('Supabase insert response:', res);
+      if (res.error) throw res.error;
     }
     return true;
   } catch (err) {
-    console.error('saveEmission error:', err);
+    // Affiche l'objet d'erreur complet et, si présent, le message HTTP renvoyé
+    console.error('saveEmission error: ', err);
+    // Si Supabase renvoie un objet avec status/message, logguer explicitement
+    if (err.status) console.error('HTTP status:', err.status);
+    if (err.message) console.error('Error message:', err.message);
     throw err;
   }
 }
+
 
 /* ---------- Setup du formulaire et des boutons du popup ---------- */
 export function setupEmissionForm() {
