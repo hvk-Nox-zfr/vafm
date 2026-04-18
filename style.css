@@ -616,3 +616,58 @@ textarea:focus {
     text-decoration: none;
     color: inherit;
 }
+/* Assurer que la section est positionnée */
+#actus { position: relative; }
+
+/* Overlay positionné sur la section */
+#actus .actus-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Fond flou sombre */
+#actus .actus-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px) saturate(1.05);
+  -webkit-backdrop-filter: blur(8px) saturate(1.05);
+  transition: opacity 240ms ease;
+}
+
+/* Contenu centré et interactif */
+#actus .actus-overlay-content {
+  position: relative;
+  z-index: 22;
+  color: #fff;
+  text-align: center;
+  padding: 18px 22px;
+  max-width: 90%;
+  pointer-events: auto;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+}
+
+/* Appliquer le flou au contenu quand la section a la classe 'blurred' */
+#actus.blurred > #actus-public,
+#actus.blurred > .actus-content {
+  filter: blur(8px) saturate(0.95);
+  transform: scale(1.01);
+  transition: filter 240ms ease, transform 240ms ease;
+}
+
+/* Masquer l'overlay */
+#actus .actus-overlay.hidden { display: none; }
+
+/* Responsive */
+@media (max-width:600px) {
+  #actus .actus-overlay-content { padding:14px; }
+  #actus .actus-overlay-content h2 { font-size:1.4rem; }
+}
