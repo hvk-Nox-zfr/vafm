@@ -14,3 +14,20 @@
     margin-bottom: 20px;
     line-height: 1.6; /* améliore la lisibilité */
 }
+
+.politique {
+    border: 2px;
+    padding: 20px;               /* Espace entre le texte et la bordure */
+    margin: 40px auto;           /* Espace autour du bloc */
+    max-width: 800px;            /* Pour éviter que ça s'étale trop large */
+}
+.politique h2,
+.politique h3 {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.politique p {
+    margin-bottom: 20px;
+    line-height: 1.6; /* améliore la lisibilité */
+}
