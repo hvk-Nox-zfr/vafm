@@ -7,10 +7,10 @@
 .mentions h2,
 .mentions h3 {
     margin-top: 20px;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .mentions p {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     line-height: 1.6; /* améliore la lisibilité */
 }
