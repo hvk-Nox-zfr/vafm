@@ -1,9 +1,8 @@
 .mentions {
     border: 2px;
     padding: 20px;               /* Espace entre le texte et la bordure */
-    margin: 30px auto;           /* Espace autour du bloc */
+    margin: 40px auto;           /* Espace autour du bloc */
     max-width: 800px;            /* Pour éviter que ça s'étale trop large */
-    border-radius: 10px;         /* Coins arrondis (optionnel) */
 }
 .mentions h2,
 .mentions h3 {
